@@ -6,6 +6,8 @@ import { badgeVencimiento, diasParaRenovar } from "@/domain/fechas";
 import { PanelSuscripcion } from "@/features/ventas/panel-suscripcion";
 import { BotonLimpieza } from "@/features/ventas/boton-limpieza";
 import { BotonAcceso } from "@/features/ventas/boton-acceso";
+import { obtenerTasasVigentes } from "@/features/tasas/actions";
+import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +41,12 @@ export default async function VencimientosPage() {
 
   // Tareas de saneamiento pendientes: perfiles que NO vuelven al stock hasta
   // confirmar que se limpiaron en la plataforma.
+  // BCV vigente: solo para mostrar el equivalente en USD mientras se escribe el
+  // monto. Quien congela la tasa de verdad es la base de datos.
+  const { bcv } = await obtenerTasasVigentes();
+  const bcvUsable =
+    bcv && evaluarFrescura(confirmadaAt(bcv)).nivel !== "inservible" ? bcv.bs_por_usd : null;
+
   const { data: limpiezas } = await supabase
     .from("operaciones_remotas")
     .select(
@@ -146,6 +154,7 @@ export default async function VencimientosPage() {
                   proximaRenovacion={f.renovacion}
                   recontactarEl={f.recontactar_el}
                   nota={f.nota}
+                  bcv={bcvUsable}
                 />
               </div>
             </details>

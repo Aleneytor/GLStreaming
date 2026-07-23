@@ -32,28 +32,27 @@ export default async function CobrosPage() {
   const bcvUsable = bcv && frescura?.nivel !== "inservible" ? bcv : null;
 
   const filas = (pendientes ?? []).map((p) => {
+    // Si la operación traía un precio en USD, se ofrece su equivalente como
+    // SUGERENCIA. El monto real lo escribe el usuario: en este negocio los
+    // bolívares recibidos varían de un cliente a otro.
     const precio = p.precio_comercial_usd == null ? null : Number(p.precio_comercial_usd);
-    const monto =
+    const sugerencia =
       precio != null && bcvUsable ? calcularMontoVesEsperado(precio, bcvUsable.bs_por_usd) : null;
-    const bloqueado =
-      precio == null
-        ? "Esta venta no tiene precio en USD. Edítala antes de cobrar."
-        : !bcvUsable
-          ? "Actualiza la tasa BCV antes de cobrar."
-          : null;
-    return { ...p, precio, monto, bloqueado };
+    const bloqueado = !bcvUsable ? "Actualiza la tasa BCV antes de cobrar." : null;
+    return { ...p, precio, sugerencia, bloqueado };
   });
 
   const totalUsd = filas.reduce((a, f) => a + (f.precio ?? 0), 0);
-  const totalVes = filas.reduce((a, f) => a + (f.monto ?? 0), 0);
+  const totalVes = filas.reduce((a, f) => a + (f.sugerencia ?? 0), 0);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Por cobrar</h1>
         <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Ventas y renovaciones sin cobro registrado. El monto en Bs se calcula con
-          la BCV del momento y queda congelado al confirmar.
+          Ventas y renovaciones a las que todavía no les registraste el dinero.
+          Lo normal es cobrar al vender o al renovar; esto es la red de seguridad
+          para lo que se quedó atrás.
         </p>
       </div>
 
@@ -86,7 +85,7 @@ export default async function CobrosPage() {
             </div>
             {bcvUsable && (
               <div>
-                <p className="text-neutral-500 dark:text-neutral-400">Esperado en Bs</p>
+                <p className="text-neutral-500 dark:text-neutral-400">Sugerido en Bs</p>
                 <p className="text-lg font-semibold tabular-nums">{bs(totalVes)}</p>
               </div>
             )}
@@ -119,9 +118,9 @@ export default async function CobrosPage() {
                     <p className="font-semibold tabular-nums">
                       {f.precio != null ? `$${f.precio.toFixed(2)}` : "—"}
                     </p>
-                    {f.monto != null && (
+                    {f.sugerencia != null && (
                       <p className="text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
-                        {bs(f.monto)} Bs
+                        ~{bs(f.sugerencia)} Bs
                       </p>
                     )}
                   </div>
@@ -129,7 +128,8 @@ export default async function CobrosPage() {
 
                 <BotonCobrar
                   periodoId={f.periodo_id!}
-                  montoVes={f.monto}
+                  sugerencia={f.sugerencia}
+                  bcv={bcvUsable?.bs_por_usd ?? null}
                   bloqueado={f.bloqueado}
                 />
               </div>

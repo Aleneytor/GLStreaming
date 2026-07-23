@@ -2973,6 +2973,17 @@ export type Database = {
         }
         Returns: string
       }
+      renovar_y_cobrar: {
+        Args: {
+          p_inicio?: string
+          p_meses?: number
+          p_monto_ves?: number
+          p_referencia?: string
+          p_suscripcion_id: string
+          p_tardia?: boolean
+        }
+        Returns: string
+      }
       resumen_financiero: {
         Args: { p_fin: string; p_inicio: string }
         Returns: {
@@ -3061,6 +3072,7 @@ export type Database = {
           p_fecha_venta?: string
           p_inicio?: string
           p_modalidad_id?: string
+          p_monto_ves?: number
           p_nombre_perfil?: string
           p_precio_usd?: number
           p_unidad_id?: string

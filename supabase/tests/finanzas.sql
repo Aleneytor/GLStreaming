@@ -58,15 +58,19 @@ select public.crear_cuenta_con_unidades(:'prod', 5, 'Fin-1', null, 'A', 'ha', 'p
 select id as u1 from public.unidades_inventario where cuenta_id = :'cta' and numero_slot = 1 \gset
 
 -- Período de 31 días exactos (julio) para que el prorrateo sea comprobable.
+-- Se vende SIN cobrar todavía, para probar el cobro por separado.
 select public.vender_unidad(
-  :'cli', :'cta', :'m_perfil', :'u1', 3.00, '2026-07-01'::date, 1, null, '2026-07-01'::date
+  :'cli', :'cta', :'m_perfil', :'u1', null, '2026-07-01'::date, 1, null, '2026-07-01'::date
 ) as susc \gset
 select id as periodo from public.periodos_servicio where suscripcion_id = :'susc' \gset
 
-select public.registrar_cobro_cliente(:'periodo', null, 'REF-1') as pago \gset
+-- El dato de entrada son los BOLIVARES recibidos; el USD se deriva (300/100=3).
+select public.registrar_cobro_cliente(:'periodo', 300, 'REF-1') as pago \gset
 
-select 'El cobro es 3 USD x 100 = 300 Bs' as prueba,
+select 'Se registran los bolivares que entraron (300)' as prueba,
        (select monto_ves from public.pagos_cliente where id = :'pago') = 300 as pass
+union all select 'El USD se deriva del monto: 300 / 100 = 3',
+       (select precio_comercial_usd from public.periodos_servicio where id = :'periodo') = 3
 union all select 'El periodo congela la BCV usada',
        (select tasa_bcv_id from public.periodos_servicio where id = :'periodo') = :'tasa_bcv'
 union all select 'El periodo congela la paralela contemporanea',
@@ -76,26 +80,47 @@ union all select 'Los datos financieros quedan completos',
 union all select 'Ya no aparece en la bandeja de por cobrar',
        not exists (select 1 from public.v_periodos_por_cobrar where periodo_id = :'periodo');
 
--- No hay abonos ni cobros dobles. El id viaja por `set_config` porque los
--- bloques DO no ven las variables de psql.
+-- El id viaja por `set_config` porque los bloques DO no ven las variables de psql.
 select set_config('pruebas.periodo', :'periodo', true);
 
 do $$
 declare ok boolean := false;
 begin
   begin
-    perform public.registrar_cobro_cliente(current_setting('pruebas.periodo')::uuid, 150, 'abono');
+    perform public.registrar_cobro_cliente(current_setting('pruebas.periodo')::uuid, null);
   exception when others then ok := true;
   end;
-  raise notice 'Rechaza un abono parcial: %', case when ok then 'PASS' else 'FAIL' end;
+  raise notice 'Exige indicar cuantos bolivares se recibieron: %', case when ok then 'PASS' else 'FAIL' end;
 
   ok := false;
   begin
-    perform public.registrar_cobro_cliente(current_setting('pruebas.periodo')::uuid);
+    perform public.registrar_cobro_cliente(current_setting('pruebas.periodo')::uuid, 250);
   exception when others then ok := true;
   end;
   raise notice 'Rechaza cobrar dos veces el mismo periodo: %', case when ok then 'PASS' else 'FAIL' end;
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- 2b. Renovar y cobrar son UNA sola operacion (el monto puede variar)
+-- ---------------------------------------------------------------------------
+select public.renovar_y_cobrar(:'susc', '2026-08-01'::date, 1, 450) as periodo2 \gset
+
+select 'Renovar y cobrar crea el periodo nuevo' as prueba,
+       (select count(*) from public.periodos_servicio
+        where suscripcion_id = :'susc' and tipo_operacion = 'renovacion') = 1 as pass
+union all select 'Y su cobro en la misma transaccion (450 Bs)',
+       (select monto_ves from public.pagos_cliente
+        where periodo_servicio_id = :'periodo2' and tipo = 'cobro') = 450
+union all select 'El monto puede diferir del mes anterior (300 -> 450)',
+       (select precio_comercial_usd from public.periodos_servicio where id = :'periodo2') = 4.5;
+
+-- Renovar sin monto es valido: queda pendiente de cobro.
+select public.renovar_y_cobrar(:'susc', '2026-09-01'::date, 1, null) as periodo3 \gset
+
+select 'Renovar sin monto no crea cobro' as prueba,
+       not exists (select 1 from public.pagos_cliente where periodo_servicio_id = :'periodo3') as pass
+union all select 'Y queda listado en por cobrar',
+       exists (select 1 from public.v_periodos_por_cobrar where periodo_id = :'periodo3');
 
 -- ---------------------------------------------------------------------------
 -- 3. Ciclo de proveedor y pago: costo cero no crea salida de caja

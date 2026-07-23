@@ -20,6 +20,7 @@ export function FormVenta({
   clientes,
   vendedores,
   volverA,
+  bcv,
 }: {
   cuentaId: string;
   unidadId: string | null;
@@ -29,7 +30,16 @@ export function FormVenta({
   clientes: { id: string; nombre: string; whatsapp: string | null }[];
   vendedores: { id: string; nombre: string }[];
   volverA: string;
+  /** BCV vigente: solo para mostrar el equivalente mientras se escribe. */
+  bcv?: number | null;
 }) {
+  const [montoVes, setMontoVes] = useState("");
+  const montoNumero = Number(montoVes.replace(/\./g, "").replace(",", "."));
+  const usdAprox =
+    bcv && bcv > 0 && Number.isFinite(montoNumero) && montoNumero > 0
+      ? montoNumero / bcv
+      : null;
+
   const [estado, action, pendiente] = useActionState<EstadoVenta, FormData>(
     venderAction,
     null,
@@ -130,14 +140,16 @@ export function FormVenta({
       {/* --- Precio, meses, inicio --- */}
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <label htmlFor="precio_usd" className="mb-1.5 block text-sm font-medium">
-            Precio (USD)
+          <label htmlFor="monto_ves" className="mb-1.5 block text-sm font-medium">
+            Bs recibidos
           </label>
           <input
-            id="precio_usd"
-            name="precio_usd"
+            id="monto_ves"
+            name="monto_ves"
             inputMode="decimal"
-            placeholder="5.50"
+            placeholder="2.500,00"
+            value={montoVes}
+            onChange={(e) => setMontoVes(e.target.value)}
             className={campo}
           />
         </div>
@@ -199,8 +211,15 @@ export function FormVenta({
       </div>
 
       <p className="rounded-lg bg-neutral-100 px-3 py-2 text-xs text-neutral-600 dark:bg-neutral-900 dark:text-neutral-400">
-        La fecha de renovación se calcula por mes calendario. El precio se congela en
-        USD; el cobro en bolívares llegará con la integración de tasas.
+        {usdAprox !== null && (
+          <>
+            ≈ {usdAprox.toFixed(2)} USD a {bcv?.toLocaleString("es-VE")} Bs/USD.{" "}
+          </>
+        )}
+        Si dejas los bolívares en blanco, la venta queda registrada y el cobro
+        pendiente en «Por cobrar». La fecha de renovación se calcula por mes
+        calendario. Al confirmar se congelan la BCV y la paralela de este
+        momento: ninguna publicación posterior las recalcula.
       </p>
 
       {estado?.error && (

@@ -15,7 +15,7 @@ const esquema = z.object({
   cuenta_id: z.string().uuid(),
   modalidad_id: z.string().uuid("Elige la modalidad."),
   unidad_id: z.string().uuid().optional().or(z.literal("")),
-  precio_usd: z.string().trim().optional().or(z.literal("")),
+  monto_ves: z.string().trim().optional().or(z.literal("")),
   vendedor_id: z.string().uuid().optional().or(z.literal("")),
   inicio: z.string().min(1, "Indica la fecha de inicio."),
   cantidad_periodos: z.coerce.number().int().min(1).max(12).default(1),
@@ -41,7 +41,7 @@ export async function venderAction(
     cuenta_id: formData.get("cuenta_id"),
     modalidad_id: formData.get("modalidad_id"),
     unidad_id: formData.get("unidad_id") ?? "",
-    precio_usd: formData.get("precio_usd") ?? "",
+    monto_ves: formData.get("monto_ves") ?? "",
     vendedor_id: formData.get("vendedor_id") ?? "",
     inicio: formData.get("inicio"),
     cantidad_periodos: formData.get("cantidad_periodos") ?? 1,
@@ -52,11 +52,14 @@ export async function venderAction(
   }
   const d = parsed.data;
 
-  let precio: number | null = null;
-  if (d.precio_usd) {
-    precio = Number(d.precio_usd.replace(",", "."));
-    if (!Number.isFinite(precio) || precio < 0) {
-      return { error: "El precio debe ser un número válido." };
+  // El hecho fuente es el dinero recibido en bolívares; el USD lo deriva la
+  // base con la BCV que congela. Dejarlo en blanco es válido: la venta queda
+  // registrada y el cobro pendiente.
+  let monto: number | null = null;
+  if (d.monto_ves) {
+    monto = Number(d.monto_ves.replace(/\./g, "").replace(",", "."));
+    if (!Number.isFinite(monto) || monto <= 0) {
+      return { error: "El monto en bolívares debe ser un número mayor que cero." };
     }
   }
 
@@ -69,7 +72,7 @@ export async function venderAction(
     p_cliente_nombre: d.cliente_nombre,
     p_cliente_whatsapp: d.cliente_whatsapp || null,
     p_nombre_perfil: d.nombre_perfil || null,
-    p_precio_usd: precio,
+    p_monto_ves: monto,
     p_inicio: d.inicio,
     p_cantidad_periodos: d.cantidad_periodos,
     p_vendedor_id: d.vendedor_id || null,
@@ -80,5 +83,7 @@ export async function venderAction(
 
   revalidatePath("/inventario");
   revalidatePath("/clientes");
+  revalidatePath("/caja");
+  revalidatePath("/cobros");
   redirect(d.volver_a);
 }

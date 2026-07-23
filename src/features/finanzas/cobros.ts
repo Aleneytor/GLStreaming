@@ -17,6 +17,7 @@ export type EstadoCobro = { error?: string; ok?: string } | null;
 
 const esquemaCobro = z.object({
   periodo_id: z.string().uuid(),
+  monto_ves: z.string().trim().min(1, "Indica cuántos bolívares recibiste."),
   referencia: z.string().trim().max(120).optional().or(z.literal("")),
   volver_a: z.string().default("/cobros"),
 });
@@ -30,16 +31,24 @@ export async function cobrarAction(
 
   const parsed = esquemaCobro.safeParse({
     periodo_id: formData.get("periodo_id"),
+    monto_ves: formData.get("monto_ves"),
     referencia: formData.get("referencia") ?? "",
     volver_a: formData.get("volver_a") ?? "/cobros",
   });
-  if (!parsed.success) return { error: "Datos inválidos." };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+  }
+
+  // Se aceptan "2.500,00" y "2500.00": la gente escribe de las dos formas.
+  const monto = Number(parsed.data.monto_ves.replace(/\./g, "").replace(",", "."));
+  if (!Number.isFinite(monto) || monto <= 0) {
+    return { error: "El monto en bolívares debe ser un número mayor que cero." };
+  }
 
   const supabase = await createClient();
-  // Sin `p_monto_ves`: la base calcula el esperado y lo cobra completo. Así el
-  // importe no puede desviarse por lo que se haya escrito en el formulario.
   const { error } = await supabase.rpc("registrar_cobro_cliente", {
     p_periodo_id: parsed.data.periodo_id,
+    p_monto_ves: monto,
     p_referencia: parsed.data.referencia || undefined,
   });
 

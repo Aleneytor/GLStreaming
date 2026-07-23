@@ -4,6 +4,8 @@ import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { uno } from "@/lib/supabase/util";
 import { FormVenta } from "@/features/ventas/form-venta";
+import { obtenerTasasVigentes } from "@/features/tasas/actions";
+import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +76,11 @@ export default async function NuevaVentaPage({
     nombrePerfilActual = u?.nombre_visible ?? null;
   }
 
+  // BCV vigente: solo para mostrar el equivalente en USD mientras se escribe.
+  const { bcv } = await obtenerTasasVigentes();
+  const bcvUsable =
+    bcv && evaluarFrescura(confirmadaAt(bcv)).nivel !== "inservible" ? bcv.bs_por_usd : null;
+
   const volverA = plataforma?.slug ? `/inventario/${plataforma.slug}` : "/inventario";
   const etiqueta = `${plataforma?.nombre} · ${cuenta.alias ?? producto?.nombre} · ${etiquetaUnidad}`;
 
@@ -107,6 +114,7 @@ export default async function NuevaVentaPage({
           }))}
           vendedores={vendedores ?? []}
           volverA={volverA}
+          bcv={bcvUsable}
         />
       )}
     </div>

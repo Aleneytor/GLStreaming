@@ -23,14 +23,23 @@ const esquemaRenovar = z.object({
   suscripcion_id: z.string().uuid(),
   inicio: z.string().min(1, "Indica la fecha de inicio."),
   meses: z.coerce.number().int().min(1).max(12).default(1),
-  precio_usd: z.string().trim().optional().or(z.literal("")),
+  monto_ves: z.string().trim().optional().or(z.literal("")),
   tardia: z.string().optional(),
 });
 
 /**
- * Renueva una suscripción. La "renovación tardía" existe porque el cliente
- * pudo pagar días después: en ese caso el período nuevo arranca en la fecha
- * real del pago, no en la que le tocaba.
+ * Renueva Y cobra en una sola operación.
+ *
+ * Antes eran dos pasos en dos pantallas (renovar aquí, cobrar en `/cobros`), lo
+ * que permitía registrar el mismo ingreso dos veces o dejar renovaciones sin
+ * cobro por olvido. Ahora la base lo hace en una transacción: o quedan las dos
+ * cosas, o ninguna.
+ *
+ * El monto es opcional a propósito: hay renovaciones legítimas sin ingreso
+ * todavía (el cliente paga después). Esas quedan listadas en «Por cobrar».
+ *
+ * La "renovación tardía" existe porque el cliente pudo pagar días después: en
+ * ese caso el período nuevo arranca en la fecha real del pago.
  */
 export async function renovarAction(
   _prev: EstadoAccion,
@@ -42,30 +51,36 @@ export async function renovarAction(
     suscripcion_id: formData.get("suscripcion_id"),
     inicio: formData.get("inicio"),
     meses: formData.get("meses") ?? 1,
-    precio_usd: formData.get("precio_usd") ?? "",
+    monto_ves: formData.get("monto_ves") ?? "",
     tardia: formData.get("tardia") ?? undefined,
   });
   if (!parsed.success) return { error: parsed.error.issues[0]!.message };
 
-  const precio = parsed.data.precio_usd
-    ? Number(parsed.data.precio_usd.replace(",", "."))
-    : null;
-  if (precio !== null && (!Number.isFinite(precio) || precio < 0)) {
-    return { error: "El precio debe ser un número válido." };
+  let monto: number | null = null;
+  if (parsed.data.monto_ves) {
+    // El usuario escribe "2.500,00" o "2500.00": ambas formas valen.
+    monto = Number(parsed.data.monto_ves.replace(/\./g, "").replace(",", "."));
+    if (!Number.isFinite(monto) || monto <= 0) {
+      return { error: "El monto en bolívares debe ser un número mayor que cero." };
+    }
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("renovar_suscripcion", {
+  const { error } = await supabase.rpc("renovar_y_cobrar", {
     p_suscripcion_id: parsed.data.suscripcion_id,
     p_inicio: parsed.data.inicio,
     p_meses: parsed.data.meses,
-    p_precio_usd: precio,
+    p_monto_ves: monto,
     p_tardia: parsed.data.tardia === "on",
   });
   if (error) return { error: error.message };
 
   refrescar();
-  return { ok: "Renovación registrada." };
+  revalidatePath("/caja");
+  revalidatePath("/cobros");
+  return {
+    ok: monto ? "Renovación y cobro registrados." : "Renovación registrada (sin cobro).",
+  };
 }
 
 export async function cambiarEstadoAction(
