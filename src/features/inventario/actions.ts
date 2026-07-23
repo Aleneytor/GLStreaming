@@ -15,7 +15,34 @@ const esquemaCuenta = z.object({
   notas: z.string().trim().max(1000).optional().or(z.literal("")),
   correo: z.string().trim().min(1, "El correo de la cuenta es obligatorio."),
   contrasena: z.string().min(1, "La contraseña de la cuenta es obligatoria."),
+  // Ciclo de proveedor (opcional): si se indica un costo, se registra.
+  costo_usdt: z.string().trim().optional().or(z.literal("")),
+  ciclo_inicio: z.string().trim().optional().or(z.literal("")),
+  dia_ancla: z.string().trim().optional().or(z.literal("")),
 });
+
+/** Registra el ciclo de proveedor si el formulario trae costo. */
+async function registrarCicloSiCorresponde(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  cuentaId: string,
+  costoTexto: string,
+  inicio: string,
+  diaAncla: string,
+): Promise<string | null> {
+  if (!costoTexto) return null;
+
+  const costo = Number(costoTexto.replace(",", "."));
+  if (!Number.isFinite(costo) || costo < 0) return "El costo debe ser un número válido.";
+
+  const { error } = await supabase.rpc("registrar_ciclo_proveedor", {
+    p_cuenta_id: cuentaId,
+    p_costo_usdt: costo,
+    p_inicio: inicio || new Date().toISOString().slice(0, 10),
+    p_dia_ancla: diaAncla ? Number(diaAncla) : null,
+    p_referencia: null,
+  });
+  return error ? error.message : null;
+}
 
 export type EstadoAlta = { error: string } | null;
 
@@ -35,6 +62,9 @@ export async function crearCuentaAction(
     notas: formData.get("notas") ?? "",
     correo: formData.get("correo"),
     contrasena: formData.get("contrasena"),
+    costo_usdt: formData.get("costo_usdt") ?? "",
+    ciclo_inicio: formData.get("ciclo_inicio") ?? "",
+    dia_ancla: formData.get("dia_ancla") ?? "",
   });
 
   if (!parsed.success) {
@@ -44,7 +74,7 @@ export async function crearCuentaAction(
 
   const supabase = await createClient();
 
-  const { error } = await supabase.rpc("crear_cuenta_con_unidades", {
+  const { data: cuentaId, error } = await supabase.rpc("crear_cuenta_con_unidades", {
     p_producto_id: datos.producto_id,
     p_capacidad: datos.capacidad,
     p_alias: datos.alias || null,
@@ -58,6 +88,18 @@ export async function crearCuentaAction(
   });
 
   if (error) return { error: error.message };
+
+  const errorCiclo = await registrarCicloSiCorresponde(
+    supabase,
+    cuentaId as unknown as string,
+    datos.costo_usdt ?? "",
+    datos.ciclo_inicio ?? "",
+    datos.dia_ancla ?? "",
+  );
+  if (errorCiclo) {
+    // La cuenta ya existe; se avisa para que el ciclo se registre al editar.
+    return { error: `Cuenta creada, pero el ciclo no: ${errorCiclo}` };
+  }
 
   revalidatePath("/inventario");
   redirect("/inventario");

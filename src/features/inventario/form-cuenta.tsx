@@ -205,6 +205,65 @@ export function FormCuenta({
         </div>
       </fieldset>
 
+      <fieldset className="space-y-4 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
+        <legend className="px-1 text-sm font-medium">
+          Costo del proveedor <span className="text-neutral-400">(opcional)</span>
+        </legend>
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          Si esta cuenta te cuesta dinero, indícalo. Aquí solo se registra{" "}
+          <strong>cuánto cuesta y cuándo vence</strong>; los pagos y las ganancias
+          llegan más adelante.
+        </p>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="costo_usdt" className="mb-1.5 block text-sm font-medium">
+              Costo (USDT)
+            </label>
+            <input
+              id="costo_usdt"
+              name="costo_usdt"
+              type="text"
+              inputMode="decimal"
+              placeholder="ej. 8.50"
+              className={claseCampo}
+            />
+          </div>
+          <div>
+            <label htmlFor="dia_ancla" className="mb-1.5 block text-sm font-medium">
+              Día de renovación
+            </label>
+            <input
+              id="dia_ancla"
+              name="dia_ancla"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={31}
+              placeholder="1-31"
+              className={claseCampo}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="ciclo_inicio" className="mb-1.5 block text-sm font-medium">
+            Inicio del ciclo actual
+          </label>
+          <input
+            id="ciclo_inicio"
+            name="ciclo_inicio"
+            type="date"
+            defaultValue={new Date().toISOString().slice(0, 10)}
+            className={claseCampo}
+          />
+          <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+            Si dejas vacío el día de renovación, se usa el día de esta fecha. Un día
+            31 se ajusta solo en los meses cortos y luego se recupera.
+          </p>
+        </div>
+      </fieldset>
+
       {estado?.error && (
         <p
           role="alert"

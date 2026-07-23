@@ -71,6 +71,51 @@ export function diasParaRenovar(fechaRenovacion: string, hoy: string): number {
   return Math.round((msRenov - msHoy) / 86_400_000);
 }
 
+/**
+ * Próxima renovación con el PROVEEDOR.
+ *
+ * A diferencia del cliente (fecha flexible que se recalcula desde el pago real),
+ * el proveedor tiene un DÍA ANCLA FIJO que se conserva: si el mes destino no
+ * tiene ese día se usa el último válido, pero el ancla NO se pierde y se
+ * recupera en el siguiente mes que sí lo tenga.
+ *
+ *   ancla 31: 31/01 -> 28/02 -> 31/03  (no se queda en 28)
+ */
+export function proximaRenovacionProveedor(
+  renovacionActual: string,
+  diaAncla: number,
+): string {
+  if (!Number.isInteger(diaAncla) || diaAncla < 1 || diaAncla > 31) {
+    throw new Error(`Día ancla inválido (1-31): ${diaAncla}`);
+  }
+  const { y, m } = parseFecha(renovacionActual);
+
+  const totalMeses = m - 1 + 1; // mes siguiente, base 0
+  const anioDestino = y + Math.floor(totalMeses / 12);
+  const mesDestino = (totalMeses % 12) + 1;
+
+  // El ancla manda; solo se recorta si el mes no llega a ese día.
+  const dia = Math.min(diaAncla, ultimoDiaDelMes(anioDestino, mesDestino));
+  return `${anioDestino}-${pad2(mesDestino)}-${pad2(dia)}`;
+}
+
+export type AvisoProveedor = {
+  nivel: "ok" | "proximo" | "hoy" | "vencido";
+  etiqueta: string;
+};
+
+/**
+ * Aviso de renovación del proveedor según los días restantes.
+ * Umbrales confirmados en el roadmap (Fase 2): 6, 5, 0 y -1.
+ * Es una obligación fija: no hay cortesía como con el cliente.
+ */
+export function avisoProveedor(dias: number): AvisoProveedor {
+  if (dias > 5) return { nivel: "ok", etiqueta: `Renueva en ${dias} días` };
+  if (dias >= 1) return { nivel: "proximo", etiqueta: `Renueva en ${dias} días` };
+  if (dias === 0) return { nivel: "hoy", etiqueta: "Renueva hoy" };
+  return { nivel: "vencido", etiqueta: `Vencido hace ${Math.abs(dias)} días` };
+}
+
 export type BadgeVencimiento =
   | { color: "verde"; etiqueta: string }
   | { color: "amarillo"; etiqueta: string }

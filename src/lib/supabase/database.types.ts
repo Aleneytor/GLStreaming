@@ -2733,6 +2733,16 @@ export type Database = {
         Returns: string
       }
       es_admin: { Args: never; Returns: boolean }
+      registrar_ciclo_proveedor: {
+        Args: {
+          p_costo_usdt: number
+          p_cuenta_id: string
+          p_dia_ancla?: number
+          p_inicio?: string
+          p_referencia?: string
+        }
+        Returns: string
+      }
       rotar_credenciales_cuenta: {
         Args: {
           p_contrasena_cifrada?: string

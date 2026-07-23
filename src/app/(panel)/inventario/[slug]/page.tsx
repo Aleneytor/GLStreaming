@@ -4,8 +4,19 @@ import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { uno } from "@/lib/supabase/util";
 import { BotonCredenciales } from "@/features/inventario/credenciales";
+import { avisoProveedor, diasParaRenovar } from "@/domain/fechas";
 
 export const dynamic = "force-dynamic";
+
+/** Fecha de hoy en la zona horaria del negocio (America/Caracas). */
+function hoyCaracas(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Caracas",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
 
 type Unidad = {
   id: string;
@@ -35,12 +46,15 @@ export default async function PlataformaPage({
 
   if (!plataforma) notFound();
 
+  const hoy = hoyCaracas();
+
   const { data: cuentas } = await supabase
     .from("cuentas")
     .select(
       `id, alias, capacidad, capacidad_vendible_habilitada, estado, created_at, notas,
        productos_plataforma!inner ( id, nombre, codigo, plataforma_id ),
        proveedores ( nombre_o_alias ),
+       ciclos_proveedor ( id, costo_usdt, proxima_renovacion, dia_ancla_proveedor, estado ),
        unidades_inventario ( id, numero_slot, nombre_visible, estado_operativo, estado_preparacion )`,
     )
     .eq("productos_plataforma.plataforma_id", plataforma.id)
@@ -99,6 +113,12 @@ export default async function PlataformaPage({
             <ul className="space-y-4">
               {grupo.cuentas.map((c) => {
                 const proveedor = uno(c.proveedores);
+                // Solo interesa el ciclo vigente (puede haber históricos).
+                const ciclo =
+                  (c.ciclos_proveedor ?? []).find((x) => x.estado === "vigente") ?? null;
+                const aviso = ciclo?.proxima_renovacion
+                  ? avisoProveedor(diasParaRenovar(ciclo.proxima_renovacion, hoy))
+                  : null;
                 const unidades = ((c.unidades_inventario ?? []) as Unidad[]).sort(
                   (a, b) => a.numero_slot - b.numero_slot,
                 );
@@ -132,6 +152,30 @@ export default async function PlataformaPage({
                     </div>
 
                     <div className="space-y-3 border-b border-neutral-200 p-4 dark:border-neutral-800">
+                      {ciclo && (
+                        <div className="flex flex-wrap items-center gap-2 text-sm">
+                          <span className="tabular-nums">
+                            {Number(ciclo.costo_usdt).toFixed(2)} USDT
+                          </span>
+                          <span className="text-neutral-400">·</span>
+                          <span className="text-neutral-500 dark:text-neutral-400">
+                            renueva {ciclo.proxima_renovacion}
+                          </span>
+                          {aviso && (
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-xs ${
+                                aviso.nivel === "vencido"
+                                  ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                                  : aviso.nivel === "hoy" || aviso.nivel === "proximo"
+                                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                                    : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                              }`}
+                            >
+                              {aviso.etiqueta}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       {(proveedor?.nombre_o_alias || c.notas) && (
                         <dl className="space-y-1 text-sm">
                           {proveedor?.nombre_o_alias && (

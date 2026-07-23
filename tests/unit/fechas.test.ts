@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  avisoProveedor,
   badgeVencimiento,
   calcularFechaRenovacion,
   diasParaRenovar,
+  proximaRenovacionProveedor,
   ultimoDiaDelMes,
 } from "@/domain/fechas";
 
@@ -62,6 +64,58 @@ describe("diasParaRenovar", () => {
     expect(diasParaRenovar(renov, "2026-08-22")).toBe(0); // renueva hoy
     expect(diasParaRenovar(renov, "2026-08-23")).toBe(-1); // vencido hace 1 día
     expect(diasParaRenovar(renov, "2026-08-16")).toBe(6); // faltan 6
+  });
+});
+
+describe("proximaRenovacionProveedor — el día ancla se recupera", () => {
+  it("ancla 31: 31/01 -> 28/02 -> 31/03 (no se queda en 28)", () => {
+    const feb = proximaRenovacionProveedor("2026-01-31", 31);
+    expect(feb).toBe("2026-02-28");
+    // Lo clave: desde febrero recupera el 31, no sigue en 28.
+    expect(proximaRenovacionProveedor(feb, 31)).toBe("2026-03-31");
+  });
+
+  it("ancla 31 en año bisiesto ajusta a 29/02 y recupera", () => {
+    const feb = proximaRenovacionProveedor("2024-01-31", 31);
+    expect(feb).toBe("2024-02-29");
+    expect(proximaRenovacionProveedor(feb, 31)).toBe("2024-03-31");
+  });
+
+  it("ancla 31 en mes de 30 días", () => {
+    expect(proximaRenovacionProveedor("2026-03-31", 31)).toBe("2026-04-30");
+    expect(proximaRenovacionProveedor("2026-04-30", 31)).toBe("2026-05-31");
+  });
+
+  it("ancla normal se mantiene", () => {
+    expect(proximaRenovacionProveedor("2026-01-15", 15)).toBe("2026-02-15");
+  });
+
+  it("cruce de año", () => {
+    expect(proximaRenovacionProveedor("2026-12-31", 31)).toBe("2027-01-31");
+  });
+
+  it("rechaza anclas inválidas", () => {
+    expect(() => proximaRenovacionProveedor("2026-01-15", 0)).toThrow();
+    expect(() => proximaRenovacionProveedor("2026-01-15", 32)).toThrow();
+  });
+});
+
+describe("avisoProveedor — umbrales 6/5/0/-1", () => {
+  it("6 días: aviso normal", () => {
+    expect(avisoProveedor(6).nivel).toBe("ok");
+  });
+  it("5 días: entra en zona de aviso próximo", () => {
+    expect(avisoProveedor(5).nivel).toBe("proximo");
+    expect(avisoProveedor(1).nivel).toBe("proximo");
+  });
+  it("0 días: renueva hoy", () => {
+    expect(avisoProveedor(0)).toEqual({ nivel: "hoy", etiqueta: "Renueva hoy" });
+  });
+  it("-1 día: vencido", () => {
+    expect(avisoProveedor(-1)).toEqual({
+      nivel: "vencido",
+      etiqueta: "Vencido hace 1 días",
+    });
   });
 });
 
