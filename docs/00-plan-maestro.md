@@ -84,7 +84,39 @@ Seguridad validada:
 Errores reales encontrados y corregidos gracias a validar contra Postgres:
 (1) `es_admin()` declarada antes de existir `usuarios`; (2) función `pg_temp` en el seed que no sobrevive entre lotes del CLI; (3) faltaban grants de tabla a `authenticated` (sin ellos RLS ni se consulta → "permiso denegado" hasta para el admin).
 
-**Siguiente: Fase 2** (roadmap `05-roadmap.md`) — inventario Netflix + asistente de carga manual + Data Grid mobile-first. Correr `npx supabase start` y `npm run dev` para retomar (ver `09-fase-1-setup.md`).
+## 4.2. Fase 2 COMPLETA (23/07/2026)
+
+Migraciones `0007..0012` y la primera interfaz real. La app ya sirve para
+gestionar inventario de punta a punta.
+
+- **Autenticación y panel**: login, middleware de sesión que protege rutas, shell
+  mobile-first (nav inferior en móvil, lateral en escritorio) adaptado por rol.
+- **Inventario por plataforma**: lista de plataformas → cuentas agrupadas por
+  producto, con filtros de estado y búsqueda en la URL.
+- **Alta transaccional**: `crear_cuenta_con_unidades` crea cuenta + unidades +
+  credenciales cifradas, todo o nada.
+- **Edición**: cuenta, rotación de credenciales (`rotada_at`) y perfiles
+  (nombre + PIN cifrado).
+- **Paquete de acceso**: revelado manual, temporal (90 s) y auditado, con correo,
+  contraseña y el PIN de cada perfil.
+- **Ciclo de proveedor**: costo USDT, día ancla recuperable, avisos 6/5/0/-1.
+- **Catálogo editable**: productos, plataformas y proveedores. Las capacidades no
+  se editan por UI a propósito (regla de dominio; se cambian por migración).
+
+Criterios de salida verificados en `supabase/tests/criterios_fase2.sql`: vertical
+Netflix con capacidades 5 y 1 distinguiendo estándar/extra; prueba sintética de
+capacidad 7 (Disney+) que descarta un "5" hardcodeado; y que renombrar un
+proveedor **no** reescribe los ciclos históricos (guardan snapshot).
+
+Bugs reales encontrados al validar en esta fase: faltaban privilegios de tabla
+para `service_role` (BYPASSRLS no sustituye al permiso), el cliente apuntaba a
+`127.0.0.1` y por eso el login fallaba desde el móvil, y el login agrupaba todos
+los errores como "contraseña incorrecta" ocultando fallos de red.
+
+**Siguiente: Fase 3 — Ciclo comercial**: clientes, ventas, asignaciones, períodos
+con fecha flexible y entrega del paquete de acceso. Hoy se puede cargar inventario
+pero **no vender**. Para retomar: `npx supabase start` y `npm run dev` (ver
+`09-fase-1-setup.md`).
 
 ## 5. Qué hacer si hay que reiniciar desde cero
 

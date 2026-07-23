@@ -44,29 +44,48 @@ tasa paralela) y revendedores. Reemplaza un Excel. Zona horaria del negocio:
 # Requiere Docker Desktop corriendo. En PowerShell, anteponer el PATH de docker:
 #   $env:PATH = "C:\Program Files\Docker\Docker\resources\bin;$env:PATH"
 npx supabase start        # levanta el stack local (imprime claves para .env.local)
-npm run db:reset          # aplica migraciones + seed desde cero
+npm run db:reset          # migraciones + seed + RECREA los usuarios de prueba
 npm run db:types          # regenera src/lib/supabase/database.types.ts
 npm test                  # pruebas unitarias (Vitest)
 npm run dev               # app en http://localhost:3000
+npx next dev -H 0.0.0.0   # accesible desde el móvil en la red local
 # Suite de aislamiento RLS (con el contenedor db corriendo):
 #   Get-Content supabase\tests\rls.sql -Raw | docker exec -i <supabase_db_...> psql -U postgres -d postgres
 ```
 
-Primer admin: crear usuario en Supabase Studio (http://127.0.0.1:54323) y luego
+**Usuarios de desarrollo** (los recrea `npm run db:reset`, porque el reset borra
+`auth.users`): `admin@glstreaming.local` / `admin123456` y
+`revendedor@glstreaming.local` / `revend123456`. Script:
+`scripts/crear-usuarios-dev.mjs`. Para crear otro admin a mano:
 `update public.usuarios set rol='admin' where id='<uuid>';` (el resto nace
 `revendedor` por trigger). Detalle en `docs/09-fase-1-setup.md`.
 
 ## Estructura del repositorio
 
 ```
-src/app/            Rutas Next.js (App Router) + manifest PWA
-src/lib/            crypto.ts (cifrado), env.ts (Zod), supabase/ (clientes + types)
+src/app/(auth)/     Login
+src/app/(panel)/    Panel: dashboard, inventario/[slug], inventario/cuenta/[id]/…, catalogo
+src/features/       Por funcionalidad: auth/, inventario/, catalogo/ (acciones + formularios)
+src/components/     Piezas compartidas (nav-panel)
+src/lib/            crypto.ts (cifrado), auth.ts, env.ts (Zod), supabase/ (clientes + types)
 src/domain/         Lógica pura con pruebas: fechas.ts, dinero.ts
+src/middleware.ts   Sesión + protección de rutas
 supabase/migrations Migraciones numeradas 0001.. (fuente de verdad del esquema)
 supabase/seed.sql   Catálogo sintético (sin secretos)
-supabase/tests/     rls.sql (prueba de aislamiento por perfil)
+supabase/tests/     Suites SQL: rls, alta_cuenta, editar_cuenta, editar_unidades,
+                    ciclo_proveedor, criterios_fase2
+scripts/            crear-usuarios-dev.mjs
 tests/unit/         Pruebas Vitest
 docs/               Especificación de dominio (ver más abajo)
+```
+
+**Cómo se prueba aquí**: las suites SQL corren dentro de una transacción y hacen
+`rollback` (no dejan datos). Simulan identidades con
+`set role authenticated` + `request.jwt.claims` para que RLS aplique de verdad;
+como `postgres` es superusuario y se salta RLS, probar sin eso no valida nada.
+
+```bash
+Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> psql -U postgres -d postgres
 ```
 
 ## Convenciones de código y esquema
@@ -85,6 +104,27 @@ docs/               Especificación de dominio (ver más abajo)
 
 ## Estado actual
 
+**Fase 2 (inventario Netflix y carga manual): COMPLETA (2026-07-23).**
+La app ya es usable para inventario: login, panel mobile-first y gestión completa
+de cuentas.
+- **Autenticación**: login con correo/contraseña, middleware que protege rutas,
+  panel con navegación inferior en móvil y lateral en escritorio, adaptada por rol.
+- **Inventario navegable por plataforma**: `/inventario` lista plataformas;
+  entrar muestra sus cuentas agrupadas por producto (Netflix estándar vs extra),
+  con filtros por estado y búsqueda que viven en la URL.
+- **Alta transaccional** (`crear_cuenta_con_unidades`): cuenta + unidades +
+  credenciales cifradas, todo o nada. Valida capacidad según el producto.
+- **Edición**: cuenta (alias/proveedor/notas/estado), rotación de credenciales
+  y perfiles (nombre + PIN cifrado).
+- **Revelado del paquete de acceso**: correo, contraseña y cada perfil con su PIN;
+  manual, temporal (90 s) y **auditado**.
+- **Ciclo de proveedor**: costo en USDT, día ancla recuperable y avisos 6/5/0/-1.
+- **Catálogo editable** (`/catalogo`): productos (estado comercial, renovaciones),
+  plataformas y proveedores. Las capacidades NO se editan por UI (regla de dominio).
+- Migraciones `0007..0012`. Pruebas: **43 unitarias** + suites SQL
+  (`alta_cuenta`, `editar_cuenta`, `editar_unidades`, `ciclo_proveedor`,
+  `criterios_fase2`, `rls`), todas en verde.
+
 **Fase 1 (fundación técnica): COMPLETA (2026-07-23).**
 - 6 migraciones (`0001..0006`): **41 tablas + 1 vista** (`v_mis_ventas_revendedor`).
   Capas: fundación/catálogo → inventario+secretos → ciclo comercial →
@@ -101,15 +141,27 @@ por la app (pide directo). Su única ventana: `v_mis_ventas_revendedor`.
 
 ## Lo que sigue
 
-**Fase 2** (ver `docs/05-roadmap.md`): inventario de Netflix + **asistente de
-carga manual** + **Data Grid mobile-first** (tarjetas apiladas en móvil, sin
-scroll horizontal). Requisito transversal: la app es **mobile-first e instalable
-(PWA)** — la mayoría de revendedores usa móvil (ver `docs/01-alcance-y-reglas.md`
-§9). Falta para PWA completa: iconos 192/512/maskable en `/public` + service worker.
+**Fase 3 — Ciclo comercial** (ver `docs/05-roadmap.md`): clientes, ventas,
+asignación de un perfil a un cliente, períodos y renovaciones con fecha flexible,
+pausa/cancelación, y la **acción de entrega del paquete de acceso**. Es lo que
+falta para que el negocio opere de verdad en la app: hoy se puede cargar
+inventario pero **no vender**.
 
-Después: Fase 3 (ciclo comercial en UI + acción de entrega de acceso), Fase 4
-(finanzas/cierre + integración de tasas), Fase 5 (portal revendedor), Fase 6
-(resto de plataformas + despliegue en `glcuenta.com`).
+Ojo con la rotación de credenciales: `credenciales_cuenta.rotada_at` ya se marca;
+en Fase 3 debe usarse para detectar entregas obsoletas y avisar a qué clientes
+activos hay que reenviarles los datos nuevos.
+
+Después: Fase 4 (finanzas/cierre + integración de tasas), Fase 5 (portal
+revendedor), Fase 6 (resto de plataformas + despliegue en `glcuenta.com`).
+
+**Pendiente transversal**: la app es mobile-first ✓ pero la PWA está a medias.
+Falta para que sea instalable: iconos 192/512/maskable en `/public` y un service
+worker (ver `docs/01-alcance-y-reglas.md` §9).
+
+**Desarrollo desde el móvil**: `NEXT_PUBLIC_SUPABASE_URL` y `allowedDevOrigins`
+apuntan a la IP local del PC (no a `127.0.0.1`, que desde el teléfono es el
+propio teléfono). Si cambia la red, hay que actualizarlas — ver
+`docs/09-fase-1-setup.md`.
 
 ## Pendientes externos (fuera del código)
 
@@ -130,5 +182,5 @@ Después: Fase 3 (ciclo comercial en UI + acción de entrega de acceso), Fase 4
 - `docs/plataformas/` — ficha por plataforma + arquetipos.
 
 ---
-*Última actualización: 2026-07-23 (cierre de Fase 1). Actualiza este archivo al
+*Última actualización: 2026-07-23 (cierre de Fase 2). Actualiza este archivo al
 terminar cada sesión: estado, lo que sigue y cualquier decisión nueva.*
