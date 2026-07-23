@@ -14,7 +14,8 @@
     "test:e2e": "playwright test",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
-    "db:reset": "supabase db reset",
+    "db:reset": "supabase db reset && npm run db:usuarios",
+    "db:usuarios": "node --env-file=.env.local scripts/crear-usuarios-dev.mjs",
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts"
   },
   "dependencies": {
