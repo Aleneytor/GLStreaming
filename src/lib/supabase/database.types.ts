@@ -131,6 +131,284 @@ export type Database = {
           },
         ]
       }
+      categorias_gasto: {
+        Row: {
+          activa: boolean
+          created_at: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          activa?: boolean
+          created_at?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          activa?: boolean
+          created_at?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
+      ciclos_proveedor: {
+        Row: {
+          capacidad_fisica_snapshot: number | null
+          capacidad_vendible_snapshot: number | null
+          confirmado_at: string | null
+          costo_usdt: number
+          costo_ves_snapshot: number | null
+          created_at: string
+          cuenta_id: string
+          dia_ancla_proveedor: number
+          estado: string
+          id: string
+          inicio: string
+          proveedor_contacto_snapshot: string | null
+          proveedor_id: string
+          proveedor_nombre_snapshot: string
+          proxima_renovacion: string
+          referencia_no_sensible: string | null
+          tasa_paralela_id: string | null
+        }
+        Insert: {
+          capacidad_fisica_snapshot?: number | null
+          capacidad_vendible_snapshot?: number | null
+          confirmado_at?: string | null
+          costo_usdt: number
+          costo_ves_snapshot?: number | null
+          created_at?: string
+          cuenta_id: string
+          dia_ancla_proveedor: number
+          estado?: string
+          id?: string
+          inicio: string
+          proveedor_contacto_snapshot?: string | null
+          proveedor_id: string
+          proveedor_nombre_snapshot: string
+          proxima_renovacion: string
+          referencia_no_sensible?: string | null
+          tasa_paralela_id?: string | null
+        }
+        Update: {
+          capacidad_fisica_snapshot?: number | null
+          capacidad_vendible_snapshot?: number | null
+          confirmado_at?: string | null
+          costo_usdt?: number
+          costo_ves_snapshot?: number | null
+          created_at?: string
+          cuenta_id?: string
+          dia_ancla_proveedor?: number
+          estado?: string
+          id?: string
+          inicio?: string
+          proveedor_contacto_snapshot?: string | null
+          proveedor_id?: string
+          proveedor_nombre_snapshot?: string
+          proxima_renovacion?: string
+          referencia_no_sensible?: string | null
+          tasa_paralela_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ciclos_proveedor_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ciclos_proveedor_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "proveedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ciclos_proveedor_tasa_paralela_id_fkey"
+            columns: ["tasa_paralela_id"]
+            isOneToOne: false
+            referencedRelation: "tasas_cambio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cierres_mensuales: {
+        Row: {
+          ajustes_clientes_ves: number
+          ajustes_economicos_usd_paralela: number
+          calculado_at: string | null
+          cerrado_at: string | null
+          cerrado_por_id: string | null
+          cobros_ves: number
+          costo_bloqueo_ves: number
+          costo_cortesia_ves: number
+          costo_no_reutilizable_sin_ingreso_ves: number
+          costo_ocioso_ves: number
+          costo_pausa_ves: number
+          costo_proveedor_devengado_usdt: number
+          costo_proveedor_devengado_ves: number
+          costo_reserva_ves: number
+          costo_saneamiento_ves: number
+          created_at: string
+          dias_no_reutilizables_sin_ingreso: number
+          dias_unidad_bloqueados: number
+          dias_unidad_cortesia: number
+          dias_unidad_disponibles: number
+          dias_unidad_pagados: number
+          dias_unidad_pausa: number
+          dias_unidad_reservados: number
+          dias_unidad_saneamiento: number
+          estado: string
+          fin: string
+          flujo_caja_valorizado_ves: number
+          gastos_operativos_usdt: number
+          gastos_operativos_ves: number
+          id: string
+          ingreso_cobrado_devengado_ves: number
+          ingreso_comercial_devengado_usd: number
+          ingreso_contractual_usd: number
+          ingreso_economico_devengado_usd_paralela: number
+          inicio: string
+          margen_bruto_economico_usd_paralela: number
+          margen_bruto_ves: number
+          mes: string
+          pagos_proveedor_usdt: number
+          pagos_proveedor_ves: number
+          reembolsos_clientes_ves: number
+          resultado_operativo_economico_usd_paralela: number
+          resultado_operativo_ves: number
+          source_watermark: string | null
+          tasa_bcv_id: string | null
+          tasa_paralela_id: string | null
+          version: number
+          ves_esperados_devengados_clientes: number
+        }
+        Insert: {
+          ajustes_clientes_ves?: number
+          ajustes_economicos_usd_paralela?: number
+          calculado_at?: string | null
+          cerrado_at?: string | null
+          cerrado_por_id?: string | null
+          cobros_ves?: number
+          costo_bloqueo_ves?: number
+          costo_cortesia_ves?: number
+          costo_no_reutilizable_sin_ingreso_ves?: number
+          costo_ocioso_ves?: number
+          costo_pausa_ves?: number
+          costo_proveedor_devengado_usdt?: number
+          costo_proveedor_devengado_ves?: number
+          costo_reserva_ves?: number
+          costo_saneamiento_ves?: number
+          created_at?: string
+          dias_no_reutilizables_sin_ingreso?: number
+          dias_unidad_bloqueados?: number
+          dias_unidad_cortesia?: number
+          dias_unidad_disponibles?: number
+          dias_unidad_pagados?: number
+          dias_unidad_pausa?: number
+          dias_unidad_reservados?: number
+          dias_unidad_saneamiento?: number
+          estado?: string
+          fin: string
+          flujo_caja_valorizado_ves?: number
+          gastos_operativos_usdt?: number
+          gastos_operativos_ves?: number
+          id?: string
+          ingreso_cobrado_devengado_ves?: number
+          ingreso_comercial_devengado_usd?: number
+          ingreso_contractual_usd?: number
+          ingreso_economico_devengado_usd_paralela?: number
+          inicio: string
+          margen_bruto_economico_usd_paralela?: number
+          margen_bruto_ves?: number
+          mes: string
+          pagos_proveedor_usdt?: number
+          pagos_proveedor_ves?: number
+          reembolsos_clientes_ves?: number
+          resultado_operativo_economico_usd_paralela?: number
+          resultado_operativo_ves?: number
+          source_watermark?: string | null
+          tasa_bcv_id?: string | null
+          tasa_paralela_id?: string | null
+          version?: number
+          ves_esperados_devengados_clientes?: number
+        }
+        Update: {
+          ajustes_clientes_ves?: number
+          ajustes_economicos_usd_paralela?: number
+          calculado_at?: string | null
+          cerrado_at?: string | null
+          cerrado_por_id?: string | null
+          cobros_ves?: number
+          costo_bloqueo_ves?: number
+          costo_cortesia_ves?: number
+          costo_no_reutilizable_sin_ingreso_ves?: number
+          costo_ocioso_ves?: number
+          costo_pausa_ves?: number
+          costo_proveedor_devengado_usdt?: number
+          costo_proveedor_devengado_ves?: number
+          costo_reserva_ves?: number
+          costo_saneamiento_ves?: number
+          created_at?: string
+          dias_no_reutilizables_sin_ingreso?: number
+          dias_unidad_bloqueados?: number
+          dias_unidad_cortesia?: number
+          dias_unidad_disponibles?: number
+          dias_unidad_pagados?: number
+          dias_unidad_pausa?: number
+          dias_unidad_reservados?: number
+          dias_unidad_saneamiento?: number
+          estado?: string
+          fin?: string
+          flujo_caja_valorizado_ves?: number
+          gastos_operativos_usdt?: number
+          gastos_operativos_ves?: number
+          id?: string
+          ingreso_cobrado_devengado_ves?: number
+          ingreso_comercial_devengado_usd?: number
+          ingreso_contractual_usd?: number
+          ingreso_economico_devengado_usd_paralela?: number
+          inicio?: string
+          margen_bruto_economico_usd_paralela?: number
+          margen_bruto_ves?: number
+          mes?: string
+          pagos_proveedor_usdt?: number
+          pagos_proveedor_ves?: number
+          reembolsos_clientes_ves?: number
+          resultado_operativo_economico_usd_paralela?: number
+          resultado_operativo_ves?: number
+          source_watermark?: string | null
+          tasa_bcv_id?: string | null
+          tasa_paralela_id?: string | null
+          version?: number
+          ves_esperados_devengados_clientes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cierres_mensuales_cerrado_por_id_fkey"
+            columns: ["cerrado_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cierres_mensuales_tasa_bcv_id_fkey"
+            columns: ["tasa_bcv_id"]
+            isOneToOne: false
+            referencedRelation: "tasas_cambio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cierres_mensuales_tasa_paralela_id_fkey"
+            columns: ["tasa_paralela_id"]
+            isOneToOne: false
+            referencedRelation: "tasas_cambio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           archived_at: string | null
@@ -356,6 +634,247 @@ export type Database = {
             columns: ["proveedor_operativo_id"]
             isOneToOne: false
             referencedRelation: "proveedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      detalles_cierre_mensual: {
+        Row: {
+          cierre_id: string
+          cuenta_id: string | null
+          dias_en_mes: number | null
+          dias_periodo: number | null
+          dias_unidad: number | null
+          fecha_negocio: string
+          id: string
+          metadata_calculo: Json | null
+          modalidad_id: string | null
+          moneda_fuente: string | null
+          monto_base_ves: number | null
+          monto_devengado_usd_comercial: number | null
+          monto_devengado_usd_paralela: number | null
+          monto_devengado_ves: number | null
+          monto_fuente: number | null
+          origen_id: string | null
+          plataforma_id: string | null
+          producto_plataforma_id: string | null
+          tasa_bcv_id: string | null
+          tasa_paralela_id: string | null
+          tipo: string
+          unidad_id: string | null
+        }
+        Insert: {
+          cierre_id: string
+          cuenta_id?: string | null
+          dias_en_mes?: number | null
+          dias_periodo?: number | null
+          dias_unidad?: number | null
+          fecha_negocio: string
+          id?: string
+          metadata_calculo?: Json | null
+          modalidad_id?: string | null
+          moneda_fuente?: string | null
+          monto_base_ves?: number | null
+          monto_devengado_usd_comercial?: number | null
+          monto_devengado_usd_paralela?: number | null
+          monto_devengado_ves?: number | null
+          monto_fuente?: number | null
+          origen_id?: string | null
+          plataforma_id?: string | null
+          producto_plataforma_id?: string | null
+          tasa_bcv_id?: string | null
+          tasa_paralela_id?: string | null
+          tipo: string
+          unidad_id?: string | null
+        }
+        Update: {
+          cierre_id?: string
+          cuenta_id?: string | null
+          dias_en_mes?: number | null
+          dias_periodo?: number | null
+          dias_unidad?: number | null
+          fecha_negocio?: string
+          id?: string
+          metadata_calculo?: Json | null
+          modalidad_id?: string | null
+          moneda_fuente?: string | null
+          monto_base_ves?: number | null
+          monto_devengado_usd_comercial?: number | null
+          monto_devengado_usd_paralela?: number | null
+          monto_devengado_ves?: number | null
+          monto_fuente?: number | null
+          origen_id?: string | null
+          plataforma_id?: string | null
+          producto_plataforma_id?: string | null
+          tasa_bcv_id?: string | null
+          tasa_paralela_id?: string | null
+          tipo?: string
+          unidad_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detalles_cierre_mensual_cierre_id_fkey"
+            columns: ["cierre_id"]
+            isOneToOne: false
+            referencedRelation: "cierres_mensuales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalles_cierre_mensual_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalles_cierre_mensual_modalidad_id_fkey"
+            columns: ["modalidad_id"]
+            isOneToOne: false
+            referencedRelation: "modalidades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalles_cierre_mensual_plataforma_id_fkey"
+            columns: ["plataforma_id"]
+            isOneToOne: false
+            referencedRelation: "plataformas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalles_cierre_mensual_producto_plataforma_id_fkey"
+            columns: ["producto_plataforma_id"]
+            isOneToOne: false
+            referencedRelation: "productos_plataforma"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalles_cierre_mensual_tasa_bcv_id_fkey"
+            columns: ["tasa_bcv_id"]
+            isOneToOne: false
+            referencedRelation: "tasas_cambio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalles_cierre_mensual_tasa_paralela_id_fkey"
+            columns: ["tasa_paralela_id"]
+            isOneToOne: false
+            referencedRelation: "tasas_cambio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalles_cierre_mensual_unidad_id_fkey"
+            columns: ["unidad_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_inventario"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gastos_operativos: {
+        Row: {
+          categoria_id: string
+          confirmado_at: string | null
+          contraparte: string | null
+          created_at: string
+          created_by: string | null
+          cuenta_id: string | null
+          descripcion: string | null
+          estado: string
+          fecha_gasto: string
+          gasto_original_id: string | null
+          id: string
+          monto_usdt: number
+          monto_ves_snapshot: number | null
+          nota: string | null
+          ocurrido_at: string
+          plataforma_id: string | null
+          referencia_no_sensible: string | null
+          tasa_paralela_id: string | null
+          tipo: string
+        }
+        Insert: {
+          categoria_id: string
+          confirmado_at?: string | null
+          contraparte?: string | null
+          created_at?: string
+          created_by?: string | null
+          cuenta_id?: string | null
+          descripcion?: string | null
+          estado?: string
+          fecha_gasto: string
+          gasto_original_id?: string | null
+          id?: string
+          monto_usdt: number
+          monto_ves_snapshot?: number | null
+          nota?: string | null
+          ocurrido_at?: string
+          plataforma_id?: string | null
+          referencia_no_sensible?: string | null
+          tasa_paralela_id?: string | null
+          tipo?: string
+        }
+        Update: {
+          categoria_id?: string
+          confirmado_at?: string | null
+          contraparte?: string | null
+          created_at?: string
+          created_by?: string | null
+          cuenta_id?: string | null
+          descripcion?: string | null
+          estado?: string
+          fecha_gasto?: string
+          gasto_original_id?: string | null
+          id?: string
+          monto_usdt?: number
+          monto_ves_snapshot?: number | null
+          nota?: string | null
+          ocurrido_at?: string
+          plataforma_id?: string | null
+          referencia_no_sensible?: string | null
+          tasa_paralela_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gastos_operativos_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_gasto"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_operativos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_operativos_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_operativos_gasto_original_id_fkey"
+            columns: ["gasto_original_id"]
+            isOneToOne: false
+            referencedRelation: "gastos_operativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_operativos_plataforma_id_fkey"
+            columns: ["plataforma_id"]
+            isOneToOne: false
+            referencedRelation: "plataformas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_operativos_tasa_paralela_id_fkey"
+            columns: ["tasa_paralela_id"]
+            isOneToOne: false
+            referencedRelation: "tasas_cambio"
             referencedColumns: ["id"]
           },
         ]
@@ -598,6 +1117,83 @@ export type Database = {
           },
           {
             foreignKeyName: "pagos_cliente_tasa_paralela_id_fkey"
+            columns: ["tasa_paralela_id"]
+            isOneToOne: false
+            referencedRelation: "tasas_cambio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pagos_proveedor: {
+        Row: {
+          ciclo_proveedor_id: string
+          confirmado_at: string | null
+          created_at: string
+          created_by: string | null
+          estado: string
+          fecha_pago: string
+          id: string
+          monto_usdt: number
+          monto_ves_snapshot: number | null
+          pago_original_id: string | null
+          referencia_no_sensible: string | null
+          tasa_paralela_id: string | null
+          tipo: string
+        }
+        Insert: {
+          ciclo_proveedor_id: string
+          confirmado_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          fecha_pago: string
+          id?: string
+          monto_usdt: number
+          monto_ves_snapshot?: number | null
+          pago_original_id?: string | null
+          referencia_no_sensible?: string | null
+          tasa_paralela_id?: string | null
+          tipo?: string
+        }
+        Update: {
+          ciclo_proveedor_id?: string
+          confirmado_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          fecha_pago?: string
+          id?: string
+          monto_usdt?: number
+          monto_ves_snapshot?: number | null
+          pago_original_id?: string | null
+          referencia_no_sensible?: string | null
+          tasa_paralela_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagos_proveedor_ciclo_proveedor_id_fkey"
+            columns: ["ciclo_proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "ciclos_proveedor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_proveedor_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_proveedor_pago_original_id_fkey"
+            columns: ["pago_original_id"]
+            isOneToOne: false
+            referencedRelation: "pagos_proveedor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_proveedor_tasa_paralela_id_fkey"
             columns: ["tasa_paralela_id"]
             isOneToOne: false
             referencedRelation: "tasas_cambio"
