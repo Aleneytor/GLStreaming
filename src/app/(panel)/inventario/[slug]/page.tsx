@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { uno } from "@/lib/supabase/util";
 import { BotonCredenciales } from "@/features/inventario/credenciales";
 import { avisoProveedor, diasParaRenovar } from "@/domain/fechas";
+import { FiltrosInventario } from "@/features/inventario/filtros";
 
 export const dynamic = "force-dynamic";
 
@@ -29,13 +30,16 @@ type Unidad = {
 /** Cuentas de UNA plataforma, agrupadas por producto (ej. Netflix cuenta vs extra). */
 export default async function PlataformaPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ q?: string; estado?: string }>;
 }) {
   const usuario = await obtenerUsuarioActual();
   if (!esAdmin(usuario)) redirect("/dashboard");
 
   const { slug } = await params;
+  const { q, estado } = await searchParams;
   const supabase = await createClient();
 
   const { data: plataforma } = await supabase
@@ -48,7 +52,7 @@ export default async function PlataformaPage({
 
   const hoy = hoyCaracas();
 
-  const { data: cuentas } = await supabase
+  let consulta = supabase
     .from("cuentas")
     .select(
       `id, alias, capacidad, capacidad_vendible_habilitada, estado, created_at, notas,
@@ -57,8 +61,16 @@ export default async function PlataformaPage({
        ciclos_proveedor ( id, costo_usdt, proxima_renovacion, dia_ancla_proveedor, estado ),
        unidades_inventario ( id, numero_slot, nombre_visible, estado_operativo, estado_preparacion )`,
     )
-    .eq("productos_plataforma.plataforma_id", plataforma.id)
-    .order("created_at", { ascending: false });
+    .eq("productos_plataforma.plataforma_id", plataforma.id);
+
+  // Filtros por URL (compartibles y persistentes al recargar).
+  if (estado) consulta = consulta.eq("estado", estado);
+  if (q) {
+    const patron = `%${q}%`;
+    consulta = consulta.or(`alias.ilike.${patron},notas.ilike.${patron}`);
+  }
+
+  const { data: cuentas } = await consulta.order("created_at", { ascending: false });
 
   // Agrupar por producto para que "Netflix cuenta" y "Netflix extra" salgan separados.
   type CuentaFila = NonNullable<typeof cuentas>[number];
@@ -99,9 +111,20 @@ export default async function PlataformaPage({
         </div>
       </div>
 
+      <FiltrosInventario
+        estados={[
+          { valor: "activa", etiqueta: "Activas" },
+          { valor: "mantenimiento", etiqueta: "En mantenimiento" },
+          { valor: "suspendida", etiqueta: "Suspendidas" },
+          { valor: "archivada", etiqueta: "Archivadas" },
+        ]}
+      />
+
       {(cuentas?.length ?? 0) === 0 ? (
         <p className="rounded-xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-          Todavía no hay cuentas de {plataforma.nombre}.
+          {q || estado
+            ? "Ninguna cuenta coincide con el filtro."
+            : `Todavía no hay cuentas de ${plataforma.nombre}.`}
         </p>
       ) : (
         [...porProducto.entries()].map(([productoId, grupo]) => (
