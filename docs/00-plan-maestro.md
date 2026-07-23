@@ -58,17 +58,33 @@ Por decisión explícita del usuario, **no se espera a cerrar el catálogo compl
 
 ## 4.1. Estado del código (actualizado 22/07/2026)
 
-**Fase 1 — rebanada 1 de ~6 entregada**: scaffold + capa de fundación/catálogo.
+**Fase 1 COMPLETA — 6 rebanadas entregadas y validadas contra PostgreSQL real (23/07/2026).**
 
-- Scaffold completo: `package.json` (stack confirmado), configs de Next 15 / TS strict / Tailwind 3.4, `.gitignore`, `.env.example`, app shell mínima en `src/app/`, helpers de Supabase en `src/lib/supabase/`, validación de entorno con Zod en `src/lib/env.ts`.
-- `supabase/migrations/0001_fundacion_catalogo.sql`: tablas `usuarios`, `vendedores`, `plataformas`, `mecanismos_entrega`, `modalidades`, `productos_plataforma`, `producto_modalidades`, `proveedores`, con RLS activo, función `es_admin()` y trigger de alta de perfil.
-- `supabase/seed.sql`: catálogo sintético de las 15 plataformas con capacidades confirmadas (sin secretos).
-- Base PWA / mobile-first iniciada: `src/app/manifest.ts` (display standalone) + viewport/theme-color en `layout.tsx`. Pendiente para instalabilidad completa: iconos 192/512/maskable en `/public` y service worker (ver `01-alcance-y-reglas.md` §9).
-- **Validado contra PostgreSQL real (22/07/2026)**: Docker Desktop 4.83 + WSL2 instalados, `supabase start` levanta el stack local, la migración 0001 aplica y el seed carga correctamente. Verificado por consulta: 15 plataformas, 17 productos, 28 modalidades, 28 combinaciones producto/modalidad, 7 mecanismos, 1 proveedor (`Yo`). Las capacidades no triviales quedaron correctas (Canva 500, CapCut 3/2, Universal+ 5, Netflix 5 + extra 1, YouTube `solo_cartera`, Spotify 1/5).
-- Verificado además: `npm install` con Node 25, `tsc --noEmit` limpio, `npm run build` de Next.js exitoso, tipos TypeScript generados desde el esquema (`src/lib/supabase/database.types.ts`).
-- Dos errores reales encontrados y corregidos gracias a esta validación: (1) `es_admin()` se declaraba antes de existir `public.usuarios` — PostgreSQL valida el cuerpo de funciones `language sql` al crearlas; (2) el seed usaba una función en `pg_temp`, que no sobrevive entre lotes de ejecución del CLI.
+Entorno: Docker Desktop 4.83 + WSL2, stack Supabase local, Node 25. La base tiene
+**41 tablas + 1 vista de revendedor**; **33 pruebas unitarias** y la **suite RLS** en verde.
 
-Rebanadas siguientes de la Fase 1 (en orden): inventario+secretos, ciclo comercial, proveedores+finanzas, rama Spotify, verificación de hogar Netflix, vistas seguras + pruebas RLS. Detalle en `09-fase-1-setup.md`.
+Migraciones (`supabase/migrations/`):
+- `0001_fundacion_catalogo` — usuarios, vendedores, plataformas, modalidades, productos_plataforma, producto_modalidades, mecanismos_entrega, proveedores. Función `es_admin()` + trigger de alta de perfil.
+- `0002_inventario_secretos` — clientes, cuentas, cuenta_modalidades, credenciales_cuenta, unidades_inventario, secretos_unidad, historial_estado_unidad, reservas_inventario.
+- `0003_ciclo_comercial` — tasas_cambio, contactos_comerciales, suscripciones, suscripcion_contactos, historial_estado_suscripcion, sesiones_carga_inicial, asignaciones_inventario, periodos_servicio, pagos_cliente.
+- `0004_proveedores_finanzas` — ciclos_proveedor, pagos_proveedor, categorias_gasto, gastos_operativos, cierres_mensuales, detalles_cierre_mensual.
+- `0005_spotify_entregas` — identidades_spotify, coberturas_spotify, controles_pago_spotify, vinculos_identidad_spotify, incidencias_spotify, casos_incidencia_spotify, entregas_acceso, operaciones_remotas.
+- `0006_cierre_vistas_seguras` — verificaciones_hogar_netflix, eventos_auditoria; vista `v_mis_ventas_revendedor` (única ventana del revendedor); grants a `authenticated` (RLS decide filas; `anon` sin privilegios). El revendedor NO ve stock ni solicita por la app (DEC-97).
+
+Lógica de dominio (TypeScript, con pruebas):
+- `src/lib/crypto.ts` — cifrado AES-256-GCM de secretos + huella HMAC + máscaras (5 pruebas).
+- `src/domain/fechas.ts` — renovación por mes calendario con ajuste de fin de mes, badges (16 pruebas).
+- `src/domain/dinero.ts` — redondeo mitad-arriba, monto VES esperado, prorrateo por intersección de días (12 pruebas).
+
+Seguridad validada:
+- RLS admin-only en tablas base; el revendedor solo accede a sus propias ventas vía `v_mis_ventas_revendedor`. Ve el paquete de acceso de sus ventas (entregado por acción de servidor que verifica propiedad), pero no stock ni datos ajenos (DEC-97).
+- `supabase/tests/rls.sql`: suite que crea admin + 2 revendedores + anon y prueba el aislamiento (revendedor no ve inventario/credenciales/ventas ajenas; sí ve su venta; anon bloqueado; admin ve todo). **Todas en PASS.**
+- Base PWA / mobile-first: `src/app/manifest.ts` + viewport/theme-color. Pendiente para instalabilidad completa: iconos 192/512/maskable en `/public` y service worker.
+
+Errores reales encontrados y corregidos gracias a validar contra Postgres:
+(1) `es_admin()` declarada antes de existir `usuarios`; (2) función `pg_temp` en el seed que no sobrevive entre lotes del CLI; (3) faltaban grants de tabla a `authenticated` (sin ellos RLS ni se consulta → "permiso denegado" hasta para el admin).
+
+**Siguiente: Fase 2** (roadmap `05-roadmap.md`) — inventario Netflix + asistente de carga manual + Data Grid mobile-first. Correr `npx supabase start` y `npm run dev` para retomar (ver `09-fase-1-setup.md`).
 
 ## 5. Qué hacer si hay que reiniciar desde cero
 

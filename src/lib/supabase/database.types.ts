@@ -123,6 +123,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "asignaciones_inventario_suscripcion_id_fkey"
+            columns: ["suscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "v_mis_ventas_revendedor"
+            referencedColumns: ["suscripcion_id"]
+          },
+          {
             foreignKeyName: "asignaciones_inventario_unidad_id_fkey"
             columns: ["unidad_id"]
             isOneToOne: false
@@ -216,6 +223,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "suscripciones"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "casos_incidencia_spotify_suscripcion_id_fkey"
+            columns: ["suscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "v_mis_ventas_revendedor"
+            referencedColumns: ["suscripcion_id"]
           },
         ]
       }
@@ -1056,6 +1070,54 @@ export type Database = {
             referencedRelation: "suscripciones"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "entregas_acceso_suscripcion_id_fkey"
+            columns: ["suscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "v_mis_ventas_revendedor"
+            referencedColumns: ["suscripcion_id"]
+          },
+        ]
+      }
+      eventos_auditoria: {
+        Row: {
+          accion: string
+          actor_id: string | null
+          entidad: string
+          entidad_id: string | null
+          id: string
+          metadata: Json | null
+          ocurrio_at: string
+          resultado: string | null
+        }
+        Insert: {
+          accion: string
+          actor_id?: string | null
+          entidad: string
+          entidad_id?: string | null
+          id?: string
+          metadata?: Json | null
+          ocurrio_at?: string
+          resultado?: string | null
+        }
+        Update: {
+          accion?: string
+          actor_id?: string | null
+          entidad?: string
+          entidad_id?: string | null
+          id?: string
+          metadata?: Json | null
+          ocurrio_at?: string
+          resultado?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eventos_auditoria_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
         ]
       }
       gastos_operativos: {
@@ -1209,6 +1271,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "suscripciones"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historial_estado_suscripcion_suscripcion_id_fkey"
+            columns: ["suscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "v_mis_ventas_revendedor"
+            referencedColumns: ["suscripcion_id"]
           },
         ]
       }
@@ -1783,6 +1852,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "periodos_servicio_suscripcion_id_fkey"
+            columns: ["suscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "v_mis_ventas_revendedor"
+            referencedColumns: ["suscripcion_id"]
+          },
+          {
             foreignKeyName: "periodos_servicio_tasa_bcv_id_fkey"
             columns: ["tasa_bcv_id"]
             isOneToOne: false
@@ -2004,7 +2080,6 @@ export type Database = {
           producto_plataforma_id: string
           reservada_at: string
           resuelta_at: string | null
-          solicitud_stock_id: string | null
           unidad_id: string | null
         }
         Insert: {
@@ -2019,7 +2094,6 @@ export type Database = {
           producto_plataforma_id: string
           reservada_at?: string
           resuelta_at?: string | null
-          solicitud_stock_id?: string | null
           unidad_id?: string | null
         }
         Update: {
@@ -2034,7 +2108,6 @@ export type Database = {
           producto_plataforma_id?: string
           reservada_at?: string
           resuelta_at?: string | null
-          solicitud_stock_id?: string | null
           unidad_id?: string | null
         }
         Relationships: [
@@ -2239,6 +2312,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "suscripciones"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suscripcion_contactos_suscripcion_id_fkey"
+            columns: ["suscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "v_mis_ventas_revendedor"
+            referencedColumns: ["suscripcion_id"]
           },
         ]
       }
@@ -2470,6 +2550,64 @@ export type Database = {
           },
         ]
       }
+      verificaciones_hogar_netflix: {
+        Row: {
+          asignacion_id: string
+          codigo_solicitado_at: string | null
+          created_at: string
+          disparada_at: string
+          id: string
+          nota_no_sensible: string | null
+          registrada_por_id: string | null
+          resultado: string
+          unidad_id: string
+        }
+        Insert: {
+          asignacion_id: string
+          codigo_solicitado_at?: string | null
+          created_at?: string
+          disparada_at?: string
+          id?: string
+          nota_no_sensible?: string | null
+          registrada_por_id?: string | null
+          resultado?: string
+          unidad_id: string
+        }
+        Update: {
+          asignacion_id?: string
+          codigo_solicitado_at?: string | null
+          created_at?: string
+          disparada_at?: string
+          id?: string
+          nota_no_sensible?: string | null
+          registrada_por_id?: string | null
+          resultado?: string
+          unidad_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verificaciones_hogar_netflix_asignacion_id_fkey"
+            columns: ["asignacion_id"]
+            isOneToOne: false
+            referencedRelation: "asignaciones_inventario"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verificaciones_hogar_netflix_registrada_por_id_fkey"
+            columns: ["registrada_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verificaciones_hogar_netflix_unidad_id_fkey"
+            columns: ["unidad_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_inventario"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vinculos_identidad_spotify: {
         Row: {
           created_at: string
@@ -2523,11 +2661,47 @@ export type Database = {
             referencedRelation: "suscripciones"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "vinculos_identidad_spotify_suscripcion_id_fkey"
+            columns: ["suscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "v_mis_ventas_revendedor"
+            referencedColumns: ["suscripcion_id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      v_mis_ventas_revendedor: {
+        Row: {
+          cliente: string | null
+          cliente_whatsapp: string | null
+          cuenta_id: string | null
+          estado: string | null
+          modalidad: string | null
+          plataforma: string | null
+          producto: string | null
+          recontactar_el: string | null
+          suscripcion_id: string | null
+          unidad_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asignaciones_inventario_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asignaciones_inventario_unidad_id_fkey"
+            columns: ["unidad_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_inventario"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       es_admin: { Args: never; Returns: boolean }
