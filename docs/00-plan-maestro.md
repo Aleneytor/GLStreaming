@@ -63,8 +63,10 @@ Por decisión explícita del usuario, **no se espera a cerrar el catálogo compl
 - Scaffold completo: `package.json` (stack confirmado), configs de Next 15 / TS strict / Tailwind 3.4, `.gitignore`, `.env.example`, app shell mínima en `src/app/`, helpers de Supabase en `src/lib/supabase/`, validación de entorno con Zod en `src/lib/env.ts`.
 - `supabase/migrations/0001_fundacion_catalogo.sql`: tablas `usuarios`, `vendedores`, `plataformas`, `mecanismos_entrega`, `modalidades`, `productos_plataforma`, `producto_modalidades`, `proveedores`, con RLS activo, función `es_admin()` y trigger de alta de perfil.
 - `supabase/seed.sql`: catálogo sintético de las 15 plataformas con capacidades confirmadas (sin secretos).
-- Verificado: `npm install` resuelve con Node 25; `tsc --noEmit` pasa sin errores.
-- **No verificado aún contra Postgres**: la migración/seed no se han ejecutado porque falta Docker (necesario para `supabase start`). Validación real pendiente de `npx supabase db reset`. Instrucciones en `09-fase-1-setup.md`.
+- Base PWA / mobile-first iniciada: `src/app/manifest.ts` (display standalone) + viewport/theme-color en `layout.tsx`. Pendiente para instalabilidad completa: iconos 192/512/maskable en `/public` y service worker (ver `01-alcance-y-reglas.md` §9).
+- **Validado contra PostgreSQL real (22/07/2026)**: Docker Desktop 4.83 + WSL2 instalados, `supabase start` levanta el stack local, la migración 0001 aplica y el seed carga correctamente. Verificado por consulta: 15 plataformas, 17 productos, 28 modalidades, 28 combinaciones producto/modalidad, 7 mecanismos, 1 proveedor (`Yo`). Las capacidades no triviales quedaron correctas (Canva 500, CapCut 3/2, Universal+ 5, Netflix 5 + extra 1, YouTube `solo_cartera`, Spotify 1/5).
+- Verificado además: `npm install` con Node 25, `tsc --noEmit` limpio, `npm run build` de Next.js exitoso, tipos TypeScript generados desde el esquema (`src/lib/supabase/database.types.ts`).
+- Dos errores reales encontrados y corregidos gracias a esta validación: (1) `es_admin()` se declaraba antes de existir `public.usuarios` — PostgreSQL valida el cuerpo de funciones `language sql` al crearlas; (2) el seed usaba una función en `pg_temp`, que no sobrevive entre lotes de ejecución del CLI.
 
 Rebanadas siguientes de la Fase 1 (en orden): inventario+secretos, ciclo comercial, proveedores+finanzas, rama Spotify, verificación de hogar Netflix, vistas seguras + pruebas RLS. Detalle en `09-fase-1-setup.md`.
 

@@ -141,7 +141,7 @@ Campos: `id`, `plataforma_id`, `nombre`, `codigo`, `tipo_inventario`, `tipo_unid
 - `variable`: capacidad fija nula; los límites pueden ser nulos, pero si existen son positivos y coherentes.
 - `recurso_indivisible`: exige regla fija, capacidad uno y `tipo_unidad_fisica IS NULL`.
 
-`capacidad_vendible_predeterminada` define cuántas unidades físicas participan en stock, ocupación comercial y distribución analítica del costo cuando no todas se venden. Si es nula, se asume igual a la capacidad física. Debe ser positiva y no puede superar la capacidad física efectiva. Universal+ usa seis físicos y cinco vendibles; CapCut usa tres físicos y dos vendibles.
+`capacidad_vendible_predeterminada` define cuántas unidades físicas participan en stock, ocupación comercial y distribución analítica del costo cuando no todas se venden. Si es nula, se asume igual a la capacidad física. Debe ser positiva y no puede superar la capacidad física efectiva. CapCut usa tres físicos y dos vendibles (único caso confirmado de capacidad física ≠ vendible).
 
 `(plataforma_id, codigo)` es único. Una configuración ya usada por cuentas o historia no cambia de significado ni reduce capacidad retroactivamente: se archiva y se crea una nueva versión/producto cuando cambie la regla. `cuentas.capacidad` conserva el valor efectivo de cada recurso.
 
@@ -156,7 +156,7 @@ Ejemplos confirmados:
 | Prime Video | Cuenta estándar | Cuenta con unidades | 7 | `perfil`, `cuenta_completa` | Abierto |
 | Crunchyroll | Cuenta estándar | Cuenta con unidades | 5 | `perfil`, `cuenta_completa` | Abierto |
 | Paramount+ | Cuenta estándar | Cuenta con unidades | 6 | `perfil`, `cuenta_completa` | Abierto |
-| Universal+ | Cuenta estándar | Cuenta con unidades | 6 físicos / 5 vendibles | `perfil`, `cuenta_completa` | Abierto |
+| Universal+ | Cuenta estándar | Cuenta con unidades | 5 | `perfil`, `cuenta_completa` | Abierto |
 | VIX | Cuenta estándar | Cuenta con unidades | 5 | `perfil`, `cuenta_completa` | Abierto |
 | FlujoTV | Cuenta por dispositivos | Cuenta con unidades | 3 | `dispositivo`, `cuenta_completa` | Abierto |
 | Telelatino | Cuenta por dispositivos | Cuenta con unidades | 3 | `cuenta_completa`; `dispositivo` pendiente | Abierto |

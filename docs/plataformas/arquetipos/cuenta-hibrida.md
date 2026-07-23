@@ -23,7 +23,7 @@ El usuario confirmó este comportamiento para las cuentas estándar de Netflix, 
 | `permite_traslado_perfil` | Si una suscripción puede cambiar de perfil/cuenta ante fallas. |
 | `permite_traslado_completo` | Si una venta completa puede moverse a otra cuenta libre. |
 
-La capacidad se confirma en cada producto/ficha: Netflix estándar, HBO, Crunchyroll y VIX usan cinco; Paramount+ usa seis; Disney+ y Prime Video usan siete; Universal+ tiene seis perfiles físicos, pero solo cinco vendibles. Aunque varias plataformas coincidan, el valor no se fija globalmente.
+La capacidad se confirma en cada producto/ficha: Netflix estándar, HBO, Crunchyroll, VIX y Universal+ usan cinco; Paramount+ usa seis; Disney+ y Prime Video usan siete. Aunque varias plataformas coincidan, el valor no se fija globalmente. Dentro de este arquetipo no queda ningún caso confirmado de capacidad física distinta de la vendible.
 
 ## 3. Inventario físico y oferta comercial
 

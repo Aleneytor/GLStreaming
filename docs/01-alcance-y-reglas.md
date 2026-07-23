@@ -705,7 +705,9 @@ En la grilla administrativa de YouTube y Spotify solo puede aparecer una máscar
 
 ## 9. Requisitos no funcionales
 
-- Dark mode, interfaz responsive y alternativa en tarjetas para pantallas estrechas.
+- **Mobile-first, prioridad alta (confirmado 22/07/2026).** La mayoría de los revendedores opera desde el móvil y el administrador también necesita usar la app desde el móvil fuera de la PC. El diseño arranca por la pantalla pequeña y escala hacia la de escritorio, no al revés.
+- Dark mode, interfaz responsive y alternativa en tarjetas para pantallas estrechas (las grillas de inventario nunca fuerzan scroll horizontal en móvil: usan tarjetas apiladas).
+- **Aplicación web instalable (PWA) (confirmado 22/07/2026).** Debe poder instalarse desde el navegador y abrirse como una app (icono en la pantalla de inicio, ventana propia sin barra del navegador). Requiere un manifest web con iconos y un service worker; la instalación real exige HTTPS en producción (`glcuenta.com`) y funciona en `localhost` durante el desarrollo. El alcance offline se limita al "cascarón" de la interfaz — los datos financieros/operativos siguen exigiendo conexión (nunca se cachea información sensible en el dispositivo).
 - Consultas paginadas; el navegador no cargará todo el historial para pintar una grilla.
 - Validación en UI y nuevamente en servidor/base de datos.
 - RLS activa en toda tabla expuesta por Supabase.

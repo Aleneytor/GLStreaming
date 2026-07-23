@@ -8,7 +8,7 @@
 --
 -- Capacidades confirmadas (docs/06-decisiones-pendientes.md, DEC-38..DEC-95):
 --   Netflix estándar 5 · Netflix extra 1 · HBO 5 · Disney+ 7 · Prime Video 7
---   Crunchyroll 5 · Paramount+ 6 · Universal+ 6 física/5 vendible · VIX 5
+--   Crunchyroll 5 · Paramount+ 6 · Universal+ 5 · VIX 5
 --   FlujoTV 3 · Telelatino 3 (solo cuenta completa) · CapCut 3 física/2 vendible
 --   Gemini/Google Cloud 5 · Canva 500 · YouTube solo_cartera · Spotify ind. 1 / fam. 5
 -- ============================================================================
@@ -105,7 +105,7 @@ from (values
   ('prime-video',    7, 7),
   ('crunchyroll',    5, 5),
   ('paramount-plus', 6, 6),
-  ('universal-plus', 6, 5),   -- física 6, vendible 5 (DEC-65)
+  ('universal-plus', 5, 5),   -- cinco perfiles, todos vendibles (DEC-96)
   ('vix',            5, 5)
 ) as v(slug_ref, cap, vend)
 join public.plataformas on plataformas.slug = v.slug_ref;
@@ -171,20 +171,8 @@ from public.plataformas where slug = 'spotify';
 -- ----------------------------------------------------------------------------
 -- producto_modalidades (qué modalidad permite cada producto + su mecanismo)
 -- ----------------------------------------------------------------------------
--- Mecanismo elegido según el tipo de modalidad.
-create or replace function pg_temp.mecanismo_por_modalidad(tipo text, es_youtube boolean)
-returns text language sql immutable as $$
-  select case
-    when tipo in ('perfil','extra')      then 'credenciales_y_unidad'
-    when tipo = 'cuenta_completa'        then 'credenciales_cuenta'
-    when tipo = 'dispositivo'            then 'dispositivo'
-    when tipo = 'miembro_familiar'       then 'grupo_familiar'
-    when tipo = 'asiento'                then 'panel_educativo'
-    when tipo = 'uso_principal'          then 'identidad_y_cobertura'
-    when tipo = 'servicio_individual' and es_youtube then 'credenciales_cliente'
-    when tipo = 'servicio_individual'    then 'identidad_y_cobertura'
-  end;
-$$;
+-- El mecanismo de entrega se elige según el tipo de modalidad, en línea
+-- (sin funciones temporales: el seed puede ejecutarse en varias sesiones).
 
 -- Plataformas de un solo producto: enlazan todas sus modalidades.
 insert into public.producto_modalidades (producto_plataforma_id, modalidad_id, mecanismo_entrega_id)
@@ -193,15 +181,29 @@ from public.productos_plataforma p
 join public.plataformas pl on pl.id = p.plataforma_id
 join public.modalidades m on m.plataforma_id = p.plataforma_id
 join public.mecanismos_entrega me
-  on me.codigo = pg_temp.mecanismo_por_modalidad(m.tipo_modalidad, pl.slug = 'youtube')
-where pl.slug not in ('netflix','spotify');
+  on me.codigo = case
+       when m.tipo_modalidad in ('perfil', 'extra')  then 'credenciales_y_unidad'
+       when m.tipo_modalidad = 'cuenta_completa'     then 'credenciales_cuenta'
+       when m.tipo_modalidad = 'dispositivo'         then 'dispositivo'
+       when m.tipo_modalidad = 'miembro_familiar'    then 'grupo_familiar'
+       when m.tipo_modalidad = 'asiento'             then 'panel_educativo'
+       when m.tipo_modalidad = 'uso_principal'       then 'identidad_y_cobertura'
+       when m.tipo_modalidad = 'servicio_individual' and pl.slug = 'youtube'
+                                                     then 'credenciales_cliente'
+       when m.tipo_modalidad = 'servicio_individual' then 'identidad_y_cobertura'
+     end
+where pl.slug not in ('netflix', 'spotify');
 
 -- Netflix estándar: perfil + cuenta completa.
 insert into public.producto_modalidades (producto_plataforma_id, modalidad_id, mecanismo_entrega_id)
 select p.id, m.id, me.id
 from public.productos_plataforma p
 join public.modalidades m on m.plataforma_id = p.plataforma_id and m.tipo_modalidad in ('perfil','cuenta_completa')
-join public.mecanismos_entrega me on me.codigo = pg_temp.mecanismo_por_modalidad(m.tipo_modalidad, false)
+join public.mecanismos_entrega me
+  on me.codigo = case m.tipo_modalidad
+       when 'perfil'          then 'credenciales_y_unidad'
+       when 'cuenta_completa' then 'credenciales_cuenta'
+     end
 where p.codigo = 'netflix';
 
 -- Netflix extra: solo modalidad extra.

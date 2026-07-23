@@ -14,7 +14,7 @@ Las reglas financieras, de calendario, seguridad, clientes, pagos, proveedores y
 | Prime Video | Cuenta híbrida de siete perfiles | Documentada; queda nombre predeterminado de perfiles | [Prime Video](prime-video.md) |
 | Crunchyroll | Cuenta híbrida de cinco perfiles | Documentada; usa cierre de sesiones/dispositivos por perfil cuando aplique | [Crunchyroll](crunchyroll.md) |
 | Paramount+ | Cuenta híbrida de seis perfiles | Documentada | [Paramount+](paramount-plus.md) |
-| Universal+ | Cuenta híbrida con seis perfiles físicos y cinco vendibles | Documentada; queda precisar sexto perfil en venta completa | [Universal+](universal-plus.md) |
+| Universal+ | Cuenta híbrida con cinco perfiles, todos vendibles | Documentada; sin decisiones pendientes | [Universal+](universal-plus.md) |
 | VIX | Cuenta híbrida de cinco perfiles | Documentada | [VIX](vix.md) |
 | FlujoTV | Cuenta por tres dispositivos/cupos | Documentada; excepción de revocación por rotación de credenciales | [FlujoTV](flujotv.md) |
 | Telelatino | Cuenta completa de tres dispositivos observada | Parcial; falta confirmar si admite venta individual y cómo revoca acceso | [Telelatino](telelatino.md) |

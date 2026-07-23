@@ -34,26 +34,9 @@ begin
 end;
 $$;
 
--- ¿El usuario autenticado actual es administrador y está activo?
--- SECURITY DEFINER: evita recursión de RLS al consultar public.usuarios.
-create or replace function public.es_admin()
-returns boolean
-language sql
-security definer
-stable
-set search_path = ''
-as $$
-  select exists (
-    select 1
-    from public.usuarios u
-    where u.id = auth.uid()
-      and u.rol = 'admin'
-      and u.activo
-  );
-$$;
-
-revoke execute on function public.es_admin() from public;
-grant execute on function public.es_admin() to authenticated;
+-- Nota: public.es_admin() se define más abajo, DESPUÉS de crear la tabla
+-- public.usuarios. PostgreSQL valida el cuerpo de una función `language sql`
+-- al crearla, así que no puede referenciar una tabla que todavía no existe.
 
 -- ----------------------------------------------------------------------------
 -- usuarios — perfil interno 1:1 con auth.users
@@ -73,6 +56,29 @@ comment on table public.usuarios is
 create trigger trg_usuarios_updated_at
   before update on public.usuarios
   for each row execute function public.set_updated_at();
+
+-- ¿El usuario autenticado actual es administrador y está activo?
+-- SECURITY DEFINER: evita recursión de RLS al consultar public.usuarios
+-- (la función se salta RLS, de modo que las políticas pueden invocarla).
+-- Debe declararse después de crear public.usuarios (ver nota arriba).
+create or replace function public.es_admin()
+returns boolean
+language sql
+security definer
+stable
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.usuarios u
+    where u.id = auth.uid()
+      and u.rol = 'admin'
+      and u.activo
+  );
+$$;
+
+revoke execute on function public.es_admin() from public;
+grant execute on function public.es_admin() to authenticated;
 
 -- Alta automática de perfil al crear un usuario de auth.
 -- El primer administrador se promueve manualmente (ver docs/09-fase-1-setup.md).
@@ -216,7 +222,7 @@ create table public.productos_plataforma (
   )
 );
 comment on column public.productos_plataforma.capacidad_vendible_predeterminada is
-  'Puede ser menor que la física (Universal+ 6/5, CapCut 3/2).';
+  'Puede ser menor que la física (por ejemplo CapCut: 3 físicos, 2 vendibles).';
 
 -- ----------------------------------------------------------------------------
 -- producto_modalidades — qué modalidades permite cada producto
