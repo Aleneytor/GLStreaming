@@ -2704,6 +2704,19 @@ export type Database = {
       }
     }
     Functions: {
+      crear_cuenta_con_unidades: {
+        Args: {
+          p_alias?: string
+          p_capacidad: number
+          p_contrasena_cifrada?: string
+          p_login_cifrado?: string
+          p_login_fingerprint?: string
+          p_nombres_unidades?: string[]
+          p_producto_id: string
+          p_proveedor_id?: string
+        }
+        Returns: string
+      }
       es_admin: { Args: never; Returns: boolean }
     }
     Enums: {
