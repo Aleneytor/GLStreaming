@@ -131,6 +131,94 @@ export type Database = {
           },
         ]
       }
+      casos_incidencia_spotify: {
+        Row: {
+          asignacion_destino_id: string | null
+          asignacion_origen_id: string | null
+          error_no_sensible: string | null
+          estado: string
+          id: string
+          identidad_destino_id: string | null
+          identidad_origen_id: string | null
+          incidencia_id: string
+          iniciado_at: string
+          resuelto_at: string | null
+          suscripcion_id: string
+          tipo_resolucion: string | null
+        }
+        Insert: {
+          asignacion_destino_id?: string | null
+          asignacion_origen_id?: string | null
+          error_no_sensible?: string | null
+          estado?: string
+          id?: string
+          identidad_destino_id?: string | null
+          identidad_origen_id?: string | null
+          incidencia_id: string
+          iniciado_at?: string
+          resuelto_at?: string | null
+          suscripcion_id: string
+          tipo_resolucion?: string | null
+        }
+        Update: {
+          asignacion_destino_id?: string | null
+          asignacion_origen_id?: string | null
+          error_no_sensible?: string | null
+          estado?: string
+          id?: string
+          identidad_destino_id?: string | null
+          identidad_origen_id?: string | null
+          incidencia_id?: string
+          iniciado_at?: string
+          resuelto_at?: string | null
+          suscripcion_id?: string
+          tipo_resolucion?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "casos_incidencia_spotify_asignacion_destino_id_fkey"
+            columns: ["asignacion_destino_id"]
+            isOneToOne: false
+            referencedRelation: "asignaciones_inventario"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "casos_incidencia_spotify_asignacion_origen_id_fkey"
+            columns: ["asignacion_origen_id"]
+            isOneToOne: false
+            referencedRelation: "asignaciones_inventario"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "casos_incidencia_spotify_identidad_destino_id_fkey"
+            columns: ["identidad_destino_id"]
+            isOneToOne: false
+            referencedRelation: "identidades_spotify"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "casos_incidencia_spotify_identidad_origen_id_fkey"
+            columns: ["identidad_origen_id"]
+            isOneToOne: false
+            referencedRelation: "identidades_spotify"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "casos_incidencia_spotify_incidencia_id_fkey"
+            columns: ["incidencia_id"]
+            isOneToOne: false
+            referencedRelation: "incidencias_spotify"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "casos_incidencia_spotify_suscripcion_id_fkey"
+            columns: ["suscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "suscripciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categorias_gasto: {
         Row: {
           activa: boolean
@@ -439,6 +527,63 @@ export type Database = {
         }
         Relationships: []
       }
+      coberturas_spotify: {
+        Row: {
+          bloqueada_at: string | null
+          created_at: string
+          cuenta_id: string
+          desbloqueada_at: string | null
+          estado_admision: string | null
+          identidad_madre_id: string | null
+          metodo_control: string | null
+          motivo_bloqueo: string | null
+          tipo: string
+          ultima_prueba_admision_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          bloqueada_at?: string | null
+          created_at?: string
+          cuenta_id: string
+          desbloqueada_at?: string | null
+          estado_admision?: string | null
+          identidad_madre_id?: string | null
+          metodo_control?: string | null
+          motivo_bloqueo?: string | null
+          tipo: string
+          ultima_prueba_admision_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bloqueada_at?: string | null
+          created_at?: string
+          cuenta_id?: string
+          desbloqueada_at?: string | null
+          estado_admision?: string | null
+          identidad_madre_id?: string | null
+          metodo_control?: string | null
+          motivo_bloqueo?: string | null
+          tipo?: string
+          ultima_prueba_admision_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coberturas_spotify_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: true
+            referencedRelation: "cuentas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coberturas_spotify_identidad_madre_id_fkey"
+            columns: ["identidad_madre_id"]
+            isOneToOne: false
+            referencedRelation: "identidades_spotify"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contactos_comerciales: {
         Row: {
           archived_at: string | null
@@ -468,6 +613,47 @@ export type Database = {
           whatsapp_original?: string | null
         }
         Relationships: []
+      }
+      controles_pago_spotify: {
+        Row: {
+          archived_at: string | null
+          cobertura_cuenta_id: string
+          created_at: string
+          gmail_cifrado: string
+          gmail_fingerprint: string
+          id: string
+          origen: string | null
+          version_clave: number
+        }
+        Insert: {
+          archived_at?: string | null
+          cobertura_cuenta_id: string
+          created_at?: string
+          gmail_cifrado: string
+          gmail_fingerprint: string
+          id?: string
+          origen?: string | null
+          version_clave?: number
+        }
+        Update: {
+          archived_at?: string | null
+          cobertura_cuenta_id?: string
+          created_at?: string
+          gmail_cifrado?: string
+          gmail_fingerprint?: string
+          id?: string
+          origen?: string | null
+          version_clave?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controles_pago_spotify_cobertura_cuenta_id_fkey"
+            columns: ["cobertura_cuenta_id"]
+            isOneToOne: true
+            referencedRelation: "coberturas_spotify"
+            referencedColumns: ["cuenta_id"]
+          },
+        ]
       }
       credenciales_cuenta: {
         Row: {
@@ -770,6 +956,108 @@ export type Database = {
           },
         ]
       }
+      entregas_acceso: {
+        Row: {
+          asignacion_inventario_id: string | null
+          canal: string | null
+          created_at: string
+          credencial_cuenta_version: number | null
+          credencial_identidad_version: number | null
+          entregada_at: string | null
+          entregada_por_id: string | null
+          estado: string
+          fecha_renovacion_snapshot: string | null
+          id: string
+          identidad_spotify_id: string | null
+          motivo: string | null
+          motivo_revocacion: string | null
+          nombre_perfil_snapshot: string | null
+          periodo_servicio_id: string | null
+          revocada_at: string | null
+          secreto_unidad_version: number | null
+          suscripcion_id: string
+          tipo: string
+        }
+        Insert: {
+          asignacion_inventario_id?: string | null
+          canal?: string | null
+          created_at?: string
+          credencial_cuenta_version?: number | null
+          credencial_identidad_version?: number | null
+          entregada_at?: string | null
+          entregada_por_id?: string | null
+          estado?: string
+          fecha_renovacion_snapshot?: string | null
+          id?: string
+          identidad_spotify_id?: string | null
+          motivo?: string | null
+          motivo_revocacion?: string | null
+          nombre_perfil_snapshot?: string | null
+          periodo_servicio_id?: string | null
+          revocada_at?: string | null
+          secreto_unidad_version?: number | null
+          suscripcion_id: string
+          tipo: string
+        }
+        Update: {
+          asignacion_inventario_id?: string | null
+          canal?: string | null
+          created_at?: string
+          credencial_cuenta_version?: number | null
+          credencial_identidad_version?: number | null
+          entregada_at?: string | null
+          entregada_por_id?: string | null
+          estado?: string
+          fecha_renovacion_snapshot?: string | null
+          id?: string
+          identidad_spotify_id?: string | null
+          motivo?: string | null
+          motivo_revocacion?: string | null
+          nombre_perfil_snapshot?: string | null
+          periodo_servicio_id?: string | null
+          revocada_at?: string | null
+          secreto_unidad_version?: number | null
+          suscripcion_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entregas_acceso_asignacion_inventario_id_fkey"
+            columns: ["asignacion_inventario_id"]
+            isOneToOne: false
+            referencedRelation: "asignaciones_inventario"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entregas_acceso_entregada_por_id_fkey"
+            columns: ["entregada_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entregas_acceso_identidad_spotify_id_fkey"
+            columns: ["identidad_spotify_id"]
+            isOneToOne: false
+            referencedRelation: "identidades_spotify"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entregas_acceso_periodo_servicio_id_fkey"
+            columns: ["periodo_servicio_id"]
+            isOneToOne: false
+            referencedRelation: "periodos_servicio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entregas_acceso_suscripcion_id_fkey"
+            columns: ["suscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "suscripciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gastos_operativos: {
         Row: {
           categoria_id: string
@@ -969,6 +1257,123 @@ export type Database = {
           },
         ]
       }
+      identidades_spotify: {
+        Row: {
+          archived_at: string | null
+          cliente_titular_id: string | null
+          contrasena_cifrada: string | null
+          created_at: string
+          estado: string
+          id: string
+          login_cifrado: string | null
+          login_fingerprint: string | null
+          reutilizable: boolean
+          secretos_eliminados_at: string | null
+          sustituye_a_id: string | null
+          tipo_correo: string
+          titular_tipo: string
+          version_clave: number
+        }
+        Insert: {
+          archived_at?: string | null
+          cliente_titular_id?: string | null
+          contrasena_cifrada?: string | null
+          created_at?: string
+          estado?: string
+          id?: string
+          login_cifrado?: string | null
+          login_fingerprint?: string | null
+          reutilizable?: boolean
+          secretos_eliminados_at?: string | null
+          sustituye_a_id?: string | null
+          tipo_correo: string
+          titular_tipo?: string
+          version_clave?: number
+        }
+        Update: {
+          archived_at?: string | null
+          cliente_titular_id?: string | null
+          contrasena_cifrada?: string | null
+          created_at?: string
+          estado?: string
+          id?: string
+          login_cifrado?: string | null
+          login_fingerprint?: string | null
+          reutilizable?: boolean
+          secretos_eliminados_at?: string | null
+          sustituye_a_id?: string | null
+          tipo_correo?: string
+          titular_tipo?: string
+          version_clave?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identidades_spotify_cliente_titular_id_fkey"
+            columns: ["cliente_titular_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "identidades_spotify_sustituye_a_id_fkey"
+            columns: ["sustituye_a_id"]
+            isOneToOne: false
+            referencedRelation: "identidades_spotify"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incidencias_spotify: {
+        Row: {
+          cobertura_origen_cuenta_id: string
+          detectada_at: string
+          estado: string
+          finalizada_at: string | null
+          id: string
+          iniciada_por_id: string | null
+          nota_no_sensible: string | null
+          snapshot_afectados_at: string | null
+          tipo: string
+        }
+        Insert: {
+          cobertura_origen_cuenta_id: string
+          detectada_at?: string
+          estado?: string
+          finalizada_at?: string | null
+          id?: string
+          iniciada_por_id?: string | null
+          nota_no_sensible?: string | null
+          snapshot_afectados_at?: string | null
+          tipo: string
+        }
+        Update: {
+          cobertura_origen_cuenta_id?: string
+          detectada_at?: string
+          estado?: string
+          finalizada_at?: string | null
+          id?: string
+          iniciada_por_id?: string | null
+          nota_no_sensible?: string | null
+          snapshot_afectados_at?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incidencias_spotify_cobertura_origen_cuenta_id_fkey"
+            columns: ["cobertura_origen_cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "coberturas_spotify"
+            referencedColumns: ["cuenta_id"]
+          },
+          {
+            foreignKeyName: "incidencias_spotify_iniciada_por_id_fkey"
+            columns: ["iniciada_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mecanismos_entrega: {
         Row: {
           activo: boolean
@@ -1039,6 +1444,106 @@ export type Database = {
             columns: ["plataforma_id"]
             isOneToOne: false
             referencedRelation: "plataformas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operaciones_remotas: {
+        Row: {
+          asignacion_id: string | null
+          caso_incidencia_spotify_id: string | null
+          clave_idempotencia: string | null
+          cuenta_id: string | null
+          error_resumido: string | null
+          estado: string
+          estado_revocacion: string | null
+          evidencia_no_sensible: string | null
+          finalizada_at: string | null
+          finalizada_por_id: string | null
+          id: string
+          iniciada_at: string
+          iniciada_por_id: string | null
+          politica_revocacion_snapshot: string | null
+          tipo: string
+          unidad_id: string | null
+        }
+        Insert: {
+          asignacion_id?: string | null
+          caso_incidencia_spotify_id?: string | null
+          clave_idempotencia?: string | null
+          cuenta_id?: string | null
+          error_resumido?: string | null
+          estado?: string
+          estado_revocacion?: string | null
+          evidencia_no_sensible?: string | null
+          finalizada_at?: string | null
+          finalizada_por_id?: string | null
+          id?: string
+          iniciada_at?: string
+          iniciada_por_id?: string | null
+          politica_revocacion_snapshot?: string | null
+          tipo: string
+          unidad_id?: string | null
+        }
+        Update: {
+          asignacion_id?: string | null
+          caso_incidencia_spotify_id?: string | null
+          clave_idempotencia?: string | null
+          cuenta_id?: string | null
+          error_resumido?: string | null
+          estado?: string
+          estado_revocacion?: string | null
+          evidencia_no_sensible?: string | null
+          finalizada_at?: string | null
+          finalizada_por_id?: string | null
+          id?: string
+          iniciada_at?: string
+          iniciada_por_id?: string | null
+          politica_revocacion_snapshot?: string | null
+          tipo?: string
+          unidad_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operaciones_remotas_asignacion_id_fkey"
+            columns: ["asignacion_id"]
+            isOneToOne: false
+            referencedRelation: "asignaciones_inventario"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operaciones_remotas_caso_incidencia_spotify_id_fkey"
+            columns: ["caso_incidencia_spotify_id"]
+            isOneToOne: false
+            referencedRelation: "casos_incidencia_spotify"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operaciones_remotas_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operaciones_remotas_finalizada_por_id_fkey"
+            columns: ["finalizada_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operaciones_remotas_iniciada_por_id_fkey"
+            columns: ["iniciada_por_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operaciones_remotas_unidad_id_fkey"
+            columns: ["unidad_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_inventario"
             referencedColumns: ["id"]
           },
         ]
@@ -1961,6 +2466,61 @@ export type Database = {
             columns: ["usuario_id"]
             isOneToOne: true
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vinculos_identidad_spotify: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          fin: string | null
+          id: string
+          identidad_spotify_id: string
+          inicio: string
+          motivo_fin: string | null
+          suscripcion_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          fin?: string | null
+          id?: string
+          identidad_spotify_id: string
+          inicio?: string
+          motivo_fin?: string | null
+          suscripcion_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          fin?: string | null
+          id?: string
+          identidad_spotify_id?: string
+          inicio?: string
+          motivo_fin?: string | null
+          suscripcion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vinculos_identidad_spotify_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vinculos_identidad_spotify_identidad_spotify_id_fkey"
+            columns: ["identidad_spotify_id"]
+            isOneToOne: false
+            referencedRelation: "identidades_spotify"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vinculos_identidad_spotify_suscripcion_id_fkey"
+            columns: ["suscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "suscripciones"
             referencedColumns: ["id"]
           },
         ]
