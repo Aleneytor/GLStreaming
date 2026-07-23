@@ -104,6 +104,25 @@ union all select 'Ambas cuentas apuntan al mismo proveedor',
 union all select 'Las notas quedan guardadas',
        (select notas from public.cuentas where id = :'cta_prov1') = 'pagada con transferencia';
 
+-- 8. Caso real: un MISMO correo es cuenta madre de dos plataformas distintas
+--    (ej. el mismo Gmail para Netflix y para el familiar de Gemini). Debe
+--    permitirse: la unicidad solo aplica dentro de la misma plataforma.
+do $$
+declare ok boolean := true;
+begin
+  begin
+    perform public.crear_cuenta_con_unidades(
+      (select id from public.productos_plataforma where codigo = 'gemini-google-cloud'),
+      5, 'Gemini familiar', null, 'CIF_M', 'huella-compartida', 'P', null, null, 'Yo');
+    perform public.crear_cuenta_con_unidades(
+      (select id from public.productos_plataforma where codigo = 'netflix'),
+      5, 'Netflix mismo correo', null, 'CIF_M', 'huella-compartida', 'P', null, null, 'Yo');
+  exception when others then ok := false;
+  end;
+  raise notice 'Mismo correo permitido en plataformas DISTINTAS: %',
+    case when ok then 'PASS' else 'FAIL' end;
+end $$;
+
 -- ======================= COMO REVENDEDOR =======================
 reset role;
 select set_config('request.jwt.claims', json_build_object('sub', :'rev_id', 'role', 'authenticated')::text, true);

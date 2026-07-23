@@ -11,20 +11,31 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default async function NuevaCuentaPage() {
+export default async function NuevaCuentaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ plataforma?: string }>;
+}) {
   const usuario = await obtenerUsuarioActual();
   if (!esAdmin(usuario)) redirect("/dashboard");
 
+  const { plataforma: slugPlataforma } = await searchParams;
   const supabase = await createClient();
 
+  // Si se entró desde una plataforma, solo se ofrecen sus productos.
+  let consultaProductos = supabase
+    .from("productos_plataforma")
+    .select(
+      "id, nombre, codigo, regla_capacidad, capacidad_fija, capacidad_min, capacidad_max, tipo_inventario, titularidad_predeterminada, plataformas!inner(nombre, slug)",
+    )
+    .eq("activo", true);
+
+  if (slugPlataforma) {
+    consultaProductos = consultaProductos.eq("plataformas.slug", slugPlataforma);
+  }
+
   const [{ data: productos }, { data: proveedores }] = await Promise.all([
-    supabase
-      .from("productos_plataforma")
-      .select(
-        "id, nombre, codigo, regla_capacidad, capacidad_fija, capacidad_min, capacidad_max, tipo_inventario, titularidad_predeterminada, plataformas(nombre)",
-      )
-      .eq("activo", true)
-      .order("codigo"),
+    consultaProductos.order("codigo"),
     supabase
       .from("proveedores")
       .select("id, nombre_o_alias, telefono_original, tipo")
@@ -53,10 +64,10 @@ export default async function NuevaCuentaPage() {
     <div className="mx-auto max-w-xl space-y-6">
       <div>
         <Link
-          href="/inventario"
+          href={slugPlataforma ? `/inventario/${slugPlataforma}` : "/inventario"}
           className="text-sm text-neutral-500 transition hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
         >
-          ← Inventario
+          ← {opcionesProducto[0]?.plataforma ?? "Inventario"}
         </Link>
         <h1 className="mt-2 text-xl font-semibold tracking-tight">Nueva cuenta</h1>
         <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
