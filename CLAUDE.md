@@ -104,6 +104,26 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 
 ## Estado actual
 
+**Fase 3 (ciclo comercial): núcleo COMPLETO (2026-07-23).** Ya se puede vender y
+gestionar el ciclo de vida entero.
+- **Clientes** (`/clientes`): alta, edición, búsqueda, contador de servicios activos.
+- **Venta** (`vender_unidad`): crea suscripción + asignación + período en una
+  transacción. **Bloquea la cuenta** (`for update`) para que dos operadores no
+  vendan el mismo perfil, y aplica la exclusión perfil ↔ cuenta completa en ambos
+  sentidos.
+- **Ciclo de vida** (migración 0014): renovar (normal y **tardía**, que arranca en
+  la fecha real del pago), pausar/reactivar, cancelar, y **liberación en DOS PASOS**
+  — cancelar deja la unidad en `pendiente_limpieza` con una operación remota; solo
+  `confirmar_limpieza()` la devuelve al stock.
+- **Vencimientos** (`/vencimientos`): agrupa por vencidos / hoy / próximos 5 días,
+  con las acciones en línea y las **tareas de limpieza pendientes**.
+- El inventario muestra el estado real de cada perfil: cliente, badge de
+  vencimiento o botón Vender.
+
+**Falta de la Fase 3**: cobros del cliente en Bs (necesita tasas), Caja diaria,
+entrega registrada del paquete de acceso (`entregas_acceso`), reservas, y las
+subentregas de YouTube (carga de cartera) y Spotify.
+
 **Fase 2 (inventario Netflix y carga manual): COMPLETA (2026-07-23).**
 La app ya es usable para inventario: login, panel mobile-first y gestión completa
 de cuentas.
@@ -141,15 +161,13 @@ por la app (pide directo). Su única ventana: `v_mis_ventas_revendedor`.
 
 ## Lo que sigue
 
-**Fase 3 — Ciclo comercial** (ver `docs/05-roadmap.md`): clientes, ventas,
-asignación de un perfil a un cliente, períodos y renovaciones con fecha flexible,
-pausa/cancelación, y la **acción de entrega del paquete de acceso**. Es lo que
-falta para que el negocio opere de verdad en la app: hoy se puede cargar
-inventario pero **no vender**.
+**Terminar la Fase 3**: cobros del cliente (requiere tasas BCV/paralela), Caja
+diaria, registrar la entrega del paquete de acceso en `entregas_acceso`, reservas,
+y las subentregas de YouTube (carga de cartera con sesión de corte) y Spotify.
 
 Ojo con la rotación de credenciales: `credenciales_cuenta.rotada_at` ya se marca;
-en Fase 3 debe usarse para detectar entregas obsoletas y avisar a qué clientes
-activos hay que reenviarles los datos nuevos.
+falta usarlo para detectar entregas obsoletas y avisar a qué clientes activos hay
+que reenviarles los datos nuevos.
 
 Después: Fase 4 (finanzas/cierre + integración de tasas), Fase 5 (portal
 revendedor), Fase 6 (resto de plataformas + despliegue en `glcuenta.com`).

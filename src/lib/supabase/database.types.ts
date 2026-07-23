@@ -2726,6 +2726,22 @@ export type Database = {
         }
         Returns: number
       }
+      cambiar_estado_suscripcion: {
+        Args: {
+          p_motivo?: string
+          p_nuevo_estado: string
+          p_suscripcion_id: string
+        }
+        Returns: undefined
+      }
+      cancelar_y_liberar: {
+        Args: { p_motivo?: string; p_suscripcion_id: string }
+        Returns: string
+      }
+      confirmar_limpieza: {
+        Args: { p_evidencia?: string; p_operacion_id: string }
+        Returns: undefined
+      }
       crear_cuenta_con_unidades: {
         Args: {
           p_alias?: string
@@ -2746,6 +2762,10 @@ export type Database = {
         Args: { p_inicio: string; p_meses?: number }
         Returns: string
       }
+      fijar_recordatorio: {
+        Args: { p_fecha?: string; p_nota?: string; p_suscripcion_id: string }
+        Returns: undefined
+      }
       registrar_ciclo_proveedor: {
         Args: {
           p_costo_usdt: number
@@ -2753,6 +2773,16 @@ export type Database = {
           p_dia_ancla?: number
           p_inicio?: string
           p_referencia?: string
+        }
+        Returns: string
+      }
+      renovar_suscripcion: {
+        Args: {
+          p_inicio?: string
+          p_meses?: number
+          p_precio_usd?: number
+          p_suscripcion_id: string
+          p_tardia?: boolean
         }
         Returns: string
       }

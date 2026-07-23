@@ -26,6 +26,7 @@ export default async function PanelLayout({
   const items: ItemNav[] = esAdmin(usuario)
     ? [
         { href: "/dashboard", etiqueta: "Inicio", icono: "🏠" },
+        { href: "/vencimientos", etiqueta: "Vencen", icono: "🔔" },
         { href: "/inventario", etiqueta: "Inventario", icono: "📦" },
         { href: "/clientes", etiqueta: "Clientes", icono: "👥" },
         { href: "/catalogo", etiqueta: "Catálogo", icono: "⚙️" },

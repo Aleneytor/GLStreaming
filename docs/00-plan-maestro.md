@@ -113,10 +113,33 @@ para `service_role` (BYPASSRLS no sustituye al permiso), el cliente apuntaba a
 `127.0.0.1` y por eso el login fallaba desde el móvil, y el login agrupaba todos
 los errores como "contraseña incorrecta" ocultando fallos de red.
 
-**Siguiente: Fase 3 — Ciclo comercial**: clientes, ventas, asignaciones, períodos
-con fecha flexible y entrega del paquete de acceso. Hoy se puede cargar inventario
-pero **no vender**. Para retomar: `npx supabase start` y `npm run dev` (ver
-`09-fase-1-setup.md`).
+## 4.3. Fase 3 — núcleo COMPLETO (23/07/2026)
+
+Migraciones `0013..0014`. La app ya cubre el ciclo comercial completo.
+
+- **Clientes** y **venta** de un perfil o de la cuenta completa. `vender_unidad`
+  bloquea la cuenta para impedir ventas simultáneas del mismo perfil y aplica la
+  exclusión perfil ↔ cuenta completa en ambos sentidos.
+- **Ciclo de vida**: renovar (agregando período, nunca sobrescribiendo),
+  **renovación tardía** que arranca en la fecha real del pago, pausar/reactivar
+  conservando el perfil apartado, y cancelar.
+- **Liberación en dos pasos**: cancelar deja la asignación en `cierre_pendiente`
+  y la unidad en `pendiente_limpieza` con una operación remota; el perfil solo
+  vuelve al stock tras `confirmar_limpieza()`. Verificado que entremedio no se
+  puede revender.
+- **`/vencimientos`**: vencidos, hoy, próximos 5 días y tareas de limpieza, con
+  las acciones en línea. Recordatorio "Recontactar el" que no crea ingreso.
+
+Bug real encontrado al validar: `ON CONFLICT` sobre `clave_idempotencia` fallaba
+porque su índice único es **parcial**; hay que repetir el predicado
+(`where clave_idempotencia is not null`).
+
+Estado de pruebas: **112 SQL + 43 unitarias**, todas en verde.
+
+**Siguiente**: terminar la Fase 3 (cobros en Bs cuando haya tasas, Caja diaria,
+`entregas_acceso`, reservas, subentregas YouTube/Spotify) y luego la Fase 4
+(motor financiero y cierre mensual). Para retomar: `npx supabase start` y
+`npm run dev` (ver `09-fase-1-setup.md`).
 
 ## 5. Qué hacer si hay que reiniciar desde cero
 
