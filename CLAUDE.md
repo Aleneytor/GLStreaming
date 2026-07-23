@@ -64,8 +64,11 @@ npx next dev -H 0.0.0.0   # accesible desde el móvil en la red local
 
 ```
 src/app/(auth)/     Login
-src/app/(panel)/    Panel: dashboard, inventario/[slug], inventario/cuenta/[id]/…, catalogo
-src/features/       Por funcionalidad: auth/, inventario/, catalogo/ (acciones + formularios)
+src/app/(panel)/    Panel: dashboard, vencimientos, inventario/…, clientes, catalogo
+src/app/(panel)/(finanzas)/  Bloque de dinero: caja, cobros, egresos, cierre, tasas
+src/features/       Por funcionalidad: auth/, inventario/, catalogo/, ventas/, clientes/,
+                    tasas/, finanzas/ (acciones + formularios)
+src/server/         Adaptadores de fuentes externas (tasas)
 src/components/     Piezas compartidas (nav-panel)
 src/lib/            crypto.ts (cifrado), auth.ts, env.ts (Zod), supabase/ (clientes + types)
 src/domain/         Lógica pura con pruebas: fechas.ts, dinero.ts
@@ -73,7 +76,8 @@ src/middleware.ts   Sesión + protección de rutas
 supabase/migrations Migraciones numeradas 0001.. (fuente de verdad del esquema)
 supabase/seed.sql   Catálogo sintético (sin secretos)
 supabase/tests/     Suites SQL: rls, alta_cuenta, editar_cuenta, editar_unidades,
-                    ciclo_proveedor, criterios_fase2
+                    ciclo_proveedor, criterios_fase2, venta_unidad, ciclo_vida,
+                    finanzas
 scripts/            crear-usuarios-dev.mjs
 tests/unit/         Pruebas Vitest
 docs/               Especificación de dominio (ver más abajo)
@@ -109,6 +113,42 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 
 ## Estado actual
 
+**Fase 4 (motor financiero): COMPLETA (2026-07-23).** Migraciones `0016..0019`.
+El negocio ya se cuadra dentro de la app, en las tres monedas.
+- **Tasas** (`/tasas`): BCV (API propia) y paralela (Kuanto, solo lectura con la
+  clave pública). Validación defensiva: rechaza saltos > 50 % frente a la última
+  conocida, exige fecha de vigencia, guarda idempotentemente y **nunca inventa un
+  valor** si la fuente falla (`DEC-98`).
+- **Cobros** (`/cobros`): `registrar_cobro_cliente()` cobra
+  `round_half_up(precio_usd × BCV, 2)`, **congela BCV y paralela** en el período y
+  en el pago, y rechaza abonos (no existen pagos parciales). El reverso es una
+  contrapartida con las mismas tasas: no borra el original y devuelve el período
+  a la bandeja de por cobrar.
+- **Egresos** (`/egresos`): `registrar_renovacion_y_pago()` — UN solo importe crea
+  el ciclo nuevo (heredando el día ancla) y su único pago. Costo cero no inventa
+  salida de Caja; reintentar no duplica. Gastos operativos en USDT valorizados a
+  paralela, con reversos.
+- **Caja** (`/caja`): día de negocio en `America/Caracas` con los tres hechos
+  separados — dinero entrado/salido, ventas del día y resultado devengado.
+- **Cierre** (`/cierre`): `resumen_financiero(inicio, fin)` es **la misma función
+  para el día y para el mes**, de modo que `suma(días) = mes` se cumple por
+  construcción. Borrador → cierre → **reapertura versionada con motivo auditado**
+  (`DEC-99`).
+
+⚠️ **`revalidada_at` no es decorativo.** Como el guardado de tasas es idempotente,
+una BCV publicada el viernes no crea fila nueva el lunes; sin esta columna el
+control de antigüedad la daría por rancia y **bloquearía un cobro válido**. La
+antigüedad que decide es `coalesce(revalidada_at, obtenida_at)`, en SQL
+(`tasa_utilizable`) y en la app (`confirmadaAt`).
+
+Estado de pruebas al cerrar la fase: **156 comprobaciones SQL + 59 unitarias**,
+todas en verde.
+
+**Falta de la Fase 4** (deliberado, no es un bug): el desglose fino de los
+días-unidad ocupados sin período pagado — cortesía, pausa, reserva, bloqueo y
+saneamiento. Esas columnas de `cierres_mensuales` quedan en cero a propósito. Sí
+se calculan capacidad, ocupados, pagados, ociosos y **costo ocioso**.
+
 **Fase 3 (ciclo comercial): núcleo COMPLETO (2026-07-23).** Ya se puede vender y
 gestionar el ciclo de vida entero.
 - **Clientes** (`/clientes`): alta, edición, búsqueda, contador de servicios activos.
@@ -134,8 +174,8 @@ gestionar el ciclo de vida entero.
   `createAdminClient()`, que él no puede leer por RLS.
 - El inventario se ordena por **uso** (clientes activos), no alfabéticamente.
 
-**Falta de la Fase 3**: cobros del cliente en Bs (necesita tasas), Caja diaria,
-reservas, y las subentregas de YouTube (carga de cartera) y Spotify.
+**Falta de la Fase 3**: reservas y las subentregas de YouTube (carga de cartera)
+y Spotify. Los cobros en Bs y la Caja diaria se resolvieron en la Fase 4.
 
 **Fase 2 (inventario Netflix y carga manual): COMPLETA (2026-07-23).**
 La app ya es usable para inventario: login, panel mobile-first y gestión completa
@@ -174,16 +214,18 @@ por la app (pide directo). Su única ventana: `v_mis_ventas_revendedor`.
 
 ## Lo que sigue
 
-**Terminar la Fase 3**: cobros del cliente (requiere tasas BCV/paralela), Caja
-diaria, registrar la entrega del paquete de acceso en `entregas_acceso`, reservas,
-y las subentregas de YouTube (carga de cartera con sesión de corte) y Spotify.
+**Cerrar los flecos de la Fase 3**: reservas y las subentregas de YouTube (carga
+de cartera con sesión de corte) y Spotify.
+
+**Flecos de la Fase 4**: desglose de días-unidad por estado (cortesía, pausa,
+reserva, bloqueo, saneamiento) y dashboard por plataforma/producto/modalidad.
 
 Ojo con la rotación de credenciales: `credenciales_cuenta.rotada_at` ya se marca;
 falta usarlo para detectar entregas obsoletas y avisar a qué clientes activos hay
 que reenviarles los datos nuevos.
 
-Después: Fase 4 (finanzas/cierre + integración de tasas), Fase 5 (portal
-revendedor), Fase 6 (resto de plataformas + despliegue en `glcuenta.com`).
+Después: Fase 5 (portal revendedor), Fase 6 (resto de plataformas + despliegue en
+`glcuenta.com`).
 
 **Pendiente transversal**: la app es mobile-first ✓ pero la PWA está a medias.
 Falta para que sea instalable: iconos 192/512/maskable en `/public` y un service
@@ -196,9 +238,11 @@ propio teléfono). Si cambia la red, hay que actualizarlas — ver
 
 ## Pendientes externos (fuera del código)
 
-- **Kuanto (tasa paralela): secreto expuesto SIN rotar** en su repo público. Hasta
-  rotarlo, la integración usa **datos simulados**. Importa antes de Fase 4. Ver
-  `docs/07-integracion-tasas.md`.
+- **Kuanto (tasa paralela): secreto expuesto SIN rotar y NO se rotará** (`DEC-98`,
+  decisión del usuario). GL Streaming solo **lee** con la clave pública y se
+  defiende por su lado (validación de rango, antigüedad, idempotencia). Si faltan
+  `KUANTO_SUPABASE_URL` / `KUANTO_SUPABASE_PUBLISHABLE_KEY` en `.env.local`, la
+  paralela usa un valor **simulado y marcado como tal** en la UI.
 - Endurecer el scraper BCV (TLS, rechazar respuesta sin fecha) antes de finanzas.
 - Despliegue: nada al VPS ni a `glcuenta.com` hasta Fase 6.
 
@@ -213,5 +257,5 @@ propio teléfono). Si cambia la red, hay que actualizarlas — ver
 - `docs/plataformas/` — ficha por plataforma + arquetipos.
 
 ---
-*Última actualización: 2026-07-23 (núcleo de Fase 3 cerrado). Actualiza este
+*Última actualización: 2026-07-23 (Fase 4 cerrada: motor financiero). Actualiza este
 archivo al terminar cada sesión: estado, lo que sigue y cualquier decisión nueva.*

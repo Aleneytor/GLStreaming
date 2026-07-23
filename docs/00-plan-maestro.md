@@ -147,11 +147,50 @@ comparan deltas y apuntan a sus propias filas.
 
 Estado de pruebas: **119 SQL + 43 unitarias**, todas en verde.
 
-**Siguiente**: lo que resta de la Fase 3 depende de las tasas de cambio (cobros
-en Bs y Caja diaria), así que enlaza con la **Fase 4** — y esta exige antes
-**rotar el secreto expuesto de Kuanto**. Quedan también reservas y las
-subentregas de YouTube/Spotify. Para retomar: `npx supabase start` y
-`npm run dev` (ver `09-fase-1-setup.md`).
+**Siguiente**: lo que restaba de la Fase 3 (cobros en Bs y Caja diaria) dependía
+de las tasas, así que se resolvió dentro de la Fase 4. Quedan reservas y las
+subentregas de YouTube/Spotify.
+
+## 4.4. Fase 4 — motor financiero COMPLETO (23/07/2026)
+
+Migraciones `0016..0019`. El negocio ya se puede cuadrar dentro de la app.
+
+- **Tasas** (`/tasas`): BCV desde la API propia y paralela desde Kuanto, con
+  validación defensiva (rechaza saltos > 50 % frente a la última conocida, exige
+  fecha de vigencia, guarda idempotentemente y nunca inventa un valor si la
+  fuente falla). Ver `DEC-98`.
+- **Cobros** (`/cobros`): `registrar_cobro_cliente()` calcula
+  `round_half_up(precio_usd × BCV, 2)`, **congela BCV y paralela** en el período
+  y en el pago, rechaza abonos y rechaza tasas sin confirmar en 24 h. El reverso
+  es una contrapartida con las mismas tasas: no borra el original y devuelve el
+  período a la bandeja de por cobrar.
+- **Egresos** (`/egresos`): `registrar_renovacion_y_pago()` — un solo importe de
+  negocio crea el ciclo nuevo (heredando el día ancla) y su único pago. Costo
+  cero no inventa salida de Caja; reintentar no duplica. Gastos operativos en
+  USDT valorizados a paralela, con reversos.
+- **Caja** (`/caja`): día de negocio en `America/Caracas`, con los tres hechos
+  separados — dinero que entró/salió, ventas del día y resultado devengado.
+- **Cierre** (`/cierre`): `resumen_financiero(inicio, fin)` es **la misma función
+  para el día y para el mes**, así la reconciliación `suma(días) = mes` se cumple
+  por construcción en vez de por una segunda implementación. Borrador, cierre y
+  **reapertura versionada auditada** (`DEC-99`).
+
+Decisiones nuevas: `DEC-99` (política de cierre tardío) y `DEC-100` (frescura de
+tasas y `revalidada_at`).
+
+Detalle de diseño que costó encontrar: como el guardado de tasas es idempotente,
+una BCV publicada el viernes no genera fila nueva el lunes y el control de
+antigüedad la habría dado por rancia, **bloqueando un cobro válido**. Por eso
+existe `revalidada_at`.
+
+Límite conocido y deliberado: el desglose fino de los días-unidad ocupados sin
+período pagado (cortesía / pausa / reserva / bloqueo / saneamiento) todavía no se
+calcula; esas columnas de `cierres_mensuales` quedan en cero a propósito. Sí se
+calculan capacidad, ocupados, pagados, ociosos y **costo ocioso**.
+
+Estado de pruebas: **156 SQL + 59 unitarias**, todas en verde.
+
+Para retomar: `npx supabase start` y `npm run dev` (ver `09-fase-1-setup.md`).
 
 ## 5. Qué hacer si hay que reiniciar desde cero
 
