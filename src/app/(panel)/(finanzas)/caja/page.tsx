@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { BotonDeshacerCobro } from "@/features/finanzas/boton-deshacer-cobro";
 
 export const dynamic = "force-dynamic";
 
@@ -228,6 +229,14 @@ export default async function CajaPage({
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">
                         {Number(m.monto_usdt).toFixed(2)} USDT
                       </p>
+                    )}
+                    {m.tipo === "cobro_cliente" && m.movimiento_id && (
+                      <div className="mt-1">
+                        <BotonDeshacerCobro
+                          pagoId={m.movimiento_id}
+                          volverA={`/caja?dia=${dia}`}
+                        />
+                      </div>
                     )}
                   </div>
                 </li>
