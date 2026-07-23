@@ -23,8 +23,18 @@ export default function LoginPage() {
     });
 
     if (error) {
-      // Mensaje genérico: no revelamos si el correo existe o no.
-      setError("Correo o contraseña incorrectos.");
+      // Se distingue un fallo de RED de una credencial inválida: agrupar todo
+      // como "contraseña incorrecta" oculta problemas de configuración y hace
+      // perder tiempo diagnosticando.
+      const fallaDeRed =
+        error.name === "AuthRetryableFetchError" || !error.status || error.status >= 500;
+
+      setError(
+        fallaDeRed
+          ? `No se pudo conectar con el servidor. Revisa la conexión o la URL de Supabase. (${error.message})`
+          : // Para credenciales: mensaje genérico, no revelamos si el correo existe.
+            "Correo o contraseña incorrectos.",
+      );
       setCargando(false);
       return;
     }

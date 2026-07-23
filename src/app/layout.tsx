@@ -28,8 +28,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // suppressHydrationWarning: las extensiones del navegador (asistentes, VPN,
+  // gestores de contraseñas) suelen inyectar atributos en <html> antes de que
+  // React hidrate; eso provoca un falso desajuste que no afecta a la app.
   return (
-    <html lang="es" className="dark">
+    <html lang="es" className="dark" suppressHydrationWarning>
       <body className="min-h-screen bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
         {children}
       </body>

@@ -58,6 +58,26 @@ npm run dev
 #    Abre http://localhost:3000
 ```
 
+## Probar desde el teléfono (mobile-first)
+
+La app es mobile-first, así que conviene probarla en un móvil real, no solo en el
+navegador de escritorio.
+
+1. El PC y el teléfono deben estar en la **misma red Wi-Fi**.
+2. Averigua la IP local del PC:
+   `Get-NetIPAddress -AddressFamily IPv4 | Where-Object InterfaceAlias -eq 'Wi-Fi'`
+3. En `.env.local`, `NEXT_PUBLIC_SUPABASE_URL` **debe apuntar a esa IP**, no a
+   `127.0.0.1`. Desde el teléfono, `127.0.0.1` es el teléfono mismo: el login
+   fallaría con un error de red (Supabase local ya escucha en `0.0.0.0`).
+4. Añade esa IP a `allowedDevOrigins` en `next.config.ts`.
+5. Arranca con `npx next dev -H 0.0.0.0` y abre `http://<IP>:3000` en el móvil.
+6. Tras cambiar `.env.local` hay que **reiniciar** el servidor de desarrollo, y
+   conviene recargar sin caché en el móvil (puede tener el bundle viejo).
+
+> La IP cambia si te reconectas a otra red o el router reasigna DHCP; entonces
+> hay que actualizar los pasos 3 y 4. En producción esto desaparece: será el
+> dominio `glcuenta.com` por HTTPS.
+
 ## Verificación rápida
 
 - `npx supabase start` deja disponible **Supabase Studio** (panel visual) en
