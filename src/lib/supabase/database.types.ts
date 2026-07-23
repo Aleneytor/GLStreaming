@@ -2717,6 +2717,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      actualizar_unidades: {
+        Args: {
+          p_cuenta_id: string
+          p_nombres: string[]
+          p_pins_cifrados: string[]
+          p_unidad_ids: string[]
+        }
+        Returns: number
+      }
       crear_cuenta_con_unidades: {
         Args: {
           p_alias?: string

@@ -143,12 +143,22 @@ export default async function PlataformaPage({
                           vendible/física
                         </p>
                       </div>
-                      <Link
-                        href={`/inventario/cuenta/${c.id}/editar`}
-                        className="shrink-0 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm transition active:scale-[0.98] dark:border-neutral-700"
-                      >
-                        Editar
-                      </Link>
+                      <div className="flex shrink-0 gap-2">
+                        {unidades.length > 0 && (
+                          <Link
+                            href={`/inventario/cuenta/${c.id}/perfiles`}
+                            className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm transition active:scale-[0.98] dark:border-neutral-700"
+                          >
+                            Perfiles
+                          </Link>
+                        )}
+                        <Link
+                          href={`/inventario/cuenta/${c.id}/editar`}
+                          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm transition active:scale-[0.98] dark:border-neutral-700"
+                        >
+                          Editar
+                        </Link>
+                      </div>
                     </div>
 
                     <div className="space-y-3 border-b border-neutral-200 p-4 dark:border-neutral-800">
@@ -212,6 +222,7 @@ export default async function PlataformaPage({
                               </span>
                               <span className="truncate">{u.nombre_visible}</span>
                             </span>
+                            {/* El estado real (vendido/libre) llega con la Fase 3. */}
                             <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                               Disponible
                             </span>

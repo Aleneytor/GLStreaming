@@ -182,8 +182,65 @@ export async function actualizarCuentaAction(
   redirect("/inventario");
 }
 
+/**
+ * Guarda el nombre y el PIN de los perfiles de una cuenta.
+ * Los PIN se cifran aquí; vacío significa "no cambiar".
+ */
+export async function actualizarUnidadesAction(
+  _prev: EstadoAlta,
+  formData: FormData,
+): Promise<EstadoAlta> {
+  const cuentaId = String(formData.get("cuenta_id") ?? "");
+  if (!cuentaId) return { error: "Falta la cuenta." };
+
+  const usuario = await obtenerUsuarioActual();
+  if (!esAdmin(usuario)) return { error: "No autorizado." };
+
+  // Los campos vienen como nombre_<id> y pin_<id>.
+  const ids: string[] = [];
+  const nombres: string[] = [];
+  const pins: (string | null)[] = [];
+
+  for (const [clave, valor] of formData.entries()) {
+    if (!clave.startsWith("nombre_")) continue;
+    const id = clave.slice("nombre_".length);
+    const pinPlano = String(formData.get(`pin_${id}`) ?? "").trim();
+
+    ids.push(id);
+    nombres.push(String(valor));
+    pins.push(pinPlano ? cifrarSecreto(pinPlano) : null);
+  }
+
+  if (ids.length === 0) return { error: "No hay perfiles que guardar." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("actualizar_unidades", {
+    p_cuenta_id: cuentaId,
+    p_unidad_ids: ids,
+    p_nombres: nombres,
+    p_pins_cifrados: pins,
+  });
+  if (error) return { error: error.message };
+
+  const huboPines = pins.some((p) => p !== null);
+  if (huboPines) {
+    await supabase.from("eventos_auditoria").insert({
+      actor_id: usuario!.id,
+      accion: "rotar_pin",
+      entidad: "cuentas",
+      entidad_id: cuentaId,
+      resultado: "ok",
+    });
+  }
+
+  revalidatePath("/inventario");
+  redirect("/inventario");
+}
+
+export type PerfilRevelado = { nombre: string; pin: string | null };
+
 export type CredencialesReveladas =
-  | { ok: true; correo: string; contrasena: string }
+  | { ok: true; correo: string; contrasena: string; perfiles: PerfilRevelado[] }
   | { ok: false; error: string };
 
 /**
@@ -228,6 +285,27 @@ export async function revelarCredencialesAction(
     };
   }
 
+  // Paquete de acceso completo: además del correo/contraseña, el nombre de
+  // perfil y su PIN, que es lo que se le entrega al cliente.
+  const { data: unidades } = await supabase
+    .from("unidades_inventario")
+    .select("numero_slot, nombre_visible, secretos_unidad ( pin_cifrado )")
+    .eq("cuenta_id", cuentaId)
+    .order("numero_slot");
+
+  const perfiles: PerfilRevelado[] = (unidades ?? []).map((u) => {
+    const secreto = Array.isArray(u.secretos_unidad)
+      ? u.secretos_unidad[0]
+      : u.secretos_unidad;
+    let pin: string | null = null;
+    try {
+      pin = secreto?.pin_cifrado ? descifrarSecreto(secreto.pin_cifrado) : null;
+    } catch {
+      pin = null;
+    }
+    return { nombre: u.nombre_visible ?? `Perfil ${u.numero_slot}`, pin };
+  });
+
   // Auditoría: se registra el acceso, nunca el valor revelado.
   await supabase.from("eventos_auditoria").insert({
     actor_id: usuario!.id,
@@ -237,5 +315,5 @@ export async function revelarCredencialesAction(
     resultado: "ok",
   });
 
-  return { ok: true, correo, contrasena };
+  return { ok: true, correo, contrasena, perfiles };
 }

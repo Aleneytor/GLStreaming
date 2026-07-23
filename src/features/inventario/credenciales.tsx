@@ -40,7 +40,11 @@ function Campo({ etiqueta, valor }: { etiqueta: string; valor: string }) {
  * Los valores solo viven en el estado de este componente y se ocultan solos.
  */
 export function BotonCredenciales({ cuentaId }: { cuentaId: string }) {
-  const [datos, setDatos] = useState<{ correo: string; contrasena: string } | null>(null);
+  const [datos, setDatos] = useState<{
+    correo: string;
+    contrasena: string;
+    perfiles: { nombre: string; pin: string | null }[];
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [restante, setRestante] = useState(SEGUNDOS_VISIBLE);
   const [pendiente, iniciar] = useTransition();
@@ -65,7 +69,8 @@ export function BotonCredenciales({ cuentaId }: { cuentaId: string }) {
     setError(null);
     iniciar(async () => {
       const r = await revelarCredencialesAction(cuentaId);
-      if (r.ok) setDatos({ correo: r.correo, contrasena: r.contrasena });
+      if (r.ok)
+        setDatos({ correo: r.correo, contrasena: r.contrasena, perfiles: r.perfiles });
       else setError(r.error);
     });
   }
@@ -75,6 +80,26 @@ export function BotonCredenciales({ cuentaId }: { cuentaId: string }) {
       <div className="space-y-2">
         <Campo etiqueta="Correo" valor={datos.correo} />
         <Campo etiqueta="Contraseña" valor={datos.contrasena} />
+
+        {datos.perfiles.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              Perfiles y PIN
+            </p>
+            {datos.perfiles.map((p, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between gap-3 rounded-lg bg-neutral-100 px-3 py-1.5 text-sm dark:bg-neutral-800"
+              >
+                <span className="truncate">{p.nombre}</span>
+                <span className="shrink-0 font-mono">
+                  {p.pin ?? <span className="text-neutral-400">sin PIN</span>}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
             Se ocultan en {restante}s · acceso registrado
