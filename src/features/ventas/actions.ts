@@ -9,7 +9,9 @@ import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 export type EstadoVenta = { error: string } | null;
 
 const esquema = z.object({
-  cliente_id: z.string().uuid("Elige un cliente."),
+  cliente_nombre: z.string().trim().min(1, "Indica el nombre del cliente."),
+  cliente_whatsapp: z.string().trim().max(40).optional().or(z.literal("")),
+  nombre_perfil: z.string().trim().max(80).optional().or(z.literal("")),
   cuenta_id: z.string().uuid(),
   modalidad_id: z.string().uuid("Elige la modalidad."),
   unidad_id: z.string().uuid().optional().or(z.literal("")),
@@ -33,7 +35,9 @@ export async function venderAction(
   if (!esAdmin(usuario)) return { error: "No autorizado." };
 
   const parsed = esquema.safeParse({
-    cliente_id: formData.get("cliente_id"),
+    cliente_nombre: formData.get("cliente_nombre"),
+    cliente_whatsapp: formData.get("cliente_whatsapp") ?? "",
+    nombre_perfil: formData.get("nombre_perfil") ?? "",
     cuenta_id: formData.get("cuenta_id"),
     modalidad_id: formData.get("modalidad_id"),
     unidad_id: formData.get("unidad_id") ?? "",
@@ -58,10 +62,13 @@ export async function venderAction(
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("vender_unidad", {
-    p_cliente_id: d.cliente_id,
     p_cuenta_id: d.cuenta_id,
     p_modalidad_id: d.modalidad_id,
     p_unidad_id: d.unidad_id || null,
+    p_cliente_id: null,
+    p_cliente_nombre: d.cliente_nombre,
+    p_cliente_whatsapp: d.cliente_whatsapp || null,
+    p_nombre_perfil: d.nombre_perfil || null,
     p_precio_usd: precio,
     p_inicio: d.inicio,
     p_cantidad_periodos: d.cantidad_periodos,

@@ -7,10 +7,15 @@ import { venderAction, type EstadoVenta } from "./actions";
 const campo =
   "w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-base outline-none transition focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-neutral-300";
 
+/**
+ * Venta en un solo paso: el cliente se escribe aquí mismo (se crea si es nuevo)
+ * y el perfil toma su nombre, igual que en la hoja de cálculo del negocio.
+ */
 export function FormVenta({
   cuentaId,
   unidadId,
   etiquetaRecurso,
+  nombrePerfilActual,
   modalidades,
   clientes,
   vendedores,
@@ -19,8 +24,9 @@ export function FormVenta({
   cuentaId: string;
   unidadId: string | null;
   etiquetaRecurso: string;
+  nombrePerfilActual: string | null;
   modalidades: { id: string; nombre: string }[];
-  clientes: { id: string; nombre: string }[];
+  clientes: { id: string; nombre: string; whatsapp: string | null }[];
   vendedores: { id: string; nombre: string }[];
   volverA: string;
 }) {
@@ -29,7 +35,22 @@ export function FormVenta({
     null,
   );
   const hoy = new Date().toISOString().slice(0, 10);
-  const [meses, setMeses] = useState(1);
+
+  const [cliente, setCliente] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [perfilTocado, setPerfilTocado] = useState(false);
+  const [perfil, setPerfil] = useState(nombrePerfilActual ?? "");
+
+  // Al escribir un cliente que ya existe, se autocompleta su teléfono.
+  function onCliente(valor: string) {
+    setCliente(valor);
+    const existente = clientes.find(
+      (c) => c.nombre.toLowerCase() === valor.trim().toLowerCase(),
+    );
+    if (existente?.whatsapp) setWhatsapp(existente.whatsapp);
+    // El perfil sigue al cliente mientras no se edite a mano.
+    if (!perfilTocado) setPerfil(valor);
+  }
 
   return (
     <form action={action} className="space-y-5">
@@ -41,64 +62,73 @@ export function FormVenta({
         Vendiendo: <strong>{etiquetaRecurso}</strong>
       </div>
 
-      <div>
-        <label htmlFor="cliente_id" className="mb-1.5 block text-sm font-medium">
-          Cliente
-        </label>
-        <select id="cliente_id" name="cliente_id" required className={campo}>
-          <option value="">Elige un cliente…</option>
-          {clientes.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nombre}
-            </option>
-          ))}
-        </select>
-        {clientes.length === 0 && (
-          <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">
-            No hay clientes todavía.{" "}
-            <Link href="/clientes" className="underline">
-              Crea uno primero
-            </Link>
-            .
+      {/* --- Cliente (se crea si es nuevo) --- */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="cliente_nombre" className="mb-1.5 block text-sm font-medium">
+            Cliente
+          </label>
+          <input
+            id="cliente_nombre"
+            name="cliente_nombre"
+            required
+            list="lista-clientes"
+            value={cliente}
+            onChange={(e) => onCliente(e.target.value)}
+            placeholder="Nombre y apellido"
+            className={campo}
+          />
+          <datalist id="lista-clientes">
+            {clientes.map((c) => (
+              <option key={c.id} value={c.nombre} />
+            ))}
+          </datalist>
+          <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+            Si es nuevo se crea solo; si ya existe, se reutiliza.
           </p>
-        )}
+        </div>
+
+        <div>
+          <label htmlFor="cliente_whatsapp" className="mb-1.5 block text-sm font-medium">
+            WhatsApp
+          </label>
+          <input
+            id="cliente_whatsapp"
+            name="cliente_whatsapp"
+            inputMode="tel"
+            value={whatsapp}
+            onChange={(e) => setWhatsapp(e.target.value)}
+            placeholder="+58 412-0000000"
+            className={campo}
+          />
+        </div>
       </div>
 
-      <div>
-        <label htmlFor="vendedor_id" className="mb-1.5 block text-sm font-medium">
-          Vendida por
-        </label>
-        <select id="vendedor_id" name="vendedor_id" className={campo}>
-          <option value="">Yo (venta directa)</option>
-          {vendedores.map((v) => (
-            <option key={v.id} value={v.id}>
-              {v.nombre}
-            </option>
-          ))}
-        </select>
-        <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-          Si la vendió un revendedor, elígelo aquí. Se gestionan en{" "}
-          <Link href="/catalogo?ver=vendedores" className="underline">
-            Catálogo → Vendedores
-          </Link>
-          .
-        </p>
-      </div>
+      {/* --- Nombre del perfil --- */}
+      {unidadId && (
+        <div>
+          <label htmlFor="nombre_perfil" className="mb-1.5 block text-sm font-medium">
+            Nombre del perfil
+          </label>
+          <input
+            id="nombre_perfil"
+            name="nombre_perfil"
+            value={perfil}
+            onChange={(e) => {
+              setPerfilTocado(true);
+              setPerfil(e.target.value);
+            }}
+            placeholder="(el del cliente)"
+            className={campo}
+          />
+          <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+            Se pone solo el nombre del cliente; cámbialo si en la plataforma usas otro.
+          </p>
+        </div>
+      )}
 
-      <div>
-        <label htmlFor="modalidad_id" className="mb-1.5 block text-sm font-medium">
-          Modalidad
-        </label>
-        <select id="modalidad_id" name="modalidad_id" required className={campo}>
-          {modalidades.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.nombre}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
+      {/* --- Precio, meses, inicio --- */}
+      <div className="grid grid-cols-3 gap-4">
         <div>
           <label htmlFor="precio_usd" className="mb-1.5 block text-sm font-medium">
             Precio (USD)
@@ -106,9 +136,8 @@ export function FormVenta({
           <input
             id="precio_usd"
             name="precio_usd"
-            type="text"
             inputMode="decimal"
-            placeholder="ej. 3.50"
+            placeholder="5.50"
             className={campo}
           />
         </div>
@@ -116,13 +145,7 @@ export function FormVenta({
           <label htmlFor="cantidad_periodos" className="mb-1.5 block text-sm font-medium">
             Meses
           </label>
-          <select
-            id="cantidad_periodos"
-            name="cantidad_periodos"
-            value={meses}
-            onChange={(e) => setMeses(Number(e.target.value))}
-            className={campo}
-          >
+          <select id="cantidad_periodos" name="cantidad_periodos" defaultValue={1} className={campo}>
             {[1, 3, 6, 12].map((m) => (
               <option key={m} value={m}>
                 {m}
@@ -130,30 +153,54 @@ export function FormVenta({
             ))}
           </select>
         </div>
+        <div>
+          <label htmlFor="inicio" className="mb-1.5 block text-sm font-medium">
+            Inicio
+          </label>
+          <input
+            id="inicio"
+            name="inicio"
+            type="date"
+            required
+            defaultValue={hoy}
+            className={campo}
+          />
+        </div>
       </div>
 
-      <div>
-        <label htmlFor="inicio" className="mb-1.5 block text-sm font-medium">
-          Inicio del servicio
-        </label>
-        <input
-          id="inicio"
-          name="inicio"
-          type="date"
-          required
-          defaultValue={hoy}
-          className={campo}
-        />
-        <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-          La fecha de renovación se calcula por mes calendario. Es una fecha de
-          contacto flexible: llegado el día el cliente puede usar y pagar, y vencer
-          no corta ni libera nada automáticamente.
-        </p>
+      {/* --- Modalidad y vendedor --- */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="modalidad_id" className="mb-1.5 block text-sm font-medium">
+            Modalidad
+          </label>
+          <select id="modalidad_id" name="modalidad_id" required className={campo}>
+            {modalidades.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="vendedor_id" className="mb-1.5 block text-sm font-medium">
+            Vendida por
+          </label>
+          <select id="vendedor_id" name="vendedor_id" className={campo}>
+            <option value="">Yo (venta directa)</option>
+            {vendedores.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <p className="rounded-lg bg-neutral-100 px-3 py-2 text-xs text-neutral-600 dark:bg-neutral-900 dark:text-neutral-400">
-        El precio se congela en USD. El cobro en bolívares, con sus tasas BCV y
-        paralela, se registrará cuando esté la integración de tasas.
+        La fecha de renovación se calcula por mes calendario. El precio se congela en
+        USD; el cobro en bolívares llegará con la integración de tasas.
       </p>
 
       {estado?.error && (
@@ -168,7 +215,7 @@ export function FormVenta({
       <div className="flex gap-3">
         <button
           type="submit"
-          disabled={pendiente || clientes.length === 0}
+          disabled={pendiente}
           className="flex-1 rounded-lg bg-neutral-900 px-4 py-3 text-base font-medium text-white transition active:scale-[0.99] disabled:opacity-60 dark:bg-white dark:text-neutral-900"
         >
           {pendiente ? "Registrando…" : "Registrar venta"}

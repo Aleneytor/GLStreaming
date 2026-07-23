@@ -298,8 +298,15 @@ export default async function PlataformaPage({
                                   <span className="w-6 shrink-0 tabular-nums text-neutral-400">
                                     {u.numero_slot}
                                   </span>
-                                  <span className="truncate">
-                                    {venta ? venta.cliente : u.nombre_visible}
+                                  <span className="min-w-0">
+                                    <span className="block truncate">
+                                      {u.nombre_visible}
+                                    </span>
+                                    {venta && (
+                                      <span className="block truncate text-xs text-neutral-500 dark:text-neutral-400">
+                                        {venta.cliente}
+                                      </span>
+                                    )}
                                   </span>
                                 </span>
 

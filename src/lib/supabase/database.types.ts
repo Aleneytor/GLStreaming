@@ -2798,11 +2798,14 @@ export type Database = {
       vender_unidad: {
         Args: {
           p_cantidad_periodos?: number
-          p_cliente_id: string
-          p_cuenta_id: string
+          p_cliente_id?: string
+          p_cliente_nombre?: string
+          p_cliente_whatsapp?: string
+          p_cuenta_id?: string
           p_fecha_venta?: string
           p_inicio?: string
-          p_modalidad_id: string
+          p_modalidad_id?: string
+          p_nombre_perfil?: string
           p_precio_usd?: number
           p_unidad_id?: string
           p_vendedor_id?: string

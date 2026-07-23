@@ -52,7 +52,7 @@ export default async function NuevaVentaPage({
   const [{ data: clientes }, { data: vendedores }] = await Promise.all([
     supabase
       .from("clientes")
-      .select("id, nombre")
+      .select("id, nombre, whatsapp_original")
       .is("archived_at", null)
       .order("nombre"),
     supabase
@@ -63,13 +63,15 @@ export default async function NuevaVentaPage({
   ]);
 
   let etiquetaUnidad = "cuenta completa";
+  let nombrePerfilActual: string | null = null;
   if (unidadId) {
     const { data: u } = await supabase
       .from("unidades_inventario")
       .select("numero_slot, nombre_visible")
       .eq("id", unidadId)
       .maybeSingle();
-    etiquetaUnidad = u ? (u.nombre_visible ?? `Perfil ${u.numero_slot}`) : "perfil";
+    etiquetaUnidad = u ? `perfil ${u.numero_slot}` : "perfil";
+    nombrePerfilActual = u?.nombre_visible ?? null;
   }
 
   const volverA = plataforma?.slug ? `/inventario/${plataforma.slug}` : "/inventario";
@@ -96,8 +98,13 @@ export default async function NuevaVentaPage({
           cuentaId={cuenta.id}
           unidadId={unidadId ?? null}
           etiquetaRecurso={etiqueta}
+          nombrePerfilActual={nombrePerfilActual}
           modalidades={modalidades}
-          clientes={clientes ?? []}
+          clientes={(clientes ?? []).map((c) => ({
+            id: c.id,
+            nombre: c.nombre,
+            whatsapp: c.whatsapp_original,
+          }))}
           vendedores={vendedores ?? []}
           volverA={volverA}
         />

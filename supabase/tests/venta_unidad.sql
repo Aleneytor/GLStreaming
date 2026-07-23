@@ -151,6 +151,42 @@ begin
   raise notice 'Rechaza una modalidad ajena al producto: %', case when ok then 'PASS' else 'FAIL' end;
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- 7. Venta en UN PASO: crea el cliente y nombra el perfil sobre la marcha
+-- ---------------------------------------------------------------------------
+select id as u3 from public.unidades_inventario where cuenta_id = :'cta' and numero_slot = 3 \gset
+
+select public.vender_unidad(
+  p_cuenta_id => :'cta', p_modalidad_id => :'m_perfil', p_unidad_id => :'u3',
+  p_cliente_nombre => 'Luis Rodriguez', p_cliente_whatsapp => '+58 414-0377887',
+  p_precio_usd => 5.50, p_inicio => '2026-07-15'::date
+) as susc_luis \gset
+
+select 'Crea el cliente nuevo sobre la marcha' as prueba,
+       (select count(*) from public.clientes where nombre = 'Luis Rodriguez') = 1 as pass
+union all select 'Guarda su WhatsApp',
+       (select whatsapp_original from public.clientes where nombre = 'Luis Rodriguez') = '+58 414-0377887'
+union all select 'El perfil toma el nombre del cliente',
+       (select nombre_visible from public.unidades_inventario where id = :'u3') = 'Luis Rodriguez'
+union all select 'Renueva el 15/08',
+       (select fecha_renovacion from public.periodos_servicio where suscripcion_id = :'susc_luis') = '2026-08-15';
+
+-- Un segundo servicio del MISMO cliente reutiliza su ficha (no la duplica)
+select id as u4 from public.unidades_inventario where cuenta_id = :'cta' and numero_slot = 4 \gset
+select public.vender_unidad(
+  p_cuenta_id => :'cta', p_modalidad_id => :'m_perfil', p_unidad_id => :'u4',
+  p_cliente_nombre => 'luis rodriguez',   -- distinto uso de mayúsculas
+  p_nombre_perfil => 'Luis (HBO)', p_precio_usd => 5.00
+) as susc_luis2 \gset
+
+select 'Mismo cliente NO se duplica' as prueba,
+       (select count(*) from public.clientes where lower(nombre) = 'luis rodriguez') = 1 as pass
+union all select 'Respeta un nombre de perfil distinto',
+       (select nombre_visible from public.unidades_inventario where id = :'u4') = 'Luis (HBO)'
+union all select 'El cliente queda con dos servicios',
+       (select count(*) from public.suscripciones s join public.clientes c on c.id = s.cliente_id
+        where lower(c.nombre) = 'luis rodriguez') = 2;
+
 -- ======================= COMO REVENDEDOR =======================
 reset role;
 select set_config('request.jwt.claims', json_build_object('sub', :'rev_id', 'role', 'authenticated')::text, true);
