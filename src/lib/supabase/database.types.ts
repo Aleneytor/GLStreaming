@@ -2707,6 +2707,16 @@ export type Database = {
       }
     }
     Functions: {
+      actualizar_cuenta: {
+        Args: {
+          p_alias?: string
+          p_cuenta_id: string
+          p_estado?: string
+          p_notas?: string
+          p_proveedor_nombre?: string
+        }
+        Returns: undefined
+      }
       crear_cuenta_con_unidades: {
         Args: {
           p_alias?: string
@@ -2723,6 +2733,15 @@ export type Database = {
         Returns: string
       }
       es_admin: { Args: never; Returns: boolean }
+      rotar_credenciales_cuenta: {
+        Args: {
+          p_contrasena_cifrada?: string
+          p_cuenta_id: string
+          p_login_cifrado?: string
+          p_login_fingerprint?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

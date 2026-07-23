@@ -78,15 +78,28 @@ export default async function InventarioPage() {
                     </p>
                     <p className="text-sm text-neutral-500 dark:text-neutral-400">
                       {plataforma?.nombre} · {producto?.nombre}
+                      {c.estado !== "activa" && (
+                        <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                          {c.estado}
+                        </span>
+                      )}
                     </p>
                   </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-sm tabular-nums">
-                      {c.capacidad_vendible_habilitada ?? c.capacidad}/{c.capacidad}
-                    </p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      vendible/física
-                    </p>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <div className="text-right">
+                      <p className="text-sm tabular-nums">
+                        {c.capacidad_vendible_habilitada ?? c.capacidad}/{c.capacidad}
+                      </p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                        vendible/física
+                      </p>
+                    </div>
+                    <Link
+                      href={`/inventario/${c.id}/editar`}
+                      className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm transition active:scale-[0.98] dark:border-neutral-700"
+                    >
+                      Editar
+                    </Link>
                   </div>
                 </div>
 

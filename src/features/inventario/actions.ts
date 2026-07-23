@@ -63,6 +63,83 @@ export async function crearCuentaAction(
   redirect("/inventario");
 }
 
+const esquemaEdicion = z.object({
+  cuenta_id: z.string().uuid(),
+  alias: z.string().trim().max(80).optional().or(z.literal("")),
+  proveedor: z.string().trim().max(80).optional().or(z.literal("")),
+  notas: z.string().trim().max(1000).optional().or(z.literal("")),
+  estado: z.enum(["activa", "mantenimiento", "suspendida", "archivada"]),
+  // Vacíos = no se tocan las credenciales actuales.
+  correo: z.string().trim().optional().or(z.literal("")),
+  contrasena: z.string().optional().or(z.literal("")),
+});
+
+/**
+ * Edita una cuenta y, si se rellenaron, rota sus credenciales.
+ *
+ * Las credenciales vacías significan "no cambiar": así el formulario nunca
+ * necesita mostrar la contraseña actual para poder editar el resto.
+ */
+export async function actualizarCuentaAction(
+  _prev: EstadoAlta,
+  formData: FormData,
+): Promise<EstadoAlta> {
+  const parsed = esquemaEdicion.safeParse({
+    cuenta_id: formData.get("cuenta_id"),
+    alias: formData.get("alias") ?? "",
+    proveedor: formData.get("proveedor") ?? "",
+    notas: formData.get("notas") ?? "",
+    estado: formData.get("estado"),
+    correo: formData.get("correo") ?? "",
+    contrasena: formData.get("contrasena") ?? "",
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+  }
+  const d = parsed.data;
+
+  const usuario = await obtenerUsuarioActual();
+  if (!esAdmin(usuario)) return { error: "No autorizado." };
+
+  const supabase = await createClient();
+
+  const { error: errorDatos } = await supabase.rpc("actualizar_cuenta", {
+    p_cuenta_id: d.cuenta_id,
+    p_alias: d.alias || null,
+    p_proveedor_nombre: d.proveedor || null,
+    p_notas: d.notas || null,
+    p_estado: d.estado,
+  });
+  if (errorDatos) return { error: errorDatos.message };
+
+  // Rotación de credenciales solo si se escribió algo.
+  const correo = d.correo?.trim() ?? "";
+  const contrasena = d.contrasena ?? "";
+  if (correo || contrasena) {
+    const { error: errorCred } = await supabase.rpc("rotar_credenciales_cuenta", {
+      p_cuenta_id: d.cuenta_id,
+      p_login_cifrado: correo ? cifrarSecreto(correo) : null,
+      p_login_fingerprint: correo ? huellaSecreto(correo) : null,
+      p_contrasena_cifrada: contrasena ? cifrarSecreto(contrasena) : null,
+    });
+    if (errorCred) return { error: errorCred.message };
+
+    // Cambiar un secreto es una acción sensible: queda auditada.
+    await supabase.from("eventos_auditoria").insert({
+      actor_id: usuario!.id,
+      accion: "rotar_credenciales",
+      entidad: "cuentas",
+      entidad_id: d.cuenta_id,
+      resultado: "ok",
+      metadata: { cambio_correo: Boolean(correo), cambio_contrasena: Boolean(contrasena) },
+    });
+  }
+
+  revalidatePath("/inventario");
+  redirect("/inventario");
+}
+
 export type CredencialesReveladas =
   | { ok: true; correo: string; contrasena: string }
   | { ok: false; error: string };
