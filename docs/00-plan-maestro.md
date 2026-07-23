@@ -130,15 +130,27 @@ Migraciones `0013..0014`. La app ya cubre el ciclo comercial completo.
 - **`/vencimientos`**: vencidos, hoy, próximos 5 días y tareas de limpieza, con
   las acciones en línea. Recordatorio "Recontactar el" que no crea ingreso.
 
-Bug real encontrado al validar: `ON CONFLICT` sobre `clave_idempotencia` fallaba
-porque su índice único es **parcial**; hay que repetir el predicado
-(`where clave_idempotencia is not null`).
+- **Entrega del paquete de acceso**: correo, contraseña, perfil, PIN y fecha, con
+  "Copiar todo". La usa el admin y también el **revendedor para sus propias
+  ventas** (DEC-97): se verifica la propiedad con su sesión y solo entonces se
+  leen los secretos con la clave de servicio. Queda registrada en
+  `entregas_acceso` (versiones y metadatos, nunca el valor) y auditada.
+- **Venta en un paso**: el cliente se crea desde el mismo formulario y el perfil
+  toma su nombre, replicando la fila del Excel del negocio.
+- Inventario ordenado por uso (clientes activos), no alfabéticamente.
 
-Estado de pruebas: **112 SQL + 43 unitarias**, todas en verde.
+Bugs reales encontrados al validar: (1) `ON CONFLICT` sobre `clave_idempotencia`
+fallaba porque su índice único es **parcial** (hay que repetir el predicado);
+(2) tres pruebas eran frágiles porque comparaban totales absolutos y usaban
+`limit 1` — con datos reales del usuario en la base daban falsos fallos. Ahora
+comparan deltas y apuntan a sus propias filas.
 
-**Siguiente**: terminar la Fase 3 (cobros en Bs cuando haya tasas, Caja diaria,
-`entregas_acceso`, reservas, subentregas YouTube/Spotify) y luego la Fase 4
-(motor financiero y cierre mensual). Para retomar: `npx supabase start` y
+Estado de pruebas: **119 SQL + 43 unitarias**, todas en verde.
+
+**Siguiente**: lo que resta de la Fase 3 depende de las tasas de cambio (cobros
+en Bs y Caja diaria), así que enlaza con la **Fase 4** — y esta exige antes
+**rotar el secreto expuesto de Kuanto**. Quedan también reservas y las
+subentregas de YouTube/Spotify. Para retomar: `npx supabase start` y
 `npm run dev` (ver `09-fase-1-setup.md`).
 
 ## 5. Qué hacer si hay que reiniciar desde cero

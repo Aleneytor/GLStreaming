@@ -1,5 +1,6 @@
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { BotonAcceso } from "@/features/ventas/boton-acceso";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,7 @@ async function VistaRevendedor() {
       {ventas.map((v) => (
         <li
           key={v.suscripcion_id}
-          className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
+          className="space-y-3 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -69,6 +70,8 @@ async function VistaRevendedor() {
               {v.estado}
             </span>
           </div>
+          {/* El revendedor obtiene el mismo paquete que le pasa a su cliente. */}
+          <BotonAcceso suscripcionId={v.suscripcion_id} />
         </li>
       ))}
     </ul>

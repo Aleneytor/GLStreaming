@@ -22,6 +22,9 @@ select id as u1 from public.unidades_inventario where cuenta_id = :'cta' and num
 
 select public.vender_unidad(:'ana', :'cta', :'m_perfil', :'u1', 3.5, '2026-07-22'::date, 1, null, null) as susc \gset
 
+-- Se expone a los bloques DO, que no ven las variables de psql.
+select set_config('pruebas.susc', :'susc', true);
+
 -- ---------------------------------------------------------------------------
 -- 1. Renovación normal: agrega un período, no sobrescribe
 -- ---------------------------------------------------------------------------
@@ -34,13 +37,14 @@ union all select 'El periodo nuevo renueva el 22/09',
 union all select 'Queda marcado como renovacion',
        (select tipo_operacion from public.periodos_servicio where id = :'per2') = 'renovacion';
 
--- 2. Una renovación que empezaría antes de terminar la actual se rechaza
+-- 2. Una renovación que empezaría antes de terminar la actual se rechaza.
+--    Se apunta a la suscripción DE ESTA PRUEBA (la base puede tener datos reales).
 do $$
 declare ok boolean := false;
 begin
   begin
     perform public.renovar_suscripcion(
-      (select id from public.suscripciones limit 1), '2026-09-01'::date, 1, 3.5, false);
+      current_setting('pruebas.susc')::uuid, '2026-09-01'::date, 1, 3.5, false);
   exception when others then ok := true;
   end;
   raise notice 'Rechaza renovar solapando el periodo vigente: %',

@@ -1,5 +1,25 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+
+/**
+ * Cliente con la clave `service_role`: se salta RLS.
+ *
+ * ÚSESE SOLO en operaciones de servidor acotadas y DESPUÉS de haber verificado
+ * la autorización con la identidad real del usuario. El caso previsto es
+ * entregar a un revendedor el paquete de acceso de SU PROPIA venta: primero se
+ * comprueba que la venta es suya y solo entonces se leen los secretos, que él
+ * no puede leer por RLS.
+ *
+ * Esta clave nunca llega al navegador.
+ */
+export function createAdminClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  );
+}
 
 /**
  * Cliente de Supabase para el servidor (Server Components, Server Actions,

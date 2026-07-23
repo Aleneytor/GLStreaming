@@ -5,6 +5,7 @@ import { uno } from "@/lib/supabase/util";
 import { badgeVencimiento, diasParaRenovar } from "@/domain/fechas";
 import { PanelSuscripcion } from "@/features/ventas/panel-suscripcion";
 import { BotonLimpieza } from "@/features/ventas/boton-limpieza";
+import { BotonAcceso } from "@/features/ventas/boton-acceso";
 
 export const dynamic = "force-dynamic";
 
@@ -137,7 +138,8 @@ export default async function VencimientosPage() {
                   </span>
                 </span>
               </summary>
-              <div className="border-t border-neutral-200 p-4 dark:border-neutral-800">
+              <div className="space-y-4 border-t border-neutral-200 p-4 dark:border-neutral-800">
+                <BotonAcceso suscripcionId={f.id} />
                 <PanelSuscripcion
                   suscripcionId={f.id}
                   estado={f.estado}

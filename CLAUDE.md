@@ -84,6 +84,11 @@ docs/               Especificación de dominio (ver más abajo)
 `set role authenticated` + `request.jwt.claims` para que RLS aplique de verdad;
 como `postgres` es superusuario y se salta RLS, probar sin eso no valida nada.
 
+⚠️ Las pruebas deben comparar **deltas, no totales absolutos**, y apuntar a las
+filas que ellas mismas crearon (`set_config('pruebas.x', …)` para pasarlas a los
+bloques `DO`). La base de desarrollo tiene datos reales del usuario: un
+`select … limit 1` puede agarrar una fila suya y dar un falso fallo.
+
 ```bash
 Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> psql -U postgres -d postgres
 ```
@@ -119,10 +124,18 @@ gestionar el ciclo de vida entero.
   con las acciones en línea y las **tareas de limpieza pendientes**.
 - El inventario muestra el estado real de cada perfil: cliente, badge de
   vencimiento o botón Vender.
+- **Venta en un paso**: el cliente se escribe en el mismo formulario (se crea si
+  es nuevo) y el perfil toma su nombre, como en la hoja de cálculo del negocio.
+- **Entrega del paquete de acceso** (`entregarAccesoAction`): correo, contraseña,
+  perfil, PIN y fecha, con botón "Copiar todo" para pegárselo al cliente. Se
+  registra en `entregas_acceso` (solo versiones y metadatos, nunca el valor) y
+  queda auditado. **El revendedor la usa para SUS ventas** (DEC-97): primero se
+  verifica la propiedad con su sesión y solo entonces se leen los secretos con
+  `createAdminClient()`, que él no puede leer por RLS.
+- El inventario se ordena por **uso** (clientes activos), no alfabéticamente.
 
 **Falta de la Fase 3**: cobros del cliente en Bs (necesita tasas), Caja diaria,
-entrega registrada del paquete de acceso (`entregas_acceso`), reservas, y las
-subentregas de YouTube (carga de cartera) y Spotify.
+reservas, y las subentregas de YouTube (carga de cartera) y Spotify.
 
 **Fase 2 (inventario Netflix y carga manual): COMPLETA (2026-07-23).**
 La app ya es usable para inventario: login, panel mobile-first y gestión completa
@@ -200,5 +213,5 @@ propio teléfono). Si cambia la red, hay que actualizarlas — ver
 - `docs/plataformas/` — ficha por plataforma + arquetipos.
 
 ---
-*Última actualización: 2026-07-23 (cierre de Fase 2). Actualiza este archivo al
-terminar cada sesión: estado, lo que sigue y cualquier decisión nueva.*
+*Última actualización: 2026-07-23 (núcleo de Fase 3 cerrado). Actualiza este
+archivo al terminar cada sesión: estado, lo que sigue y cualquier decisión nueva.*

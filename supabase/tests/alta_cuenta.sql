@@ -19,6 +19,11 @@ reset role;
 select set_config('request.jwt.claims', json_build_object('sub', :'admin_id', 'role', 'authenticated')::text, true);
 set role authenticated;
 
+-- Línea base: la base puede tener datos reales. Las pruebas comparan DELTAS,
+-- no totales absolutos, para no depender de una base vacía.
+select count(*) as cuentas_antes  from public.cuentas \gset
+select count(*) as unidades_antes from public.unidades_inventario \gset
+
 -- 1. Alta válida de Netflix: debe crear cuenta + 5 unidades + credencial
 select public.crear_cuenta_con_unidades(
   :'prod_netflix', 5, 'Netflix Prueba', null, 'CIF_LOGIN', 'huella-abc', 'CIF_PASS', null
@@ -72,11 +77,12 @@ begin
 end $$;
 
 -- 5. ATOMICIDAD: un fallo no debe dejar cuentas ni unidades a medias.
---    Tras los 3 fallos anteriores, sigue habiendo exactamente 1 cuenta.
+--    Tras los 3 fallos anteriores, solo la cuenta válida (con sus 5 unidades)
+--    debió persistir; los intentos fallidos no dejaron basura.
 select 'Atomicidad: los fallos no dejaron basura' as prueba,
-       (select count(*) from public.cuentas) = 1 as pass
+       (select count(*) from public.cuentas) = :cuentas_antes + 1 as pass
 union all select 'Atomicidad: sin unidades huerfanas',
-       (select count(*) from public.unidades_inventario) = 5;
+       (select count(*) from public.unidades_inventario) = :unidades_antes + 5;
 
 -- 6. Recurso indivisible (Spotify individual): 0 unidades hijas
 select public.crear_cuenta_con_unidades(
