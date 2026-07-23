@@ -34,6 +34,250 @@ export type Database = {
   }
   public: {
     Tables: {
+      clientes: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          id: string
+          nombre: string
+          notas: string | null
+          whatsapp_normalizado: string | null
+          whatsapp_original: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          nombre: string
+          notas?: string | null
+          whatsapp_normalizado?: string | null
+          whatsapp_original?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          nombre?: string
+          notas?: string | null
+          whatsapp_normalizado?: string | null
+          whatsapp_original?: string | null
+        }
+        Relationships: []
+      }
+      credenciales_cuenta: {
+        Row: {
+          cliente_titular_id: string | null
+          contrasena_cifrada: string | null
+          created_at: string
+          cuenta_id: string
+          eliminada_at: string | null
+          id: string
+          login_cifrado: string | null
+          login_fingerprint: string | null
+          rotada_at: string | null
+          tipo_credencial: string
+          titular_tipo: string
+          version_clave: number
+        }
+        Insert: {
+          cliente_titular_id?: string | null
+          contrasena_cifrada?: string | null
+          created_at?: string
+          cuenta_id: string
+          eliminada_at?: string | null
+          id?: string
+          login_cifrado?: string | null
+          login_fingerprint?: string | null
+          rotada_at?: string | null
+          tipo_credencial?: string
+          titular_tipo?: string
+          version_clave?: number
+        }
+        Update: {
+          cliente_titular_id?: string | null
+          contrasena_cifrada?: string | null
+          created_at?: string
+          cuenta_id?: string
+          eliminada_at?: string | null
+          id?: string
+          login_cifrado?: string | null
+          login_fingerprint?: string | null
+          rotada_at?: string | null
+          tipo_credencial?: string
+          titular_tipo?: string
+          version_clave?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credenciales_cuenta_cliente_titular_id_fkey"
+            columns: ["cliente_titular_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credenciales_cuenta_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: true
+            referencedRelation: "cuentas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cuenta_modalidades: {
+        Row: {
+          activa: boolean
+          archived_at: string | null
+          created_at: string
+          cuenta_id: string
+          id: string
+          modalidad_id: string
+        }
+        Insert: {
+          activa?: boolean
+          archived_at?: string | null
+          created_at?: string
+          cuenta_id: string
+          id?: string
+          modalidad_id: string
+        }
+        Update: {
+          activa?: boolean
+          archived_at?: string | null
+          created_at?: string
+          cuenta_id?: string
+          id?: string
+          modalidad_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cuenta_modalidades_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuenta_modalidades_modalidad_id_fkey"
+            columns: ["modalidad_id"]
+            isOneToOne: false
+            referencedRelation: "modalidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cuentas: {
+        Row: {
+          alias: string | null
+          archived_at: string | null
+          capacidad: number
+          capacidad_vendible_habilitada: number | null
+          cliente_propietario_id: string | null
+          created_at: string
+          estado: string
+          id: string
+          producto_plataforma_id: string
+          proveedor_operativo_id: string | null
+          reutilizable: boolean
+          titular_tipo: string
+        }
+        Insert: {
+          alias?: string | null
+          archived_at?: string | null
+          capacidad: number
+          capacidad_vendible_habilitada?: number | null
+          cliente_propietario_id?: string | null
+          created_at?: string
+          estado?: string
+          id?: string
+          producto_plataforma_id: string
+          proveedor_operativo_id?: string | null
+          reutilizable?: boolean
+          titular_tipo?: string
+        }
+        Update: {
+          alias?: string | null
+          archived_at?: string | null
+          capacidad?: number
+          capacidad_vendible_habilitada?: number | null
+          cliente_propietario_id?: string | null
+          created_at?: string
+          estado?: string
+          id?: string
+          producto_plataforma_id?: string
+          proveedor_operativo_id?: string | null
+          reutilizable?: boolean
+          titular_tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cuentas_cliente_propietario_id_fkey"
+            columns: ["cliente_propietario_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuentas_producto_plataforma_id_fkey"
+            columns: ["producto_plataforma_id"]
+            isOneToOne: false
+            referencedRelation: "productos_plataforma"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuentas_proveedor_operativo_id_fkey"
+            columns: ["proveedor_operativo_id"]
+            isOneToOne: false
+            referencedRelation: "proveedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      historial_estado_unidad: {
+        Row: {
+          actor_id: string | null
+          estado_anterior: string | null
+          estado_nuevo: string
+          id: string
+          motivo: string | null
+          ocurrio_at: string
+          unidad_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          estado_anterior?: string | null
+          estado_nuevo: string
+          id?: string
+          motivo?: string | null
+          ocurrio_at?: string
+          unidad_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          estado_anterior?: string | null
+          estado_nuevo?: string
+          id?: string
+          motivo?: string | null
+          ocurrio_at?: string
+          unidad_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historial_estado_unidad_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historial_estado_unidad_unidad_id_fkey"
+            columns: ["unidad_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_inventario"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mecanismos_entrega: {
         Row: {
           activo: boolean
@@ -293,6 +537,179 @@ export type Database = {
           tipo?: string
         }
         Relationships: []
+      }
+      reservas_inventario: {
+        Row: {
+          alcance: string
+          cliente_id: string | null
+          created_by: string | null
+          cuenta_id: string
+          estado: string
+          expira_at: string | null
+          id: string
+          modalidad_id: string
+          producto_plataforma_id: string
+          reservada_at: string
+          resuelta_at: string | null
+          solicitud_stock_id: string | null
+          unidad_id: string | null
+        }
+        Insert: {
+          alcance: string
+          cliente_id?: string | null
+          created_by?: string | null
+          cuenta_id: string
+          estado?: string
+          expira_at?: string | null
+          id?: string
+          modalidad_id: string
+          producto_plataforma_id: string
+          reservada_at?: string
+          resuelta_at?: string | null
+          solicitud_stock_id?: string | null
+          unidad_id?: string | null
+        }
+        Update: {
+          alcance?: string
+          cliente_id?: string | null
+          created_by?: string | null
+          cuenta_id?: string
+          estado?: string
+          expira_at?: string | null
+          id?: string
+          modalidad_id?: string
+          producto_plataforma_id?: string
+          reservada_at?: string
+          resuelta_at?: string | null
+          solicitud_stock_id?: string | null
+          unidad_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservas_inventario_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservas_inventario_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservas_inventario_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservas_inventario_modalidad_id_fkey"
+            columns: ["modalidad_id"]
+            isOneToOne: false
+            referencedRelation: "modalidades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservas_inventario_producto_plataforma_id_fkey"
+            columns: ["producto_plataforma_id"]
+            isOneToOne: false
+            referencedRelation: "productos_plataforma"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservas_inventario_unidad_id_fkey"
+            columns: ["unidad_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_inventario"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      secretos_unidad: {
+        Row: {
+          created_at: string
+          id: string
+          pin_cifrado: string | null
+          rotada_at: string | null
+          secreto_adicional_cifrado: string | null
+          unidad_id: string
+          version_clave: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pin_cifrado?: string | null
+          rotada_at?: string | null
+          secreto_adicional_cifrado?: string | null
+          unidad_id: string
+          version_clave?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pin_cifrado?: string | null
+          rotada_at?: string | null
+          secreto_adicional_cifrado?: string | null
+          unidad_id?: string
+          version_clave?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "secretos_unidad_unidad_id_fkey"
+            columns: ["unidad_id"]
+            isOneToOne: true
+            referencedRelation: "unidades_inventario"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unidades_inventario: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          cuenta_id: string
+          estado_operativo: string
+          estado_preparacion: string
+          id: string
+          nombre_visible: string | null
+          numero_slot: number
+          tipo_unidad: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          cuenta_id: string
+          estado_operativo?: string
+          estado_preparacion?: string
+          id?: string
+          nombre_visible?: string | null
+          numero_slot: number
+          tipo_unidad?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          cuenta_id?: string
+          estado_operativo?: string
+          estado_preparacion?: string
+          id?: string
+          nombre_visible?: string | null
+          numero_slot?: number
+          tipo_unidad?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unidades_inventario_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       usuarios: {
         Row: {
