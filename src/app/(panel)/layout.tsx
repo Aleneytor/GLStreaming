@@ -27,6 +27,7 @@ export default async function PanelLayout({
     ? [
         { href: "/dashboard", etiqueta: "Inicio", icono: "🏠" },
         { href: "/inventario", etiqueta: "Inventario", icono: "📦" },
+        { href: "/catalogo", etiqueta: "Catálogo", icono: "⚙️" },
       ]
     : [{ href: "/dashboard", etiqueta: "Mis ventas", icono: "🧾" }];
 
