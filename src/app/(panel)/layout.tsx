@@ -29,6 +29,7 @@ export default async function PanelLayout({
         { href: "/vencimientos", etiqueta: "Vencen", icono: "🔔" },
         { href: "/inventario", etiqueta: "Inventario", icono: "📦" },
         { href: "/clientes", etiqueta: "Clientes", icono: "👥" },
+        { href: "/tasas", etiqueta: "Tasas", icono: "💱" },
         { href: "/catalogo", etiqueta: "Catálogo", icono: "⚙️" },
       ]
     : [{ href: "/dashboard", etiqueta: "Mis ventas", icono: "🧾" }];
