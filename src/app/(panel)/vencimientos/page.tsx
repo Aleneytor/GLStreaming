@@ -29,6 +29,7 @@ export default async function VencimientosPage() {
     .select(
       `id, estado, recontactar_el, nota_renovacion,
        clientes ( nombre, whatsapp_original ),
+       vendedores ( nombre ),
        productos_plataforma ( nombre, plataformas ( nombre ) ),
        periodos_servicio ( inicio, fecha_renovacion ),
        asignaciones_inventario ( unidad_id, fin, unidades_inventario ( nombre_visible ) )`,
@@ -60,6 +61,7 @@ export default async function VencimientosPage() {
         recontactar_el: s.recontactar_el,
         nota: s.nota_renovacion,
         cliente: uno(s.clientes),
+        vendedor: uno(s.vendedores)?.nombre ?? null,
         producto: uno(s.productos_plataforma),
         renovacion: ultimo?.fecha_renovacion ?? null,
         dias,
@@ -104,6 +106,7 @@ export default async function VencimientosPage() {
                     <span className="block text-sm text-neutral-500 dark:text-neutral-400">
                       {plataforma?.nombre} · {f.producto?.nombre}
                       {f.perfil ? ` · ${f.perfil}` : ""}
+                      {f.vendedor ? ` · vendió ${f.vendedor}` : ""}
                     </span>
                     {f.recontactar_el && (
                       <span className="mt-1 block text-xs text-sky-700 dark:text-sky-400">

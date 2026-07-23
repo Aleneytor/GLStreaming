@@ -14,6 +14,7 @@ const esquema = z.object({
   modalidad_id: z.string().uuid("Elige la modalidad."),
   unidad_id: z.string().uuid().optional().or(z.literal("")),
   precio_usd: z.string().trim().optional().or(z.literal("")),
+  vendedor_id: z.string().uuid().optional().or(z.literal("")),
   inicio: z.string().min(1, "Indica la fecha de inicio."),
   cantidad_periodos: z.coerce.number().int().min(1).max(12).default(1),
   volver_a: z.string().default("/inventario"),
@@ -37,6 +38,7 @@ export async function venderAction(
     modalidad_id: formData.get("modalidad_id"),
     unidad_id: formData.get("unidad_id") ?? "",
     precio_usd: formData.get("precio_usd") ?? "",
+    vendedor_id: formData.get("vendedor_id") ?? "",
     inicio: formData.get("inicio"),
     cantidad_periodos: formData.get("cantidad_periodos") ?? 1,
     volver_a: formData.get("volver_a") ?? "/inventario",
@@ -63,7 +65,7 @@ export async function venderAction(
     p_precio_usd: precio,
     p_inicio: d.inicio,
     p_cantidad_periodos: d.cantidad_periodos,
-    p_vendedor_id: null,
+    p_vendedor_id: d.vendedor_id || null,
     p_fecha_venta: d.inicio,
   });
 

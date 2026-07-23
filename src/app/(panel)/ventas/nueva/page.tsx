@@ -49,11 +49,18 @@ export default async function NuevaVentaPage({
     .filter((m) => m.alcance_asignacion === alcanceBuscado)
     .map((m) => ({ id: m.id, nombre: m.nombre }));
 
-  const { data: clientes } = await supabase
-    .from("clientes")
-    .select("id, nombre")
-    .is("archived_at", null)
-    .order("nombre");
+  const [{ data: clientes }, { data: vendedores }] = await Promise.all([
+    supabase
+      .from("clientes")
+      .select("id, nombre")
+      .is("archived_at", null)
+      .order("nombre"),
+    supabase
+      .from("vendedores")
+      .select("id, nombre")
+      .eq("activo", true)
+      .order("nombre"),
+  ]);
 
   let etiquetaUnidad = "cuenta completa";
   if (unidadId) {
@@ -91,6 +98,7 @@ export default async function NuevaVentaPage({
           etiquetaRecurso={etiqueta}
           modalidades={modalidades}
           clientes={clientes ?? []}
+          vendedores={vendedores ?? []}
           volverA={volverA}
         />
       )}

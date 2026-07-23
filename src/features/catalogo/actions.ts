@@ -83,6 +83,65 @@ export async function actualizarPlataformaAction(
   return { ok: "Plataforma actualizada." };
 }
 
+const esquemaVendedor = z.object({
+  id: z.string().uuid().optional().or(z.literal("")),
+  nombre: z.string().trim().min(1, "El nombre es obligatorio."),
+  alias: z.string().trim().max(60).optional().or(z.literal("")),
+  usuario_id: z.string().uuid().optional().or(z.literal("")),
+  activo: z.coerce.boolean(),
+});
+
+/**
+ * Crea o edita un vendedor (la identidad comercial a la que se atribuye una venta).
+ *
+ * Un vendedor puede existir SIN login: así se pueden registrar ventas de alguien
+ * que todavía no usa la app y vincularlo después (decisión AUTH-01). Vincularlo
+ * a un usuario es lo que le permite ver sus propias ventas en su panel.
+ */
+export async function guardarVendedorAction(
+  _prev: EstadoCatalogo,
+  formData: FormData,
+): Promise<EstadoCatalogo> {
+  const usuario = await obtenerUsuarioActual();
+  if (!esAdmin(usuario)) return { error: "No autorizado." };
+
+  const parsed = esquemaVendedor.safeParse({
+    id: formData.get("id") ?? "",
+    nombre: formData.get("nombre"),
+    alias: formData.get("alias") ?? "",
+    usuario_id: formData.get("usuario_id") ?? "",
+    activo: formData.get("activo") === "on",
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+  }
+  const { id, nombre, alias, usuario_id, activo } = parsed.data;
+
+  const fila = {
+    nombre,
+    alias: alias || null,
+    usuario_id: usuario_id || null,
+    activo,
+  };
+
+  const supabase = await createClient();
+  const { error } = id
+    ? await supabase.from("vendedores").update(fila).eq("id", id)
+    : await supabase.from("vendedores").insert(fila);
+
+  if (error) {
+    // usuario_id es único: un usuario no puede ser dos vendedores.
+    if (error.code === "23505") {
+      return { error: "Ese usuario ya está vinculado a otro vendedor." };
+    }
+    return { error: error.message };
+  }
+
+  revalidatePath("/catalogo");
+  revalidatePath("/ventas/nueva");
+  return { ok: id ? "Vendedor actualizado." : "Vendedor creado." };
+}
+
 const esquemaProveedor = z.object({
   id: z.string().uuid().optional().or(z.literal("")),
   nombre_o_alias: z.string().trim().max(80).optional().or(z.literal("")),

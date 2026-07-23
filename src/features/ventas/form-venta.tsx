@@ -13,6 +13,7 @@ export function FormVenta({
   etiquetaRecurso,
   modalidades,
   clientes,
+  vendedores,
   volverA,
 }: {
   cuentaId: string;
@@ -20,6 +21,7 @@ export function FormVenta({
   etiquetaRecurso: string;
   modalidades: { id: string; nombre: string }[];
   clientes: { id: string; nombre: string }[];
+  vendedores: { id: string; nombre: string }[];
   volverA: string;
 }) {
   const [estado, action, pendiente] = useActionState<EstadoVenta, FormData>(
@@ -60,6 +62,27 @@ export function FormVenta({
             .
           </p>
         )}
+      </div>
+
+      <div>
+        <label htmlFor="vendedor_id" className="mb-1.5 block text-sm font-medium">
+          Vendida por
+        </label>
+        <select id="vendedor_id" name="vendedor_id" className={campo}>
+          <option value="">Yo (venta directa)</option>
+          {vendedores.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.nombre}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+          Si la vendió un revendedor, elígelo aquí. Se gestionan en{" "}
+          <Link href="/catalogo?ver=vendedores" className="underline">
+            Catálogo → Vendedores
+          </Link>
+          .
+        </p>
       </div>
 
       <div>

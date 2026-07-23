@@ -5,6 +5,7 @@ import {
   actualizarPlataformaAction,
   actualizarProductoAction,
   guardarProveedorAction,
+  guardarVendedorAction,
   type EstadoCatalogo,
 } from "./actions";
 
@@ -130,6 +131,126 @@ export function EditorProducto({
         <button type="submit" disabled={pendiente} className={boton}>
           {pendiente ? "…" : "Guardar"}
         </button>
+      </div>
+      <Mensaje estado={estado} />
+    </form>
+  );
+}
+
+export type VendedorFila = {
+  id: string;
+  nombre: string;
+  alias: string | null;
+  usuario_id: string | null;
+  activo: boolean;
+};
+
+/** Un vendedor puede existir sin login; vincularlo le permite ver sus ventas. */
+export function EditorVendedor({
+  vendedor,
+  usuarios,
+}: {
+  vendedor?: VendedorFila;
+  usuarios: { id: string; nombre: string; rol: string }[];
+}) {
+  const [estado, action, pendiente] = useActionState<EstadoCatalogo, FormData>(
+    guardarVendedorAction,
+    null,
+  );
+  const [abierto, setAbierto] = useState(!vendedor);
+
+  if (vendedor && !abierto) {
+    const vinculado = usuarios.find((u) => u.id === vendedor.usuario_id);
+    return (
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
+        <div className="min-w-0">
+          <p className="truncate font-medium">
+            {vendedor.nombre}
+            {!vendedor.activo && (
+              <span className="ml-2 rounded-full bg-neutral-200 px-2 py-0.5 text-xs dark:bg-neutral-700">
+                inactivo
+              </span>
+            )}
+          </p>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            {vinculado ? `Entra como ${vinculado.nombre}` : "Sin acceso a la app"}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setAbierto(true)}
+          className="shrink-0 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm dark:border-neutral-700"
+        >
+          Editar
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form
+      action={action}
+      className="space-y-3 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
+    >
+      {vendedor && <input type="hidden" name="id" value={vendedor.id} />}
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="text-sm">
+          Nombre
+          <input
+            name="nombre"
+            required
+            defaultValue={vendedor?.nombre ?? ""}
+            className={`${campo} mt-1`}
+          />
+        </label>
+        <label className="text-sm">
+          Alias
+          <input
+            name="alias"
+            defaultValue={vendedor?.alias ?? ""}
+            className={`${campo} mt-1`}
+          />
+        </label>
+      </div>
+
+      <label className="block text-sm">
+        Usuario de la app <span className="text-neutral-400">(opcional)</span>
+        <select
+          name="usuario_id"
+          defaultValue={vendedor?.usuario_id ?? ""}
+          className={`${campo} mt-1`}
+        >
+          <option value="">Sin acceso a la app</option>
+          {usuarios.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.nombre} ({u.rol})
+            </option>
+          ))}
+        </select>
+        <span className="mt-1 block text-xs text-neutral-500 dark:text-neutral-400">
+          Vincularlo es lo que le permite entrar y ver <strong>sus</strong> ventas.
+          Puedes registrar ventas suyas aunque todavía no tenga acceso.
+        </span>
+      </label>
+
+      <div className="flex flex-wrap items-center gap-4">
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="activo" defaultChecked={vendedor?.activo ?? true} />
+          Activo
+        </label>
+        <button type="submit" disabled={pendiente} className={boton}>
+          {pendiente ? "…" : vendedor ? "Guardar" : "Crear vendedor"}
+        </button>
+        {vendedor && (
+          <button
+            type="button"
+            onClick={() => setAbierto(false)}
+            className="rounded-lg border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700"
+          >
+            Cerrar
+          </button>
+        )}
       </div>
       <Mensaje estado={estado} />
     </form>

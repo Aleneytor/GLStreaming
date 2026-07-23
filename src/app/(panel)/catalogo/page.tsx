@@ -6,7 +6,9 @@ import {
   EditorPlataforma,
   EditorProducto,
   EditorProveedor,
+  EditorVendedor,
   type ProveedorFila,
+  type VendedorFila,
 } from "@/features/catalogo/editores";
 
 export const dynamic = "force-dynamic";
@@ -23,8 +25,13 @@ export default async function CatalogoPage({
   const seccion = ver ?? "productos";
   const supabase = await createClient();
 
-  const [{ data: plataformas }, { data: productos }, { data: proveedores }] =
-    await Promise.all([
+  const [
+    { data: plataformas },
+    { data: productos },
+    { data: proveedores },
+    { data: vendedores },
+    { data: usuarios },
+  ] = await Promise.all([
       supabase.from("plataformas").select("id, nombre, slug, activa").order("nombre"),
       supabase
         .from("productos_plataforma")
@@ -36,11 +43,17 @@ export default async function CatalogoPage({
         .from("proveedores")
         .select("id, tipo, nombre_o_alias, telefono_original, notas, activo")
         .order("nombre_o_alias"),
+      supabase
+        .from("vendedores")
+        .select("id, nombre, alias, usuario_id, activo")
+        .order("nombre"),
+      supabase.from("usuarios").select("id, nombre, rol").eq("activo", true).order("nombre"),
     ]);
 
   const pestañas = [
     { clave: "productos", etiqueta: "Productos" },
     { clave: "plataformas", etiqueta: "Plataformas" },
+    { clave: "vendedores", etiqueta: "Vendedores" },
     { clave: "proveedores", etiqueta: "Proveedores" },
   ];
 
@@ -108,6 +121,40 @@ export default async function CatalogoPage({
               <EditorPlataforma plataforma={p} />
             </div>
           ))}
+        </section>
+      )}
+
+      {seccion === "vendedores" && (
+        <section className="space-y-4">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            A quién se le atribuye una venta. Un vendedor puede existir{" "}
+            <strong>sin acceso a la app</strong>; vincularlo a un usuario es lo que
+            le permite entrar y ver sus propias ventas.
+          </p>
+          <div>
+            <h2 className="mb-2 text-sm font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+              Nuevo vendedor
+            </h2>
+            <EditorVendedor usuarios={usuarios ?? []} />
+          </div>
+          <div className="space-y-3">
+            <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+              Existentes
+            </h2>
+            {(vendedores ?? []).length === 0 ? (
+              <p className="rounded-xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
+                Aún no hay vendedores. Crea uno para poder atribuirle ventas.
+              </p>
+            ) : (
+              (vendedores ?? []).map((v) => (
+                <EditorVendedor
+                  key={v.id}
+                  vendedor={v as VendedorFila}
+                  usuarios={usuarios ?? []}
+                />
+              ))
+            )}
+          </div>
         </section>
       )}
 
