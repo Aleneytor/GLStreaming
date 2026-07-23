@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export type ItemNav = { href: string; etiqueta: string; icono: string };
+export type ItemNav = {
+  href: string;
+  etiqueta: string;
+  icono: string;
+  /** Otras rutas que también deben marcar este elemento como activo. */
+  incluye?: string[];
+};
 
 /**
  * Navegación del panel, mobile-first:
@@ -13,8 +19,11 @@ export type ItemNav = { href: string; etiqueta: string; icono: string };
 export function NavPanel({ items }: { items: ItemNav[] }) {
   const pathname = usePathname();
 
-  const esActivo = (href: string) =>
+  const coincide = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
+
+  const esActivo = (item: ItemNav) =>
+    coincide(item.href) || (item.incluye ?? []).some(coincide);
 
   return (
     <>
@@ -29,9 +38,9 @@ export function NavPanel({ items }: { items: ItemNav[] }) {
             <li key={item.href} className="flex-1">
               <Link
                 href={item.href}
-                aria-current={esActivo(item.href) ? "page" : undefined}
+                aria-current={esActivo(item) ? "page" : undefined}
                 className={`flex flex-col items-center gap-0.5 px-2 py-2.5 text-xs transition ${
-                  esActivo(item.href)
+                  esActivo(item)
                     ? "text-neutral-900 dark:text-white"
                     : "text-neutral-500 dark:text-neutral-400"
                 }`}
@@ -56,9 +65,9 @@ export function NavPanel({ items }: { items: ItemNav[] }) {
             <li key={item.href}>
               <Link
                 href={item.href}
-                aria-current={esActivo(item.href) ? "page" : undefined}
+                aria-current={esActivo(item) ? "page" : undefined}
                 className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
-                  esActivo(item.href)
+                  esActivo(item)
                     ? "bg-neutral-100 font-medium text-neutral-900 dark:bg-neutral-800 dark:text-white"
                     : "text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-900"
                 }`}

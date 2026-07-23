@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   antiguedadEnMinutos,
+  confirmadaAt,
   evaluarFrescura,
   validarFechaVigencia,
   validarValorTasa,
@@ -75,5 +76,31 @@ describe("validarFechaVigencia (BCV)", () => {
     expect(validarFechaVigencia(undefined).valida).toBe(false);
     expect(validarFechaVigencia("").valida).toBe(false);
     expect(validarFechaVigencia("23/07/2026").valida).toBe(false);
+  });
+});
+
+describe("confirmadaAt", () => {
+  // La BCV publica de lunes a viernes: el domingo su observación es
+  // legítimamente de hace dos días. Lo que decide si la tasa sirve es cuándo
+  // confirmamos por última vez que seguía siendo la más reciente.
+  it("prefiere la revalidación sobre la fecha de obtención", () => {
+    expect(
+      confirmadaAt({ obtenida_at: "2026-07-17T21:00:00Z", revalidada_at: "2026-07-20T13:00:00Z" }),
+    ).toBe("2026-07-20T13:00:00Z");
+  });
+
+  it("cae a la fecha de obtención cuando nunca se revalidó", () => {
+    expect(confirmadaAt({ obtenida_at: "2026-07-17T21:00:00Z", revalidada_at: null })).toBe(
+      "2026-07-17T21:00:00Z",
+    );
+    expect(confirmadaAt({ obtenida_at: "2026-07-17T21:00:00Z" })).toBe("2026-07-17T21:00:00Z");
+  });
+
+  it("una tasa del viernes revalidada hoy sigue siendo utilizable", () => {
+    const ahora = new Date("2026-07-20T14:00:00Z");
+    const tasa = { obtenida_at: "2026-07-17T21:00:00Z", revalidada_at: "2026-07-20T13:30:00Z" };
+    expect(evaluarFrescura(confirmadaAt(tasa), ahora).nivel).not.toBe("inservible");
+    // Sin la revalidación, la misma tasa quedaría bloqueada.
+    expect(evaluarFrescura(tasa.obtenida_at, ahora).nivel).toBe("inservible");
   });
 });

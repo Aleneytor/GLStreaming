@@ -356,8 +356,10 @@ export type Database = {
           created_at: string
           dias_no_reutilizables_sin_ingreso: number
           dias_unidad_bloqueados: number
+          dias_unidad_capacidad: number
           dias_unidad_cortesia: number
           dias_unidad_disponibles: number
+          dias_unidad_ocupados: number
           dias_unidad_pagados: number
           dias_unidad_pausa: number
           dias_unidad_reservados: number
@@ -406,8 +408,10 @@ export type Database = {
           created_at?: string
           dias_no_reutilizables_sin_ingreso?: number
           dias_unidad_bloqueados?: number
+          dias_unidad_capacidad?: number
           dias_unidad_cortesia?: number
           dias_unidad_disponibles?: number
+          dias_unidad_ocupados?: number
           dias_unidad_pagados?: number
           dias_unidad_pausa?: number
           dias_unidad_reservados?: number
@@ -456,8 +460,10 @@ export type Database = {
           created_at?: string
           dias_no_reutilizables_sin_ingreso?: number
           dias_unidad_bloqueados?: number
+          dias_unidad_capacidad?: number
           dias_unidad_cortesia?: number
           dias_unidad_disponibles?: number
+          dias_unidad_ocupados?: number
           dias_unidad_pagados?: number
           dias_unidad_pausa?: number
           dias_unidad_reservados?: number
@@ -1065,6 +1071,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "periodos_servicio"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entregas_acceso_periodo_servicio_id_fkey"
+            columns: ["periodo_servicio_id"]
+            isOneToOne: false
+            referencedRelation: "v_periodos_por_cobrar"
+            referencedColumns: ["periodo_id"]
           },
           {
             foreignKeyName: "entregas_acceso_suscripcion_id_fkey"
@@ -1686,6 +1699,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pagos_cliente_periodo_servicio_id_fkey"
+            columns: ["periodo_servicio_id"]
+            isOneToOne: false
+            referencedRelation: "v_periodos_por_cobrar"
+            referencedColumns: ["periodo_id"]
+          },
+          {
             foreignKeyName: "pagos_cliente_tasa_bcv_id_fkey"
             columns: ["tasa_bcv_id"]
             isOneToOne: false
@@ -1754,6 +1774,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ciclos_proveedor"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_proveedor_ciclo_proveedor_id_fkey"
+            columns: ["ciclo_proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "v_ciclos_proveedor_estado"
+            referencedColumns: ["ciclo_id"]
           },
           {
             foreignKeyName: "pagos_proveedor_created_by_fkey"
@@ -2407,6 +2434,7 @@ export type Database = {
           obtenida_at: string
           payload_hash: string | null
           publicada_at: string | null
+          revalidada_at: string | null
           tipo: string
           version: number
           vigente_desde: string
@@ -2424,6 +2452,7 @@ export type Database = {
           obtenida_at?: string
           payload_hash?: string | null
           publicada_at?: string | null
+          revalidada_at?: string | null
           tipo: string
           version?: number
           vigente_desde?: string
@@ -2441,6 +2470,7 @@ export type Database = {
           obtenida_at?: string
           payload_hash?: string | null
           publicada_at?: string | null
+          revalidada_at?: string | null
           tipo?: string
           version?: number
           vigente_desde?: string
@@ -2675,6 +2705,45 @@ export type Database = {
       }
     }
     Views: {
+      v_caja_diaria: {
+        Row: {
+          egresos_usdt: number | null
+          entradas_ves: number | null
+          fecha: string | null
+          flujo_ves: number | null
+          movimientos: number | null
+          salidas_ves: number | null
+        }
+        Relationships: []
+      }
+      v_ciclos_proveedor_estado: {
+        Row: {
+          ciclo_id: string | null
+          costo_usdt: number | null
+          costo_ves_snapshot: number | null
+          cuenta_alias: string | null
+          cuenta_id: string | null
+          dia_ancla_proveedor: number | null
+          dias_para_renovar: number | null
+          estado: string | null
+          inicio: string | null
+          pagado: boolean | null
+          plataforma_nombre: string | null
+          producto_nombre: string | null
+          proveedor_nombre_snapshot: string | null
+          proxima_renovacion: string | null
+          sin_desembolso: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ciclos_proveedor_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_mis_ventas_revendedor: {
         Row: {
           cliente: string | null
@@ -2705,6 +2774,74 @@ export type Database = {
           },
         ]
       }
+      v_movimientos_caja: {
+        Row: {
+          concepto: string | null
+          created_by: string | null
+          fecha: string | null
+          monto_usdt: number | null
+          monto_ves: number | null
+          movimiento_id: string | null
+          origen_id: string | null
+          plataforma_nombre: string | null
+          referencia: string | null
+          tipo: string | null
+        }
+        Relationships: []
+      }
+      v_periodos_por_cobrar: {
+        Row: {
+          cliente_id: string | null
+          cliente_nombre: string | null
+          cliente_whatsapp: string | null
+          estado_datos_financieros: string | null
+          fecha_renovacion: string | null
+          fecha_venta: string | null
+          inicio: string | null
+          modalidad_nombre: string | null
+          monto_ves_esperado: number | null
+          periodo_id: string | null
+          plataforma_nombre: string | null
+          precio_comercial_usd: number | null
+          producto_nombre: string | null
+          suscripcion_id: string | null
+          tipo_operacion: string | null
+          vendedor_nombre: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "periodos_servicio_suscripcion_id_fkey"
+            columns: ["suscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "suscripciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "periodos_servicio_suscripcion_id_fkey"
+            columns: ["suscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "v_mis_ventas_revendedor"
+            referencedColumns: ["suscripcion_id"]
+          },
+          {
+            foreignKeyName: "suscripciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_ventas_diarias: {
+        Row: {
+          fecha: string | null
+          renovaciones: number | null
+          ventas_esperadas_ves: number | null
+          ventas_nuevas: number | null
+          ventas_usd: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       actualizar_cuenta: {
@@ -2726,6 +2863,7 @@ export type Database = {
         }
         Returns: number
       }
+      calcular_cierre_mensual: { Args: { p_mes: string }; Returns: string }
       cambiar_estado_suscripcion: {
         Args: {
           p_motivo?: string
@@ -2738,6 +2876,7 @@ export type Database = {
         Args: { p_motivo?: string; p_suscripcion_id: string }
         Returns: string
       }
+      cerrar_mes: { Args: { p_mes: string }; Returns: string }
       confirmar_limpieza: {
         Args: { p_evidencia?: string; p_operacion_id: string }
         Returns: undefined
@@ -2766,12 +2905,60 @@ export type Database = {
         Args: { p_fecha?: string; p_nota?: string; p_suscripcion_id: string }
         Returns: undefined
       }
+      reabrir_mes: {
+        Args: { p_mes: string; p_motivo: string }
+        Returns: string
+      }
       registrar_ciclo_proveedor: {
         Args: {
           p_costo_usdt: number
           p_cuenta_id: string
           p_dia_ancla?: number
           p_inicio?: string
+          p_referencia?: string
+        }
+        Returns: string
+      }
+      registrar_cobro_cliente: {
+        Args: {
+          p_monto_ves?: number
+          p_ocurrido_at?: string
+          p_periodo_id: string
+          p_referencia?: string
+        }
+        Returns: string
+      }
+      registrar_gasto_operativo: {
+        Args: {
+          p_categoria: string
+          p_contraparte?: string
+          p_cuenta_id?: string
+          p_descripcion?: string
+          p_fecha_gasto?: string
+          p_monto_usdt: number
+          p_nota?: string
+          p_plataforma_id?: string
+          p_referencia?: string
+        }
+        Returns: string
+      }
+      registrar_pago_proveedor: {
+        Args: {
+          p_ciclo_id: string
+          p_fecha_pago?: string
+          p_referencia?: string
+          p_tipo?: string
+        }
+        Returns: string
+      }
+      registrar_renovacion_y_pago: {
+        Args: {
+          p_costo_usdt: number
+          p_cuenta_id: string
+          p_dia_ancla?: number
+          p_fecha_pago?: string
+          p_inicio?: string
+          p_pagar?: boolean
           p_referencia?: string
         }
         Returns: string
@@ -2786,6 +2973,48 @@ export type Database = {
         }
         Returns: string
       }
+      resumen_financiero: {
+        Args: { p_fin: string; p_inicio: string }
+        Returns: {
+          ajustes_clientes_ves: number
+          ajustes_economicos_usd_paralela: number
+          cobros_ves: number
+          costo_ocioso_ves: number
+          costo_proveedor_devengado_usdt: number
+          costo_proveedor_devengado_ves: number
+          dias_unidad_capacidad: number
+          dias_unidad_disponibles: number
+          dias_unidad_ocupados: number
+          dias_unidad_pagados: number
+          flujo_caja_valorizado_ves: number
+          gastos_operativos_usdt: number
+          gastos_operativos_ves: number
+          ingreso_cobrado_devengado_ves: number
+          ingreso_comercial_devengado_usd: number
+          ingreso_contractual_usd: number
+          ingreso_economico_devengado_usd_paralela: number
+          margen_bruto_economico_usd_paralela: number
+          margen_bruto_ves: number
+          pagos_proveedor_usdt: number
+          pagos_proveedor_ves: number
+          reembolsos_clientes_ves: number
+          resultado_operativo_economico_usd_paralela: number
+          resultado_operativo_ves: number
+          ves_esperados_devengados_clientes: number
+        }[]
+      }
+      revertir_cobro_cliente: {
+        Args: { p_motivo?: string; p_pago_id: string }
+        Returns: string
+      }
+      revertir_gasto_operativo: {
+        Args: { p_gasto_id: string; p_motivo?: string }
+        Returns: string
+      }
+      revertir_pago_proveedor: {
+        Args: { p_motivo?: string; p_pago_id: string }
+        Returns: string
+      }
       rotar_credenciales_cuenta: {
         Args: {
           p_contrasena_cifrada?: string
@@ -2794,6 +3023,33 @@ export type Database = {
           p_login_fingerprint?: string
         }
         Returns: undefined
+      }
+      tasa_utilizable: {
+        Args: { p_tipo: string }
+        Returns: {
+          bs_por_usd: number
+          created_at: string
+          detalle_fuentes: Json | null
+          estado: string
+          fecha_vigencia: string | null
+          fuente: string | null
+          fuente_registro_id: string | null
+          id: string
+          observada_fuente_at: string | null
+          obtenida_at: string
+          payload_hash: string | null
+          publicada_at: string | null
+          revalidada_at: string | null
+          tipo: string
+          version: number
+          vigente_desde: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tasas_cambio"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       vender_unidad: {
         Args: {

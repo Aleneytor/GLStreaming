@@ -29,7 +29,13 @@ export default async function PanelLayout({
         { href: "/vencimientos", etiqueta: "Vencen", icono: "🔔" },
         { href: "/inventario", etiqueta: "Inventario", icono: "📦" },
         { href: "/clientes", etiqueta: "Clientes", icono: "👥" },
-        { href: "/tasas", etiqueta: "Tasas", icono: "💱" },
+        {
+          href: "/caja",
+          etiqueta: "Caja",
+          icono: "💵",
+          // Todo el bloque financiero cuelga de aquí (ver el grupo (finanzas)).
+          incluye: ["/cobros", "/egresos", "/cierre", "/tasas"],
+        },
         { href: "/catalogo", etiqueta: "Catálogo", icono: "⚙️" },
       ]
     : [{ href: "/dashboard", etiqueta: "Mis ventas", icono: "🧾" }];

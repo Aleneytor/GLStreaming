@@ -90,6 +90,23 @@ export function evaluarFrescura(
   };
 }
 
+/**
+ * Instante que decide si una tasa sirve para congelar una operación.
+ *
+ * NO es «cuándo la observó la fuente»: la BCV publica de lunes a viernes, así
+ * que el domingo su observación es legítimamente de hace dos días. Lo que
+ * importa es cuándo confirmamos por última vez que sigue siendo la más
+ * reciente (`revalidada_at`), o en su defecto cuándo la recibimos.
+ * El equivalente en SQL es `coalesce(revalidada_at, obtenida_at)`
+ * (ver `public.tasa_utilizable`, migración 0016).
+ */
+export function confirmadaAt(tasa: {
+  revalidada_at?: string | null;
+  obtenida_at: string;
+}): string {
+  return tasa.revalidada_at ?? tasa.obtenida_at;
+}
+
 /** Valida la fecha de vigencia que publica la fuente BCV. */
 export function validarFechaVigencia(fecha: unknown): ResultadoValidacion {
   if (typeof fecha !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {

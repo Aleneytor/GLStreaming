@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { obtenerTasasVigentes, type TasaVigente } from "@/features/tasas/actions";
 import { BotonRefrescarTasas } from "@/features/tasas/boton-refrescar";
-import { evaluarFrescura } from "@/domain/tasas";
+import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +26,9 @@ function Tarjeta({
     );
   }
 
-  const frescura = evaluarFrescura(tasa.observada_fuente_at ?? tasa.obtenida_at);
+  // La antigüedad que importa es la de la última CONFIRMACIÓN, no la de la
+  // observación: la BCV no publica en fin de semana y aun así su tasa es válida.
+  const frescura = evaluarFrescura(confirmadaAt(tasa));
   const simulada = tasa.fuente === "simulada";
 
   return (

@@ -6,11 +6,14 @@ import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { obtenerBcv, obtenerParalela } from "@/server/tasas/adaptadores";
 
 export type TasaVigente = {
+  id: string;
   tipo: "bcv" | "paralela";
   bs_por_usd: number;
   fecha_vigencia: string | null;
   observada_fuente_at: string | null;
   obtenida_at: string;
+  /** Última comprobación de que sigue siendo la más reciente de la fuente. */
+  revalidada_at: string | null;
   fuente: string | null;
 };
 
@@ -24,7 +27,9 @@ export async function obtenerTasasVigentes(): Promise<{
   const [bcv, paralela] = await Promise.all([
     supabase
       .from("tasas_cambio")
-      .select("tipo, bs_por_usd, fecha_vigencia, observada_fuente_at, obtenida_at, fuente")
+      .select(
+        "id, tipo, bs_por_usd, fecha_vigencia, observada_fuente_at, obtenida_at, revalidada_at, fuente",
+      )
       .eq("tipo", "bcv")
       .eq("estado", "vigente")
       .order("obtenida_at", { ascending: false })
@@ -32,7 +37,9 @@ export async function obtenerTasasVigentes(): Promise<{
       .maybeSingle(),
     supabase
       .from("tasas_cambio")
-      .select("tipo, bs_por_usd, fecha_vigencia, observada_fuente_at, obtenida_at, fuente")
+      .select(
+        "id, tipo, bs_por_usd, fecha_vigencia, observada_fuente_at, obtenida_at, revalidada_at, fuente",
+      )
       .eq("tipo", "paralela")
       .eq("estado", "vigente")
       .order("obtenida_at", { ascending: false })
@@ -44,11 +51,13 @@ export async function obtenerTasasVigentes(): Promise<{
     if (!d) return null;
     const r = d as Record<string, unknown>;
     return {
+      id: r.id as string,
       tipo: r.tipo as "bcv" | "paralela",
       bs_por_usd: Number(r.bs_por_usd),
       fecha_vigencia: (r.fecha_vigencia as string) ?? null,
       observada_fuente_at: (r.observada_fuente_at as string) ?? null,
       obtenida_at: r.obtenida_at as string,
+      revalidada_at: (r.revalidada_at as string) ?? null,
       fuente: (r.fuente as string) ?? null,
     };
   };
@@ -100,6 +109,15 @@ export async function refrescarTasasAction(
         .maybeSingle();
 
       if (existente) {
+        // La fuente no publicó nada nuevo (fin de semana, feriado, BCV aún sin
+        // salir). No se duplica la fila, pero sí se deja constancia de que se
+        // comprobó: si no, un cobro válido con la tasa del viernes quedaría
+        // bloqueado el lunes por "tasa rancia".
+        await supabase
+          .from("tasas_cambio")
+          .update({ revalidada_at: new Date().toISOString() })
+          .eq("id", (existente as { id: string }).id);
+
         mensajes.push(`${o.tipo}: sin cambios`);
         continue;
       }
@@ -113,6 +131,7 @@ export async function refrescarTasasAction(
       fuente_registro_id: o.fuente_registro_id,
       observada_fuente_at: o.observada_fuente_at,
       detalle_fuentes: o.detalle_fuentes ?? null,
+      revalidada_at: new Date().toISOString(),
       estado: "vigente",
     });
 
