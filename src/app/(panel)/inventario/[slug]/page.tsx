@@ -4,7 +4,7 @@ import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { uno } from "@/lib/supabase/util";
 import { BotonCredenciales } from "@/features/inventario/credenciales";
-import { avisoProveedor, diasParaRenovar } from "@/domain/fechas";
+import { avisoProveedor, badgeVencimiento, diasParaRenovar } from "@/domain/fechas";
 import { FiltrosInventario } from "@/features/inventario/filtros";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +59,11 @@ export default async function PlataformaPage({
        productos_plataforma!inner ( id, nombre, codigo, plataforma_id ),
        proveedores ( nombre_o_alias ),
        ciclos_proveedor ( id, costo_usdt, proxima_renovacion, dia_ancla_proveedor, estado ),
-       unidades_inventario ( id, numero_slot, nombre_visible, estado_operativo, estado_preparacion )`,
+       unidades_inventario ( id, numero_slot, nombre_visible, estado_operativo, estado_preparacion ),
+       asignaciones_inventario (
+         id, alcance, unidad_id, fin,
+         suscripciones ( id, estado, clientes ( nombre ),
+           periodos_servicio ( fecha_renovacion, inicio ) ) )`,
     )
     .eq("productos_plataforma.plataforma_id", plataforma.id);
 
@@ -145,6 +149,38 @@ export default async function PlataformaPage({
                 const unidades = ((c.unidades_inventario ?? []) as Unidad[]).sort(
                   (a, b) => a.numero_slot - b.numero_slot,
                 );
+
+                // Asignaciones abiertas: qué está vendido ahora mismo.
+                const abiertas = (c.asignaciones_inventario ?? []).filter(
+                  (a) => a.fin === null,
+                );
+                const ventaCompleta = abiertas.find((a) => a.alcance === "cuenta");
+                const porUnidad = new Map(
+                  abiertas
+                    .filter((a) => a.unidad_id)
+                    .map((a) => [a.unidad_id as string, a]),
+                );
+
+                /** Datos de la venta abierta sobre un recurso, si existe. */
+                const datosVenta = (asignacion: (typeof abiertas)[number] | undefined) => {
+                  if (!asignacion) return null;
+                  const susc = uno(asignacion.suscripciones);
+                  if (!susc) return null;
+                  const periodos = susc.periodos_servicio ?? [];
+                  // El período vigente es el de fecha de renovación más lejana.
+                  const ultimo = [...periodos].sort((a, b) =>
+                    a.fecha_renovacion < b.fecha_renovacion ? 1 : -1,
+                  )[0];
+                  const dias = ultimo ? diasParaRenovar(ultimo.fecha_renovacion, hoy) : null;
+                  return {
+                    cliente: uno(susc.clientes)?.nombre ?? "—",
+                    estado: susc.estado,
+                    renovacion: ultimo?.fecha_renovacion ?? null,
+                    badge: dias === null ? null : badgeVencimiento(dias),
+                  };
+                };
+
+                const ventaDeCuenta = datosVenta(ventaCompleta);
 
                 return (
                   <li
@@ -232,30 +268,108 @@ export default async function PlataformaPage({
                       <BotonCredenciales cuentaId={c.id} />
                     </div>
 
+                    {ventaDeCuenta && (
+                      <div className="border-b border-neutral-200 bg-sky-50 px-4 py-3 text-sm dark:border-neutral-800 dark:bg-sky-950/40">
+                        <p className="font-medium">
+                          Vendida completa a {ventaDeCuenta.cliente}
+                        </p>
+                        {ventaDeCuenta.badge && (
+                          <p className="mt-0.5 text-neutral-600 dark:text-neutral-400">
+                            {ventaDeCuenta.badge.etiqueta} · renueva{" "}
+                            {ventaDeCuenta.renovacion}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     {unidades.length > 0 ? (
                       <ul className="divide-y divide-neutral-100 dark:divide-neutral-900">
-                        {unidades.map((u) => (
-                          <li
-                            key={u.id}
-                            className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"
-                          >
-                            <span className="flex min-w-0 items-center gap-2">
-                              <span className="w-6 shrink-0 tabular-nums text-neutral-400">
-                                {u.numero_slot}
-                              </span>
-                              <span className="truncate">{u.nombre_visible}</span>
-                            </span>
-                            {/* El estado real (vendido/libre) llega con la Fase 3. */}
-                            <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                              Disponible
-                            </span>
-                          </li>
-                        ))}
+                        {unidades.map((u) => {
+                          const venta = datosVenta(porUnidad.get(u.id));
+                          const bloqueadoPorCuenta = Boolean(ventaCompleta);
+                          const listo =
+                            u.estado_operativo === "habilitada" &&
+                            u.estado_preparacion === "lista";
+
+                          return (
+                            <li key={u.id} className="px-4 py-2.5 text-sm">
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="flex min-w-0 items-center gap-2">
+                                  <span className="w-6 shrink-0 tabular-nums text-neutral-400">
+                                    {u.numero_slot}
+                                  </span>
+                                  <span className="truncate">
+                                    {venta ? venta.cliente : u.nombre_visible}
+                                  </span>
+                                </span>
+
+                                {venta ? (
+                                  <span
+                                    className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs ${
+                                      venta.badge?.color === "rojo"
+                                        ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                                        : venta.badge?.color === "amarillo"
+                                          ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                                          : "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+                                    }`}
+                                  >
+                                    {venta.badge?.etiqueta ?? "Vendido"}
+                                  </span>
+                                ) : bloqueadoPorCuenta ? (
+                                  <span className="shrink-0 text-xs text-neutral-400">
+                                    incluido en la venta completa
+                                  </span>
+                                ) : listo ? (
+                                  <Link
+                                    href={`/ventas/nueva?cuenta=${c.id}&unidad=${u.id}`}
+                                    className="shrink-0 rounded-lg bg-neutral-900 px-3 py-1 text-xs font-medium text-white transition active:scale-[0.98] dark:bg-white dark:text-neutral-900"
+                                  >
+                                    Vender
+                                  </Link>
+                                ) : (
+                                  <span className="shrink-0 rounded-full bg-neutral-200 px-2.5 py-0.5 text-xs dark:bg-neutral-700">
+                                    {u.estado_preparacion === "pendiente_limpieza"
+                                      ? "pendiente limpieza"
+                                      : u.estado_operativo}
+                                  </span>
+                                )}
+                              </div>
+
+                              {venta?.estado && venta.estado !== "activa" && (
+                                <p className="mt-1 pl-8 text-xs text-neutral-500 dark:text-neutral-400">
+                                  {venta.estado}
+                                </p>
+                              )}
+                            </li>
+                          );
+                        })}
                       </ul>
                     ) : (
-                      <p className="px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400">
-                        Recurso indivisible (sin unidades hijas).
-                      </p>
+                      <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                        <span className="text-neutral-500 dark:text-neutral-400">
+                          Recurso indivisible (sin perfiles).
+                        </span>
+                        {!ventaCompleta && (
+                          <Link
+                            href={`/ventas/nueva?cuenta=${c.id}`}
+                            className="shrink-0 rounded-lg bg-neutral-900 px-3 py-1 text-xs font-medium text-white dark:bg-white dark:text-neutral-900"
+                          >
+                            Vender
+                          </Link>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Venta de la cuenta completa (solo si no hay perfiles ocupados). */}
+                    {unidades.length > 0 && !ventaCompleta && porUnidad.size === 0 && (
+                      <div className="px-4 py-2.5">
+                        <Link
+                          href={`/ventas/nueva?cuenta=${c.id}`}
+                          className="text-xs text-neutral-500 underline transition hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+                        >
+                          Vender la cuenta completa
+                        </Link>
+                      </div>
                     )}
                   </li>
                 );
