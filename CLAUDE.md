@@ -19,8 +19,8 @@ tasa paralela) y revendedores. Reemplaza un Excel. Zona horaria del negocio:
    pruebas. Así hemos encontrado bugs reales (orden de funciones, grants, etc.).
 2. **Avanza por rebanadas pequeñas y coherentes**, no todo de golpe. Cada
    rebanada: escribir → validar → **commit**. Un commit por rebanada.
-3. **El dominio manda.** Las reglas de negocio están en `docs/` con ~97
-   decisiones confirmadas (`DEC-01..DEC-97`). No inventes reglas: si falta una
+3. **El dominio manda.** Las reglas de negocio están en `docs/` con ~101
+   decisiones confirmadas (`DEC-01..DEC-101`). No inventes reglas: si falta una
    decisión de negocio que solo el usuario sabe, **pregúntale**.
 4. **No programar de más.** El usuario prefiere no construir lo que no usará
    (ver DEC-97: sin stock para revendedor). Ante la duda, confirma alcance.
@@ -113,10 +113,10 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 
 ## Estado actual
 
-**Fase 4 (motor financiero): COMPLETA (2026-07-23).** Migraciones `0016..0019`.
+**Fase 4 (motor financiero): COMPLETA (2026-07-23).** Migraciones `0016..0020`.
 El negocio ya se cuadra dentro de la app, en las tres monedas.
-- **Tasas** (`/tasas`): BCV (API propia) y paralela (Kuanto, solo lectura con la
-  clave pública). Validación defensiva: rechaza saltos > 50 % frente a la última
+- **Tasas** (`/tasas`): BCV (API propia) y paralela (Kuanto **en vivo**, solo
+  lectura con la clave anon). Validación defensiva: rechaza saltos > 50 % frente a la última
   conocida, exige fecha de vigencia, guarda idempotentemente y **nunca inventa un
   valor** si la fuente falla (`DEC-98`).
 - **Cobros** (`/cobros`): `registrar_cobro_cliente()` cobra
@@ -134,6 +134,12 @@ El negocio ya se cuadra dentro de la app, en las tres monedas.
   para el día y para el mes**, de modo que `suma(días) = mes` se cumple por
   construcción. Borrador → cierre → **reapertura versionada con motivo auditado**
   (`DEC-99`).
+
+⚠️ **Una tasa `simulada` no congela dinero** (migración 0020). Sirve para ver la
+pantalla y desarrollar, pero `tasa_utilizable` la descarta: antes de eso, un
+cobro podía quedar grabado para siempre con un valor inventado. Y una tasa
+simulada tampoco sirve de referencia para el control de desviación — si no,
+conectar la fuente real (40 → 855) parecería un ataque y se rechazaría la buena.
 
 ⚠️ **`revalidada_at` no es decorativo.** Como el guardado de tasas es idempotente,
 una BCV publicada el viernes no crea fila nueva el lunes; sin esta columna el
@@ -238,11 +244,15 @@ propio teléfono). Si cambia la red, hay que actualizarlas — ver
 
 ## Pendientes externos (fuera del código)
 
-- **Kuanto (tasa paralela): secreto expuesto SIN rotar y NO se rotará** (`DEC-98`,
-  decisión del usuario). GL Streaming solo **lee** con la clave pública y se
-  defiende por su lado (validación de rango, antigüedad, idempotencia). Si faltan
-  `KUANTO_SUPABASE_URL` / `KUANTO_SUPABASE_PUBLISHABLE_KEY` en `.env.local`, la
-  paralela usa un valor **simulado y marcado como tal** en la UI.
+- **Kuanto (tasa paralela): CONECTADO EN VIVO desde el 23/07/2026** (`DEC-98`,
+  el usuario asume el riesgo). Se lee `p2p_rate_history` con la clave **anon**
+  (la misma que el frontend de Kuanto entrega a cualquier navegador; no es la
+  clave de escritura expuesta). El secreto expuesto NO se rotará. GL Streaming se
+  defiende por su lado: rango contra la última tasa real, antigüedad, guardado
+  idempotente y prohibición de inventar valores.
+- Si faltan `KUANTO_SUPABASE_URL` / `KUANTO_SUPABASE_PUBLISHABLE_KEY`, la paralela
+  cae a un valor **simulado**, visible como tal y —desde la migración 0020— **no
+  utilizable para congelar dinero**.
 - Endurecer el scraper BCV (TLS, rechazar respuesta sin fecha) antes de finanzas.
 - Despliegue: nada al VPS ni a `glcuenta.com` hasta Fase 6.
 

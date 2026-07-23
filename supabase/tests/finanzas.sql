@@ -35,6 +35,21 @@ select 'tasa_utilizable devuelve la BCV de la prueba' as prueba,
 union all select 'tasa_utilizable devuelve la paralela de la prueba',
        (select id from public.tasa_utilizable('paralela')) = :'tasa_par';
 
+-- Una tasa SIMULADA nunca puede congelar dinero, por reciente que sea.
+reset role;
+insert into public.tasas_cambio (tipo, bs_por_usd, fuente, fuente_registro_id, observada_fuente_at, revalidada_at, obtenida_at, estado)
+values ('paralela', 999, 'simulada', 'test-sim-1', now(), now(), now() + interval '1 minute', 'vigente');
+select set_config('request.jwt.claims', json_build_object('sub', :'admin_id', 'role', 'authenticated')::text, true);
+set role authenticated;
+
+select 'Una tasa simulada, aun siendo la mas nueva, no es utilizable' as prueba,
+       (select id from public.tasa_utilizable('paralela')) = :'tasa_par' as pass;
+
+reset role;
+delete from public.tasas_cambio where fuente_registro_id = 'test-sim-1';
+select set_config('request.jwt.claims', json_build_object('sub', :'admin_id', 'role', 'authenticated')::text, true);
+set role authenticated;
+
 -- ---------------------------------------------------------------------------
 -- 2. Cobro del cliente: congela tasas y calcula el esperado
 -- ---------------------------------------------------------------------------

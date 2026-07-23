@@ -84,9 +84,15 @@ export async function refrescarTasasAction(
   const supabase = await createClient();
   const vigentes = await obtenerTasasVigentes();
 
+  // Una tasa simulada NO sirve de referencia para el control de desviación: al
+  // conectar la fuente real, el salto (40 → 855) parecería un dato manipulado y
+  // se rechazaría la tasa buena. Solo un valor real puede juzgar a otro.
+  const referencia = (t: TasaVigente | null) =>
+    t && t.fuente !== "simulada" ? t.bs_por_usd : null;
+
   const resultados = await Promise.all([
-    obtenerBcv(vigentes.bcv?.bs_por_usd ?? null),
-    obtenerParalela(vigentes.paralela?.bs_por_usd ?? null),
+    obtenerBcv(referencia(vigentes.bcv)),
+    obtenerParalela(referencia(vigentes.paralela)),
   ]);
 
   const mensajes: string[] = [];
