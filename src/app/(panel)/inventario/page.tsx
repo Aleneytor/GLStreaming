@@ -3,6 +3,7 @@ import Link from "next/link";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { uno } from "@/lib/supabase/util";
+import { BotonCredenciales } from "@/features/inventario/credenciales";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +25,9 @@ export default async function InventarioPage() {
   const { data: cuentas } = await supabase
     .from("cuentas")
     .select(
-      `id, alias, capacidad, capacidad_vendible_habilitada, estado, created_at,
+      `id, alias, capacidad, capacidad_vendible_habilitada, estado, created_at, notas,
        productos_plataforma ( nombre, codigo, plataformas ( nombre ) ),
+       proveedores ( nombre_o_alias ),
        unidades_inventario ( id, numero_slot, nombre_visible, estado_operativo, estado_preparacion )`,
     )
     .order("created_at", { ascending: false });
@@ -58,6 +60,7 @@ export default async function InventarioPage() {
           {cuentas?.map((c) => {
             const producto = uno(c.productos_plataforma);
             const plataforma = uno(producto?.plataformas);
+            const proveedor = uno(c.proveedores);
             const unidades = ((c.unidades_inventario ?? []) as Unidad[]).sort(
               (a, b) => a.numero_slot - b.numero_slot,
             );
@@ -85,6 +88,31 @@ export default async function InventarioPage() {
                       vendible/física
                     </p>
                   </div>
+                </div>
+
+                {/* Proveedor, notas y credenciales */}
+                <div className="space-y-3 border-b border-neutral-200 p-4 dark:border-neutral-800">
+                  {(proveedor?.nombre_o_alias || c.notas) && (
+                    <dl className="space-y-1 text-sm">
+                      {proveedor?.nombre_o_alias && (
+                        <div className="flex gap-2">
+                          <dt className="text-neutral-500 dark:text-neutral-400">
+                            Proveedor:
+                          </dt>
+                          <dd>{proveedor.nombre_o_alias}</dd>
+                        </div>
+                      )}
+                      {c.notas && (
+                        <div className="flex gap-2">
+                          <dt className="shrink-0 text-neutral-500 dark:text-neutral-400">
+                            Notas:
+                          </dt>
+                          <dd className="whitespace-pre-wrap">{c.notas}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  )}
+                  <BotonCredenciales cuentaId={c.id} />
                 </div>
 
                 {/* Filas hijas: las unidades */}

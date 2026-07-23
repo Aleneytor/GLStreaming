@@ -85,6 +85,25 @@ select public.crear_cuenta_con_unidades(
 select 'Recurso indivisible no crea unidades' as prueba,
        (select count(*) from public.unidades_inventario where cuenta_id = :'cuenta_spot') = 0 as pass;
 
+-- 7. Proveedor por nombre libre: se crea si no existe y se reutiliza si ya está.
+select count(*) as prov_antes from public.proveedores \gset
+select public.crear_cuenta_con_unidades(
+  :'prod_netflix', 5, 'Con proveedor nuevo', null, 'CIF3', 'huella-3', 'CIF3P', null,
+  'pagada con transferencia', 'Distribuidor Pepe'
+) as cta_prov1 \gset
+select public.crear_cuenta_con_unidades(
+  :'prod_netflix', 5, 'Mismo proveedor', null, 'CIF4', 'huella-4', 'CIF4P', null,
+  null, 'distribuidor pepe'   -- misma etiqueta en minúsculas: NO debe duplicar
+) as cta_prov2 \gset
+
+select 'Proveedor nuevo se crea una sola vez' as prueba,
+       (select count(*) from public.proveedores) = :prov_antes + 1 as pass
+union all select 'Ambas cuentas apuntan al mismo proveedor',
+       (select proveedor_operativo_id from public.cuentas where id = :'cta_prov1')
+       = (select proveedor_operativo_id from public.cuentas where id = :'cta_prov2')
+union all select 'Las notas quedan guardadas',
+       (select notas from public.cuentas where id = :'cta_prov1') = 'pagada con transferencia';
+
 -- ======================= COMO REVENDEDOR =======================
 reset role;
 select set_config('request.jwt.claims', json_build_object('sub', :'rev_id', 'role', 'authenticated')::text, true);

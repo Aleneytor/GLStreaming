@@ -781,6 +781,7 @@ export type Database = {
           created_at: string
           estado: string
           id: string
+          notas: string | null
           producto_plataforma_id: string
           proveedor_operativo_id: string | null
           reutilizable: boolean
@@ -795,6 +796,7 @@ export type Database = {
           created_at?: string
           estado?: string
           id?: string
+          notas?: string | null
           producto_plataforma_id: string
           proveedor_operativo_id?: string | null
           reutilizable?: boolean
@@ -809,6 +811,7 @@ export type Database = {
           created_at?: string
           estado?: string
           id?: string
+          notas?: string | null
           producto_plataforma_id?: string
           proveedor_operativo_id?: string | null
           reutilizable?: boolean
@@ -2712,8 +2715,10 @@ export type Database = {
           p_login_cifrado?: string
           p_login_fingerprint?: string
           p_nombres_unidades?: string[]
+          p_notas?: string
           p_producto_id: string
           p_proveedor_id?: string
+          p_proveedor_nombre?: string
         }
         Returns: string
       }

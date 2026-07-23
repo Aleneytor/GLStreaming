@@ -129,19 +129,43 @@ export function FormCuenta({
       </div>
 
       <div>
-        <label htmlFor="proveedor_id" className="mb-1.5 block text-sm font-medium">
+        <label htmlFor="proveedor" className="mb-1.5 block text-sm font-medium">
           Proveedor <span className="text-neutral-400">(opcional)</span>
         </label>
-        <select id="proveedor_id" name="proveedor_id" className={claseCampo}>
-          <option value="">Sin proveedor</option>
+        {/* Texto libre: se reutiliza si el nombre ya existe, si no se crea. */}
+        <input
+          id="proveedor"
+          name="proveedor"
+          type="text"
+          list="lista-proveedores"
+          placeholder="Yo, un nombre o un teléfono…"
+          className={claseCampo}
+        />
+        <datalist id="lista-proveedores">
           {proveedores.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.etiqueta}
-            </option>
+            <option key={p.id} value={p.etiqueta} />
           ))}
-        </select>
+        </datalist>
         <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-          Elegirlo no crea costo ni pago: eso se registra aparte.
+          Escribe el que quieras: si no existe, se crea. Indicarlo no crea costo ni
+          pago; eso se registra aparte.
+        </p>
+      </div>
+
+      <div>
+        <label htmlFor="notas" className="mb-1.5 block text-sm font-medium">
+          Notas <span className="text-neutral-400">(opcional)</span>
+        </label>
+        <textarea
+          id="notas"
+          name="notas"
+          rows={3}
+          placeholder="ej. cómo pagaste esta cuenta, dónde la compraste…"
+          className={claseCampo}
+        />
+        <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+          Para tus recordatorios. No anotes aquí números completos de tarjeta ni
+          códigos de seguridad.
         </p>
       </div>
 
