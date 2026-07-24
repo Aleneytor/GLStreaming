@@ -65,13 +65,16 @@ export function FormImportacion({
     (v) => !vendedoresConocidos.has(v.trim().toLowerCase()),
   );
 
-  // Alerta anti-error: la hoja es de Spotify pero el producto elegido no lo es
-  // (o al revés). Fue lo que duplicó familias de Spotify como si fueran Netflix.
-  const esProductoSpotify = (producto?.codigo ?? "").startsWith("spotify");
+  // Alerta anti-error: las columnas «Correo Cliente» / «Clave Cliente» son
+  // exclusivas de Spotify FAMILIAR (cada miembro con su login). Un individual
+  // NO las tiene: usa el login del cliente en las columnas normales.
+  //   - hoja con esas columnas + producto que no es familiar → error
+  //   - producto familiar + hoja sin esas columnas → error
+  const esFamiliar = (producto?.codigo ?? "") === "spotify-familiar";
   const desajusteSpotify =
     analisis != null &&
-    ((analisis.columnasSpotify && !esProductoSpotify) ||
-      (!analisis.columnasSpotify && esProductoSpotify));
+    ((analisis.columnasSpotify && !esFamiliar) ||
+      (esFamiliar && !analisis.columnasSpotify));
 
   const aBs = (monto: number | null) =>
     monto == null ? null : moneda === "usd" && bcv ? monto * bcv : monto;
@@ -230,16 +233,18 @@ export function FormImportacion({
           <p className="mt-1 text-red-800 dark:text-red-300">
             {analisis?.columnasSpotify ? (
               <>
-                Esta hoja tiene columnas de <strong>Spotify</strong> («Correo Cliente» /
-                «Clave Cliente») pero elegiste <strong>{producto?.etiqueta}</strong>. Elige
-                arriba el producto de <strong>Spotify</strong> que corresponda (familiar o
-                individual). Importarla así crearía cuentas equivocadas.
+                Esta hoja tiene columnas de <strong>Spotify familiar</strong> («Correo
+                Cliente» / «Clave Cliente») pero elegiste{" "}
+                <strong>{producto?.etiqueta}</strong>. Elige arriba el producto{" "}
+                <strong>Spotify — familiar</strong>. Importarla así crearía cuentas
+                equivocadas.
               </>
             ) : (
               <>
-                Elegiste un producto de <strong>Spotify</strong> pero esta hoja no trae las
-                columnas «Correo Cliente» / «Clave Cliente». Revisa que sea la hoja de
-                Spotify correcta, o cambia el producto.
+                Elegiste <strong>Spotify — familiar</strong>, pero esta hoja no trae las
+                columnas «Correo Cliente» / «Clave Cliente» (donde va el login de cada
+                miembro). Si son <strong>individuales</strong>, cambia el producto a{" "}
+                <strong>Spotify — individual</strong>.
               </>
             )}
           </p>

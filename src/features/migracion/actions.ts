@@ -118,19 +118,19 @@ export async function importarAction(
   // MISMO modo que la vista previa: si no, se guardaría otra cosa.
   const analisis = analizarFilas(texto, capacidad, modoDeProducto(codigo));
 
-  // Blindaje contra el error que duplicó familias como Netflix: la hoja de
-  // Spotify solo se importa con un producto de Spotify, y viceversa.
-  const productoSpotify = esFamiliar || esIndividualSpotify;
-  if (analisis.columnasSpotify && !productoSpotify) {
+  // Blindaje contra el error que duplicó familias como Netflix. Las columnas
+  // «Correo Cliente» / «Clave Cliente» son EXCLUSIVAS de Spotify familiar; un
+  // individual usa el login del cliente en las columnas normales.
+  if (analisis.columnasSpotify && !esFamiliar) {
     return {
       error:
-        "Esta hoja es de Spotify (tiene «Correo Cliente» / «Clave Cliente») pero el producto elegido no lo es. Elige el producto de Spotify que corresponda.",
+        "Esta hoja es de Spotify familiar (tiene «Correo Cliente» / «Clave Cliente»). Elige el producto «Spotify — familiar».",
     };
   }
-  if (!analisis.columnasSpotify && productoSpotify) {
+  if (esFamiliar && !analisis.columnasSpotify) {
     return {
       error:
-        "Elegiste un producto de Spotify pero la hoja no trae las columnas «Correo Cliente» / «Clave Cliente».",
+        "Elegiste «Spotify — familiar» pero la hoja no trae «Correo Cliente» / «Clave Cliente». Si son individuales, usa «Spotify — individual».",
     };
   }
 
