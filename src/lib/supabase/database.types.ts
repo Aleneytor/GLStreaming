@@ -2748,9 +2748,12 @@ export type Database = {
         Row: {
           cliente: string | null
           cliente_whatsapp: string | null
+          cliente_whatsapp_original: string | null
           cuenta_id: string | null
           estado: string | null
+          fecha_renovacion: string | null
           modalidad: string | null
+          nota_renovacion: string | null
           plataforma: string | null
           producto: string | null
           recontactar_el: string | null

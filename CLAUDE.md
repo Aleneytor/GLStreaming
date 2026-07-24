@@ -255,8 +255,11 @@ Ojo con la rotación de credenciales: `credenciales_cuenta.rotada_at` ya se marc
 falta usarlo para detectar entregas obsoletas y avisar a qué clientes activos hay
 que reenviarles los datos nuevos.
 
-Después: Fase 5 (portal revendedor), Fase 6 (resto de plataformas + despliegue en
-`glcuenta.com`).
+Después: **Fase 6** (despliegue en `glcuenta.com`). La **Fase 5 (portal del
+revendedor)** ya tiene su primera versión: `/dashboard` del revendedor lista SUS
+ventas por la pasarela `v_mis_ventas_revendedor` (migración 0030 le añadió el
+vencimiento y el WhatsApp), agrupadas por vencimiento, con búsqueda, enlace de
+WhatsApp y el paquete de acceso (que verifica propiedad y descifra en servidor).
 
 **Pendiente transversal**: la app es mobile-first ✓ pero la PWA está a medias.
 Falta para que sea instalable: iconos 192/512/maskable en `/public` y un service
