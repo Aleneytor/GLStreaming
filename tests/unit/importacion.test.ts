@@ -347,6 +347,25 @@ describe("analizarFilas", () => {
     expect(r.filas[2].datos.inversion).toBe(0); // Maurifred: «$ -» = cortesía en costo
   });
 
+  it("avisa cuando NO se pegó la fila de títulos", () => {
+    // Sin encabezado se adivina por posición: una columna de más al principio
+    // corre todo un puesto. Hay que poder avisarlo en pantalla.
+    const conCab = analizarFilas(
+      [
+        fila("Correo", "Contraseña", "Perfil", "Pin", "Ingresos", "Inicio", "Vence", "Cliente"),
+        fila("a@gls.org", "c1", "P1", "", "5", "", "23/07/2026", "Ana"),
+      ].join("\n"),
+      5,
+    );
+    expect(conCab.hayCabecera).toBe(true);
+
+    const sinCab = analizarFilas(
+      fila("a@gls.org", "c1", "P1", "", "5", "", "23/07/2026", "Ana"),
+      5,
+    );
+    expect(sinCab.hayCabecera).toBe(false);
+  });
+
   it("sin encabezado, usa el orden posicional por defecto", () => {
     const r = analizarFilas(
       fila("a@gls.org", "c1", "P1", "", "5", "", "23/07/2026", "Ana", "", ""),

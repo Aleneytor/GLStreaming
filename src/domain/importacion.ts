@@ -81,6 +81,12 @@ export type ResultadoAnalisis = {
   conError: number;
   /** Nombres distintos de la columna «Vendió» que aparecen. */
   vendedores: string[];
+  /**
+   * `false` si no se pegó la fila de títulos y hubo que adivinar las columnas
+   * por su posición. Es la causa más común de un desastre silencioso: basta una
+   * columna de más al principio para que TODO se corra un puesto.
+   */
+  hayCabecera: boolean;
 };
 
 /**
@@ -382,7 +388,7 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
 
   // Las columnas se reconocen por su título si se pegó la fila de encabezados;
   // así el orden y las columnas de más (días, alerta, renovar…) no importan.
-  const { mapa } = resolverColumnas(filasCrudas[0] ?? []);
+  const { mapa, hayCabecera } = resolverColumnas(filasCrudas[0] ?? []);
 
   // Lee una columna por su campo, sin depender de la posición absoluta.
   const leer = (c: string[], campo: Campo): string => {
@@ -568,5 +574,6 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
     validas: filas.filter((f) => f.errores.length === 0).length,
     conError: filas.filter((f) => f.errores.length > 0).length,
     vendedores: [...vendedores.values()],
+    hayCabecera,
   };
 }

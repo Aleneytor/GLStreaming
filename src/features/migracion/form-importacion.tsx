@@ -205,6 +205,20 @@ export function FormImportacion({
         </div>
       </div>
 
+      {analisis && !analisis.hayCabecera && (
+        <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-3 text-sm dark:border-amber-700 dark:bg-amber-950/40">
+          <p className="font-medium text-amber-900 dark:text-amber-200">
+            ⚠️ No encontré la fila de títulos
+          </p>
+          <p className="mt-1 text-amber-800 dark:text-amber-300">
+            Estoy adivinando las columnas <strong>por su posición</strong>, y basta una
+            columna de más al principio para que todo se corra un puesto (el teléfono
+            acabaría como vendedor, la alerta como cliente…). <strong>Copia también la
+            fila de encabezados</strong> de tu Excel y pégala arriba del todo.
+          </p>
+        </div>
+      )}
+
       {analisis && (
         <div className="space-y-2">
           <div className="flex flex-wrap gap-4 rounded-xl border border-neutral-200 p-3 text-sm dark:border-neutral-800">
