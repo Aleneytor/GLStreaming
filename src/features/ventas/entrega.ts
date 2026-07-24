@@ -69,49 +69,82 @@ export async function entregarAccesoAction(
   const asignacion = (susc.asignaciones_inventario ?? []).find((a) => a.fin === null);
   if (!asignacion) return { ok: false, error: "Esta venta no tiene un recurso asignado." };
 
-  const { data: credencial } = await priv
-    .from("credenciales_cuenta")
-    .select("login_cifrado, contrasena_cifrada, version_clave")
-    .eq("cuenta_id", asignacion.cuenta_id)
-    .is("eliminada_at", null)
-    .maybeSingle();
-
-  if (!credencial) return { ok: false, error: "La cuenta no tiene credenciales cargadas." };
-
+  let correo = "";
+  let contrasena = "";
   let perfil: string | null = null;
   let pin: string | null = null;
   let versionPin: number | null = null;
+  let versionCredencial: number | null = null;
 
-  if (asignacion.unidad_id) {
-    const { data: unidad } = await priv
-      .from("unidades_inventario")
-      .select("nombre_visible, numero_slot, secretos_unidad ( pin_cifrado, version_clave )")
-      .eq("id", asignacion.unidad_id)
+  // SPOTIFY: la venta entrega el LOGIN PROPIO del cliente (su identidad), no la
+  // cuenta madre. En una familia, el miembro entra con su propio correo/clave;
+  // el control de la madre es del administrador, invisible para el cliente. No
+  // hay «perfil» ni PIN: el cliente usa su cuenta de Spotify completa.
+  const { data: vinculo } = await priv
+    .from("vinculos_identidad_spotify")
+    .select("identidad_spotify_id")
+    .eq("suscripcion_id", suscripcionId)
+    .is("fin", null)
+    .maybeSingle();
+
+  if (vinculo?.identidad_spotify_id) {
+    const { data: identidad } = await priv
+      .from("identidades_spotify")
+      .select("login_cifrado, contrasena_cifrada, version_clave")
+      .eq("id", vinculo.identidad_spotify_id)
       .maybeSingle();
 
-    perfil = unidad?.nombre_visible ?? (unidad ? `Perfil ${unidad.numero_slot}` : null);
-    const secreto = Array.isArray(unidad?.secretos_unidad)
-      ? unidad?.secretos_unidad[0]
-      : unidad?.secretos_unidad;
-    if (secreto?.pin_cifrado) {
-      try {
-        pin = descifrarSecreto(secreto.pin_cifrado);
-        versionPin = secreto.version_clave ?? null;
-      } catch {
-        pin = null;
+    if (!identidad) return { ok: false, error: "La identidad de Spotify no está cargada." };
+    try {
+      correo = identidad.login_cifrado ? descifrarSecreto(identidad.login_cifrado) : "";
+      contrasena = identidad.contrasena_cifrada
+        ? descifrarSecreto(identidad.contrasena_cifrada)
+        : "";
+    } catch {
+      return { ok: false, error: "No se pudieron descifrar (¿cambió la clave?)." };
+    }
+    versionCredencial = identidad.version_clave ?? null;
+  } else {
+    // Resto de plataformas: credenciales de la cuenta + perfil/PIN de la unidad.
+    const { data: credencial } = await priv
+      .from("credenciales_cuenta")
+      .select("login_cifrado, contrasena_cifrada, version_clave")
+      .eq("cuenta_id", asignacion.cuenta_id)
+      .is("eliminada_at", null)
+      .maybeSingle();
+
+    if (!credencial) return { ok: false, error: "La cuenta no tiene credenciales cargadas." };
+    versionCredencial = credencial.version_clave ?? null;
+
+    if (asignacion.unidad_id) {
+      const { data: unidad } = await priv
+        .from("unidades_inventario")
+        .select("nombre_visible, numero_slot, secretos_unidad ( pin_cifrado, version_clave )")
+        .eq("id", asignacion.unidad_id)
+        .maybeSingle();
+
+      perfil = unidad?.nombre_visible ?? (unidad ? `Perfil ${unidad.numero_slot}` : null);
+      const secreto = Array.isArray(unidad?.secretos_unidad)
+        ? unidad?.secretos_unidad[0]
+        : unidad?.secretos_unidad;
+      if (secreto?.pin_cifrado) {
+        try {
+          pin = descifrarSecreto(secreto.pin_cifrado);
+          versionPin = secreto.version_clave ?? null;
+        } catch {
+          pin = null;
+        }
       }
     }
-  }
 
-  let correo = "";
-  let contrasena = "";
-  try {
-    correo = credencial.login_cifrado ? descifrarSecreto(credencial.login_cifrado) : "";
-    contrasena = credencial.contrasena_cifrada
-      ? descifrarSecreto(credencial.contrasena_cifrada)
-      : "";
-  } catch {
-    return { ok: false, error: "No se pudieron descifrar (¿cambió la clave?)." };
+    try {
+      correo = credencial.login_cifrado ? descifrarSecreto(credencial.login_cifrado) : "";
+      contrasena = credencial.contrasena_cifrada
+        ? descifrarSecreto(credencial.contrasena_cifrada)
+        : "";
+    } catch {
+      return { ok: false, error: "No se pudieron descifrar (¿cambió la clave?)." };
+    }
   }
 
   const periodos = susc.periodos_servicio ?? [];
@@ -124,7 +157,7 @@ export async function entregarAccesoAction(
     suscripcion_id: suscripcionId,
     tipo: "reenvio",
     estado: "entregada",
-    credencial_cuenta_version: credencial.version_clave ?? null,
+    credencial_cuenta_version: versionCredencial,
     secreto_unidad_version: versionPin,
     nombre_perfil_snapshot: perfil,
     fecha_renovacion_snapshot: renovacion,
