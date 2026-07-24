@@ -83,6 +83,27 @@ union all select 'El USD se deriva del monto: 250 / 100 = 2.5',
         where id = current_setting('pruebas.periodo1')::uuid) = 2.5;
 
 -- ---------------------------------------------------------------------------
+-- 2c. El revendedor (columna «Vendió») queda registrado en la venta
+-- ---------------------------------------------------------------------------
+insert into public.vendedores (nombre) values ('Gabriel Nadales') returning id as vend \gset
+
+select public.importar_servicio_existente(
+  :'sesion', :'prod', 5, 'cif-correo-A', 'huella-A', 'cif-pass',
+  'Cuenta A', 4, 'Rafael', null, :'m_perfil',
+  'Rafael Mora', null, '2026-07-01'::date, '2026-08-01'::date, 300, :'vend'
+) as r4 \gset
+
+select set_config('pruebas.susc4', (:'r4'::jsonb ->> 'suscripcion_id'), true);
+select set_config('pruebas.periodo4', (:'r4'::jsonb ->> 'periodo_id'), true);
+
+select 'La suscripcion guarda el vendedor de origen' as prueba,
+       (select vendedor_origen_id from public.suscripciones
+        where id = current_setting('pruebas.susc4')::uuid) = :'vend' as pass
+union all select 'El periodo guarda el vendedor',
+       (select vendedor_id from public.periodos_servicio
+        where id = current_setting('pruebas.periodo4')::uuid) = :'vend';
+
+-- ---------------------------------------------------------------------------
 -- 3. Un perfil sin cliente se carga libre (inventario, sin suscripción)
 -- ---------------------------------------------------------------------------
 select public.importar_servicio_existente(

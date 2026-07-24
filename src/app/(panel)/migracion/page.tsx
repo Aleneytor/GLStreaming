@@ -3,6 +3,8 @@ import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { uno } from "@/lib/supabase/util";
 import { FormImportacion, type OpcionProducto } from "@/features/migracion/form-importacion";
+import { obtenerTasasVigentes } from "@/features/tasas/actions";
+import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,7 @@ export default async function MigracionPage() {
 
   // Productos que se cargan por perfil (alcance "unidad"): tanto los extras
   // (capacidad 1, cada uno con su correo) como los perfiles de una cuenta madre.
-  const [{ data: productos }, { data: vendedores }] = await Promise.all([
+  const [{ data: productos }, { data: vendedores }, { bcv }] = await Promise.all([
     supabase
       .from("productos_plataforma")
       .select(
@@ -24,8 +26,12 @@ export default async function MigracionPage() {
       )
       .eq("estado_comercial", "abierto")
       .order("nombre"),
-    supabase.from("vendedores").select("id, nombre").eq("activo", true).order("nombre"),
+    supabase.from("vendedores").select("nombre").order("nombre"),
+    obtenerTasasVigentes(),
   ]);
+
+  const bcvUsable =
+    bcv && evaluarFrescura(confirmadaAt(bcv)).nivel !== "inservible" ? bcv.bs_por_usd : null;
 
   const opciones: OpcionProducto[] = (productos ?? [])
     .map((p) => {
@@ -75,7 +81,11 @@ export default async function MigracionPage() {
           No hay productos con perfiles configurados todavía.
         </p>
       ) : (
-        <FormImportacion productos={opciones} vendedores={vendedores ?? []} />
+        <FormImportacion
+          productos={opciones}
+          vendedoresExistentes={(vendedores ?? []).map((v) => v.nombre)}
+          bcv={bcvUsable}
+        />
       )}
     </div>
   );

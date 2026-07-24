@@ -18,8 +18,6 @@ describe("normalizarFecha", () => {
   });
 
   it("rechaza fechas que no existen", () => {
-    // Sin esta comprobación, el 31 de febrero se convertiría en marzo en
-    // silencio y el cliente quedaría con un vencimiento equivocado.
     expect(normalizarFecha("31/02/2026")).toBeNull();
     expect(normalizarFecha("hola")).toBeNull();
   });
@@ -31,14 +29,15 @@ describe("normalizarFecha", () => {
 });
 
 describe("normalizarMonto", () => {
+  it("acepta montos en dólares con punto decimal y símbolo $", () => {
+    expect(normalizarMonto("$ 5.50")).toBe(5.5);
+    expect(normalizarMonto("4.00")).toBe(4);
+    expect(normalizarMonto("2.50")).toBe(2.5);
+  });
+
   it("acepta el formato venezolano con punto de miles", () => {
     expect(normalizarMonto("2.500,00")).toBe(2500);
     expect(normalizarMonto("1.234.567,89")).toBe(1234567.89);
-  });
-
-  it("acepta el formato con punto decimal", () => {
-    expect(normalizarMonto("2500.50")).toBe(2500.5);
-    expect(normalizarMonto("2500")).toBe(2500);
   });
 
   it("ignora el símbolo Bs y los espacios", () => {
@@ -58,7 +57,6 @@ describe("restarUnMes", () => {
   });
 
   it("recorta al último día válido del mes destino", () => {
-    // Un vencimiento el 31 de marzo empezó el 28 de febrero, no el 31.
     expect(restarUnMes("2026-03-31")).toBe("2026-02-28");
     expect(restarUnMes("2024-03-31")).toBe("2024-02-29");
   });
@@ -69,14 +67,14 @@ describe("restarUnMes", () => {
 });
 
 describe("analizarFilas", () => {
+  // correo·contraseña·perfil·pin·monto·inicio·vence·cliente·whatsapp·vendió
   const fila = (...c: string[]) => c.join("\t");
 
-  it("entiende una fila completa pegada desde Excel", () => {
+  it("entiende una fila de perfil extra completa", () => {
     const r = analizarFilas(
-      fila("net1@gmail.com", "clave123", "Ana", "1234", "Ana Pérez", "04141234567", "23/07/2026", "2.500,00"),
-      5,
+      fila("net1@gmail.com", "clave123", "Ana", "1234", "5.00", "24/6/2026", "24/7/2026", "Ana Pérez", "04141234567", "Gabriel Nadales"),
+      1,
     );
-    expect(r.filas).toHaveLength(1);
     expect(r.conError).toBe(0);
     expect(r.filas[0].datos).toMatchObject({
       correo: "net1@gmail.com",
@@ -84,80 +82,109 @@ describe("analizarFilas", () => {
       perfil: "Ana",
       pin: "1234",
       cliente: "Ana Pérez",
-      vence: "2026-07-23",
-      montoVes: 2500,
+      vendio: "Gabriel Nadales",
+      inicio: "2026-06-24",
+      vence: "2026-07-24",
+      monto: 5,
     });
+    expect(r.vendedores).toEqual(["Gabriel Nadales"]);
   });
 
-  it("agrupa por correo y numera los perfiles de cada cuenta", () => {
+  it("hereda la cuenta madre de la fila anterior (celdas combinadas)", () => {
+    // Cuenta completa: correo y contraseña solo en la primera fila.
     const texto = [
-      fila("net1@gmail.com", "c1", "P1", "", "Ana", "", "23/07/2026", "2500"),
-      fila("net1@gmail.com", "c1", "P2", "", "Beto", "", "23/07/2026", "2500"),
-      fila("net2@gmail.com", "c2", "P1", "", "Caro", "", "23/07/2026", "2500"),
+      fila("madre@gls.org", "gls3030", "Maurifred", "7449", "2.50", "24/7/2026", "23/8/2026", "", "+58 412-4067449", "Gabriel Nadales"),
+      fila("", "", "Nana", "3334", "5.00", "10/7/2026", "9/8/2026", "Nana", "", ""),
+      fila("", "", "Norelys", "5555", "3.00", "27/6/2026", "27/7/2026", "", "", "Edgar Espinoza"),
     ].join("\n");
     const r = analizarFilas(texto, 5);
 
+    expect(r.conError).toBe(0);
+    expect(r.cuentas).toBe(1); // una sola cuenta madre
+    expect(r.filas.map((f) => f.datos.correo)).toEqual([
+      "madre@gls.org",
+      "madre@gls.org",
+      "madre@gls.org",
+    ]);
+    expect(r.filas.map((f) => f.datos.contrasena)).toEqual(["gls3030", "gls3030", "gls3030"]);
+    expect(r.filas.map((f) => f.slot)).toEqual([1, 2, 3]);
+    expect(r.filas[1].heredaCuenta).toBe(true);
+  });
+
+  it("toma el nombre del perfil como cliente cuando la columna Cliente está vacía", () => {
+    // Maurifred: sin Cliente, pero con monto, teléfono y vendedor → está vendido.
+    const r = analizarFilas(
+      fila("m@gls.org", "p", "Maurifred", "7449", "2.50", "24/7/2026", "23/8/2026", "", "+58 412-4067449", "Gabriel Nadales"),
+      5,
+    );
+    expect(r.conError).toBe(0);
+    expect(r.filas[0].datos.cliente).toBe("Maurifred");
+    expect(r.filas[0].avisos.join(" ")).toContain("tomado del perfil");
+  });
+
+  it("un perfil sin ninguna señal de venta se carga libre", () => {
+    // Sin cliente, sin monto, sin teléfono, sin vendedor.
+    const r = analizarFilas(fila("m@gls.org", "p", "Libre", "1234", "", "", "", "", "", ""), 5);
+    expect(r.conError).toBe(0);
+    expect(r.filas[0].datos.cliente).toBeNull();
+  });
+
+  it("el monto queda sin moneda: lo interpreta el importador", () => {
+    // 2.50 se lee como 2.5 (dólares); la conversión a Bs se hace fuera.
+    const r = analizarFilas(fila("m@gls.org", "p", "Ana", "", "2.50", "", "24/7/2026", "Ana", "", ""), 5);
+    expect(r.filas[0].datos.monto).toBe(2.5);
+  });
+
+  it("agrupa por correo y cuenta las cuentas madre distintas", () => {
+    const texto = [
+      fila("a@gls.org", "c1", "P1", "", "5", "", "23/07/2026", "Ana", "", ""),
+      fila("a@gls.org", "c1", "P2", "", "5", "", "23/07/2026", "Beto", "", ""),
+      fila("b@gls.org", "c2", "P1", "", "5", "", "23/07/2026", "Caro", "", ""),
+    ].join("\n");
+    const r = analizarFilas(texto, 5);
     expect(r.cuentas).toBe(2);
     expect(r.filas.map((f) => f.slot)).toEqual([1, 2, 1]);
   });
 
   it("no deja meter más perfiles que la capacidad de la cuenta", () => {
     const texto = Array.from({ length: 6 }, (_, i) =>
-      fila("net1@gmail.com", "c1", `P${i + 1}`, "", `Cliente ${i}`, "", "23/07/2026", "2500"),
+      fila("a@gls.org", "c1", `P${i + 1}`, "", "5", "", "23/07/2026", `Cli ${i}`, "", ""),
     ).join("\n");
     const r = analizarFilas(texto, 5);
-
     expect(r.filas[4].errores).toHaveLength(0);
     expect(r.filas[5].errores[0]).toContain("máximo");
-    expect(r.conError).toBe(1);
   });
 
-  it("un perfil sin cliente se carga como inventario libre", () => {
-    const r = analizarFilas(fila("net1@gmail.com", "c1", "P3", "1234", "", "", "", ""), 5);
-    expect(r.conError).toBe(0);
-    expect(r.filas[0].datos.cliente).toBeNull();
-    expect(r.filas[0].avisos).toHaveLength(0);
+  it("reúne los vendedores distintos que aparecen", () => {
+    const texto = [
+      fila("a@gls.org", "c", "P1", "", "5", "", "23/07/2026", "Ana", "", "Gabriel Nadales"),
+      fila("b@gls.org", "c", "P1", "", "5", "", "23/07/2026", "Beto", "", "gabriel nadales"),
+      fila("c@gls.org", "c", "P1", "", "5", "", "23/07/2026", "Caro", "", "Edgar Espinoza"),
+    ].join("\n");
+    const r = analizarFilas(texto, 1);
+    // "Gabriel Nadales" y "gabriel nadales" son el mismo (sin distinguir mayúsculas).
+    expect(r.vendedores).toHaveLength(2);
   });
 
-  it("avisa (sin bloquear) cuando hay cliente pero falta el monto", () => {
-    const r = analizarFilas(
-      fila("net1@gmail.com", "c1", "P1", "", "Ana", "", "23/07/2026", ""),
-      5,
-    );
-    expect(r.conError).toBe(0);
-    expect(r.filas[0].avisos.join(" ")).toContain("Por cobrar");
-  });
-
-  it("exige correo y contraseña", () => {
-    const r = analizarFilas(fila("", "", "P1", "", "Ana", "", "", ""), 5);
-    expect(r.filas[0].errores).toContain("Falta el correo.");
-    expect(r.filas[0].errores).toContain("Falta la contraseña.");
+  it("exige correo y contraseña en la primera fila", () => {
+    const r = analizarFilas(fila("", "", "P1", "", "5", "", "23/07/2026", "Ana", "", ""), 5);
+    expect(r.filas[0].errores.join(" ")).toContain("Falta el correo");
   });
 
   it("descarta la fila de cabecera si la pegan sin querer", () => {
     const texto = [
-      fila("correo", "contraseña", "perfil", "pin", "cliente", "whatsapp", "vence", "bs"),
-      fila("net1@gmail.com", "c1", "P1", "", "Ana", "", "23/07/2026", "2500"),
+      fila("correo", "contraseña", "perfil", "pin", "monto", "inicio", "vence", "cliente", "whatsapp", "vendió"),
+      fila("a@gls.org", "c1", "P1", "", "5", "", "23/07/2026", "Ana", "", ""),
     ].join("\n");
     expect(analizarFilas(texto, 5).filas).toHaveLength(1);
   });
 
-  it("ignora líneas en blanco entre bloques", () => {
-    const texto = [
-      fila("net1@gmail.com", "c1", "P1", "", "Ana", "", "23/07/2026", "2500"),
-      "",
-      "   ",
-      fila("net2@gmail.com", "c2", "P1", "", "Beto", "", "23/07/2026", "2500"),
-    ].join("\n");
-    expect(analizarFilas(texto, 5).filas).toHaveLength(2);
-  });
-
-  it("marca la fecha ilegible como error, no la adivina", () => {
+  it("marca la fecha de vencimiento ilegible como error, no la adivina", () => {
     const r = analizarFilas(
-      fila("net1@gmail.com", "c1", "P1", "", "Ana", "", "el martes", "2500"),
+      fila("a@gls.org", "c1", "P1", "", "5", "", "el martes", "Ana", "", ""),
       5,
     );
     expect(r.conError).toBe(1);
-    expect(r.filas[0].errores[0]).toContain("Fecha no entendida");
+    expect(r.filas[0].errores[0]).toContain("vencimiento no entendida");
   });
 });

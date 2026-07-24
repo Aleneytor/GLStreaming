@@ -15,20 +15,28 @@ export type OpcionProducto = {
   modalidades: { id: string; nombre: string }[];
 };
 
+// Ejemplo de cuenta completa: el correo va SOLO en la primera fila (como en el
+// Excel, con celdas combinadas). Columnas: correo·contraseña·perfil·pin·monto·
+// inicio·vence·cliente·whatsapp·vendió
 const EJEMPLO = [
-  "netflix-uno@gmail.com\tClave123\tAna\t1234\tAna Pérez\t04141234567\t23/07/2026\t2.500,00",
-  "netflix-uno@gmail.com\tClave123\tBeto\t5678\tBeto Gómez\t04249876543\t28/07/2026\t2.500,00",
-  "netflix-uno@gmail.com\tClave123\tLibre\t\t\t\t\t",
+  "madre@correo.com\tgls3030\tMaurifred\t7449\t2.50\t24/7/2026\t23/8/2026\t\t+58 412-4067449\tGabriel Nadales",
+  "\t\tNana\t3334\t5.00\t10/7/2026\t9/8/2026\tNana\t\t",
+  "\t\tNorelys\t5555\t3.00\t27/6/2026\t27/7/2026\t\t+58 424-1991901\tEdgar Espinoza",
 ].join("\n");
 
 export function FormImportacion({
   productos,
-  vendedores,
+  vendedoresExistentes,
+  bcv,
 }: {
   productos: OpcionProducto[];
-  vendedores: { id: string; nombre: string }[];
+  /** Nombres de vendedores ya registrados, para avisar cuáles se crearán. */
+  vendedoresExistentes: string[];
+  /** BCV vigente para previsualizar la conversión de dólares a bolívares. */
+  bcv: number | null;
 }) {
   const [productoId, setProductoId] = useState(productos[0]?.id ?? "");
+  const [moneda, setMoneda] = useState<"usd" | "ves">("usd");
   const [texto, setTexto] = useState("");
   const [estado, action, pendiente] = useActionState<EstadoImportacion, FormData>(
     importarAction,
@@ -38,6 +46,11 @@ export function FormImportacion({
   const producto = productos.find((p) => p.id === productoId) ?? productos[0];
   const capacidad = producto?.capacidad ?? 1;
 
+  const vendedoresConocidos = useMemo(
+    () => new Set(vendedoresExistentes.map((v) => v.trim().toLowerCase())),
+    [vendedoresExistentes],
+  );
+
   // La vista previa usa el MISMO analizador que la importación real, así que lo
   // que se ve aquí es literalmente lo que se va a guardar.
   const analisis = useMemo(
@@ -45,12 +58,20 @@ export function FormImportacion({
     [texto, capacidad],
   );
 
+  const nuevosVendedores = (analisis?.vendedores ?? []).filter(
+    (v) => !vendedoresConocidos.has(v.trim().toLowerCase()),
+  );
+
+  const aBs = (monto: number | null) =>
+    monto == null ? null : moneda === "usd" && bcv ? monto * bcv : monto;
+
   return (
     <form action={action} className="space-y-5">
       <input type="hidden" name="producto_id" value={productoId} />
       <input type="hidden" name="capacidad" value={capacidad} />
+      <input type="hidden" name="moneda" value={moneda} />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <label className="block text-sm">
           <span className="mb-1 block text-neutral-600 dark:text-neutral-400">Producto</span>
           <select
@@ -76,19 +97,35 @@ export function FormImportacion({
             ))}
           </select>
         </label>
+      </div>
 
-        <label className="block text-sm">
-          <span className="mb-1 block text-neutral-600 dark:text-neutral-400">
-            Vendedor (opcional)
-          </span>
-          <select name="vendedor_id" className={CAMPO} defaultValue="">
-            <option value="">Yo (venta directa)</option>
-            {vendedores.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.nombre}
-              </option>
-            ))}
-          </select>
+      {/* Moneda de los montos: el Excel del negocio va en divisas. */}
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-neutral-200 p-3 text-sm dark:border-neutral-800">
+        <span className="text-neutral-600 dark:text-neutral-400">Los montos están en:</span>
+        <label className="flex items-center gap-1.5">
+          <input
+            type="radio"
+            name="moneda-ui"
+            checked={moneda === "usd"}
+            onChange={() => setMoneda("usd")}
+          />
+          Dólares{" "}
+          {bcv ? (
+            <span className="text-xs text-neutral-500">
+              (se convierten a {bcv.toLocaleString("es-VE")} Bs/USD)
+            </span>
+          ) : (
+            <span className="text-xs text-amber-600">(falta BCV para convertir)</span>
+          )}
+        </label>
+        <label className="flex items-center gap-1.5">
+          <input
+            type="radio"
+            name="moneda-ui"
+            checked={moneda === "ves"}
+            onChange={() => setMoneda("ves")}
+          />
+          Bolívares
         </label>
       </div>
 
@@ -112,16 +149,29 @@ export function FormImportacion({
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           spellCheck={false}
-          placeholder={"correo\tcontraseña\tperfil\tpin\tcliente\twhatsapp\tvence\tbs"}
+          placeholder={"correo\tcontraseña\tperfil\tpin\tmonto\tinicio\tvence\tcliente\twhatsapp\tvendió"}
           className={`${CAMPO} font-mono text-xs`}
         />
-        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-          Ocho columnas, en este orden:{" "}
-          <strong>correo · contraseña · perfil · pin · cliente · whatsapp · vence · bs</strong>.
-          Copia las celdas desde Excel y pégalas tal cual. Deja el{" "}
-          <strong>cliente vacío</strong> si ese perfil está libre, y los{" "}
-          <strong>bolívares vacíos</strong> si todavía no te pagó.
-        </p>
+        <div className="mt-1 space-y-1 text-xs text-neutral-500 dark:text-neutral-400">
+          <p>
+            Diez columnas, en este orden:{" "}
+            <strong>
+              correo · contraseña · perfil · pin · monto · inicio · vence · cliente · whatsapp ·
+              vendió
+            </strong>
+            .
+          </p>
+          <p>
+            <strong>Cuenta completa</strong> (Netflix, Disney…): elige el producto «cuenta»
+            y pega los perfiles; el <strong>correo y la contraseña van solo en la primera
+            fila</strong>, como en tu Excel. <strong>Perfiles extra:</strong> elige «perfil
+            extra» y cada fila lleva su propio correo.
+          </p>
+          <p>
+            Si el <strong>cliente</strong> está vacío pero hay monto o teléfono, se usa el
+            nombre del perfil. Sin nada de eso, el perfil se carga <strong>libre</strong>.
+          </p>
+        </div>
       </div>
 
       {analisis && (
@@ -143,57 +193,102 @@ export function FormImportacion({
             )}
           </div>
 
-          <div className="max-h-80 overflow-auto rounded-xl border border-neutral-200 dark:border-neutral-800">
+          {nuevosVendedores.length > 0 && (
+            <p className="rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-800 dark:bg-sky-950/40 dark:text-sky-300">
+              Se crearán {nuevosVendedores.length} revendedores nuevos:{" "}
+              <strong>{nuevosVendedores.join(", ")}</strong>.
+            </p>
+          )}
+
+          <div className="max-h-96 overflow-auto rounded-xl border border-neutral-200 dark:border-neutral-800">
             <table className="w-full text-left text-xs">
               <thead className="sticky top-0 bg-neutral-100 dark:bg-neutral-900">
                 <tr>
-                  {["#", "Cuenta", "Perfil", "Cliente", "Vence", "Bs", "Estado"].map((h) => (
-                    <th key={h} className="whitespace-nowrap px-2 py-1.5 font-medium">
-                      {h}
-                    </th>
-                  ))}
+                  {["#", "Cuenta", "Perfil", "Cliente", "Vence", "Monto", "Vendió", "Estado"].map(
+                    (h) => (
+                      <th key={h} className="whitespace-nowrap px-2 py-1.5 font-medium">
+                        {h}
+                      </th>
+                    ),
+                  )}
                 </tr>
               </thead>
               <tbody>
-                {analisis.filas.map((f) => (
-                  <tr
-                    key={f.numero}
-                    className={`border-t border-neutral-200 dark:border-neutral-800 ${
-                      f.errores.length ? "bg-red-50 dark:bg-red-950/30" : ""
-                    }`}
-                  >
-                    <td className="px-2 py-1.5 tabular-nums text-neutral-500">{f.numero}</td>
-                    <td className="max-w-40 truncate px-2 py-1.5">{f.datos.correo}</td>
-                    <td className="px-2 py-1.5">
-                      {f.slot}
-                      {f.datos.perfil ? ` · ${f.datos.perfil}` : ""}
-                    </td>
-                    <td className="px-2 py-1.5">
-                      {f.datos.cliente ?? (
-                        <span className="text-neutral-400">libre</span>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">
-                      {f.datos.vence ?? "—"}
-                    </td>
-                    <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">
-                      {f.datos.montoVes?.toLocaleString("es-VE") ?? "—"}
-                    </td>
-                    <td className="px-2 py-1.5">
-                      {f.errores.length > 0 ? (
-                        <span className="text-red-700 dark:text-red-400">
-                          {f.errores.join(" ")}
-                        </span>
-                      ) : f.avisos.length > 0 ? (
-                        <span className="text-amber-700 dark:text-amber-400">
-                          {f.avisos.join(" ")}
-                        </span>
-                      ) : (
-                        <span className="text-emerald-700 dark:text-emerald-400">Lista</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {analisis.filas.map((f) => {
+                  const bs = aBs(f.datos.monto);
+                  const vendedorNuevo =
+                    f.datos.vendio &&
+                    !vendedoresConocidos.has(f.datos.vendio.trim().toLowerCase());
+                  return (
+                    <tr
+                      key={f.numero}
+                      className={`border-t border-neutral-200 dark:border-neutral-800 ${
+                        f.errores.length ? "bg-red-50 dark:bg-red-950/30" : ""
+                      }`}
+                    >
+                      <td className="px-2 py-1.5 tabular-nums text-neutral-500">{f.numero}</td>
+                      <td className="max-w-40 truncate px-2 py-1.5">
+                        {f.heredaCuenta ? (
+                          <span className="text-neutral-400">↳ {f.datos.correo}</span>
+                        ) : (
+                          f.datos.correo
+                        )}
+                      </td>
+                      <td className="px-2 py-1.5">
+                        {f.slot || "—"}
+                        {f.datos.perfil ? ` · ${f.datos.perfil}` : ""}
+                      </td>
+                      <td className="px-2 py-1.5">
+                        {f.datos.cliente ?? <span className="text-neutral-400">libre</span>}
+                      </td>
+                      <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">
+                        {f.datos.vence ?? "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">
+                        {f.datos.monto == null ? (
+                          "—"
+                        ) : (
+                          <>
+                            {moneda === "usd" ? `$${f.datos.monto}` : `${f.datos.monto} Bs`}
+                            {moneda === "usd" && bs != null && (
+                              <span className="text-neutral-400">
+                                {" "}
+                                ≈ {bs.toLocaleString("es-VE", { maximumFractionDigits: 2 })} Bs
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-2 py-1.5">
+                        {f.datos.vendio ? (
+                          <>
+                            {f.datos.vendio}
+                            {vendedorNuevo && (
+                              <span className="ml-1 rounded bg-sky-100 px-1 text-[10px] text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+                                nuevo
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-neutral-400">directa</span>
+                        )}
+                      </td>
+                      <td className="px-2 py-1.5">
+                        {f.errores.length > 0 ? (
+                          <span className="text-red-700 dark:text-red-400">
+                            {f.errores.join(" ")}
+                          </span>
+                        ) : f.avisos.length > 0 ? (
+                          <span className="text-amber-700 dark:text-amber-400">
+                            {f.avisos.join(" ")}
+                          </span>
+                        ) : (
+                          <span className="text-emerald-700 dark:text-emerald-400">Lista</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

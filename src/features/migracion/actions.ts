@@ -5,14 +5,20 @@ import { createClient } from "@/lib/supabase/server";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { cifrarSecreto, huellaSecreto } from "@/lib/crypto";
 import { analizarFilas, restarUnMes } from "@/domain/importacion";
+import { obtenerTasasVigentes } from "@/features/tasas/actions";
+import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
 
 /**
  * Importación masiva de la cartera existente.
  *
  * Se procesa FILA A FILA, no todo o nada: con cientos de filas, que una sola
- * mala tumbe las 114 buenas haría la migración imposible de terminar. Cada fila
- * sí es atómica por su cuenta (lo garantiza `importar_servicio_existente`), y
- * al final se devuelve el detalle de qué entró y qué no.
+ * mala tumbe las buenas haría la migración imposible de terminar. Cada fila sí
+ * es atómica por su cuenta (lo garantiza `importar_servicio_existente`).
+ *
+ * MONEDA: el Excel del negocio lleva todo en divisas. Por eso el importador
+ * convierte el monto a bolívares con la BCV del momento (`round(usd * bcv, 2)`),
+ * la MISMA que la base congela después. El precio en USD se deriva de vuelta,
+ * de modo que queda idéntico al del Excel.
  */
 
 export type ResultadoFila = {
@@ -44,6 +50,33 @@ function sumarUnMes(iso: string): string {
   return new Date(Date.UTC(anio, mes - 1, Math.min(d, ultimo))).toISOString().slice(0, 10);
 }
 
+/** Resuelve los nombres de la columna «Vendió» a ids, creando los que falten. */
+async function resolverVendedores(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  nombres: string[],
+): Promise<Map<string, string>> {
+  const mapa = new Map<string, string>();
+  if (nombres.length === 0) return mapa;
+
+  const { data: existentes } = await supabase.from("vendedores").select("id, nombre");
+  for (const v of existentes ?? []) {
+    mapa.set(v.nombre.trim().toLowerCase(), v.id);
+  }
+
+  for (const nombre of nombres) {
+    const clave = nombre.trim().toLowerCase();
+    if (mapa.has(clave)) continue;
+    const { data, error } = await supabase
+      .from("vendedores")
+      .insert({ nombre: nombre.trim() })
+      .select("id")
+      .single();
+    if (!error && data) mapa.set(clave, data.id);
+  }
+
+  return mapa;
+}
+
 export async function importarAction(
   _prev: EstadoImportacion,
   formData: FormData,
@@ -55,7 +88,8 @@ export async function importarAction(
   const productoId = String(formData.get("producto_id") ?? "");
   const modalidadId = String(formData.get("modalidad_id") ?? "");
   const capacidad = Number(formData.get("capacidad") ?? 0);
-  const vendedorId = String(formData.get("vendedor_id") ?? "");
+  // Por defecto los montos vienen en dólares (así está el Excel del negocio).
+  const moneda = String(formData.get("moneda") ?? "usd") === "ves" ? "ves" : "usd";
 
   if (!texto.trim()) return { error: "No pegaste ninguna fila." };
   if (!productoId || !modalidadId || !capacidad) {
@@ -69,6 +103,21 @@ export async function importarAction(
     return { error: "Ninguna fila es válida. Corrige los errores marcados." };
   }
 
+  // Si hay montos y vienen en dólares, hace falta una BCV utilizable.
+  const hayMontos = validas.some((f) => f.datos.cliente && f.datos.monto != null);
+  let bcv: number | null = null;
+  if (hayMontos && moneda === "usd") {
+    const { bcv: tasa } = await obtenerTasasVigentes();
+    const usable = tasa && evaluarFrescura(confirmadaAt(tasa)).nivel !== "inservible";
+    if (!usable) {
+      return {
+        error:
+          "Los montos están en dólares pero no hay una tasa BCV utilizable para convertirlos. Actualízala en «Tasas».",
+      };
+    }
+    bcv = tasa.bs_por_usd;
+  }
+
   const supabase = await createClient();
 
   const { data: sesionId, error: errorSesion } = await supabase.rpc("abrir_sesion_carga", {
@@ -77,14 +126,25 @@ export async function importarAction(
   });
   if (errorSesion) return { error: `No se pudo abrir la sesión de carga: ${errorSesion.message}` };
 
+  const vendedores = await resolverVendedores(supabase, analisis.vendedores);
+
   const hoy = hoyCaracas();
   const resultados: ResultadoFila[] = [];
 
   for (const fila of validas) {
     const d = fila.datos;
-    // Del vencimiento se deduce el inicio: es el dato que existe en el Excel.
-    const vence = d.vence ?? sumarUnMes(hoy);
-    const inicio = d.vence ? restarUnMes(d.vence) : hoy;
+
+    // Fechas: se toman explícitas del Excel; si faltan, se derivan.
+    const inicio = d.inicio ?? (d.vence ? restarUnMes(d.vence) : hoy);
+    const vence = d.vence ?? sumarUnMes(inicio);
+
+    // Monto → bolívares. En USD se convierte con la BCV del momento.
+    let montoVes: number | null = null;
+    if (d.cliente && d.monto != null) {
+      montoVes = moneda === "usd" && bcv ? Math.round(d.monto * bcv * 100) / 100 : d.monto;
+    }
+
+    const vendedorId = d.vendio ? (vendedores.get(d.vendio.toLowerCase()) ?? null) : null;
 
     const { error } = await supabase.rpc("importar_servicio_existente", {
       p_sesion_id: sesionId as unknown as string,
@@ -102,17 +162,18 @@ export async function importarAction(
       p_cliente_whatsapp: d.whatsapp,
       p_inicio: inicio,
       p_fecha_renovacion: vence,
-      p_monto_ves: d.cliente ? d.montoVes : null,
-      p_vendedor_id: vendedorId || null,
+      p_monto_ves: montoVes,
+      p_vendedor_id: vendedorId,
     });
 
+    const etiquetaVendedor = d.vendio ? ` · vendió ${d.vendio}` : "";
     resultados.push({
       numero: fila.numero,
       ok: !error,
       mensaje: error
         ? error.message
         : d.cliente
-          ? `${d.cliente} · vence ${vence}${d.montoVes ? ` · ${d.montoVes} Bs` : " · sin cobro"}`
+          ? `${d.cliente} · vence ${vence}${montoVes ? ` · ${montoVes.toLocaleString("es-VE")} Bs` : " · sin cobro"}${etiquetaVendedor}`
           : `Perfil ${fila.slot} cargado libre`,
     });
   }
@@ -131,7 +192,8 @@ export async function importarAction(
     resumen:
       `Importadas ${ok} de ${resultados.length} filas.` +
       (fallidas ? ` ${fallidas} fallaron.` : "") +
-      (omitidas ? ` ${omitidas} se omitieron por errores de formato.` : ""),
+      (omitidas ? ` ${omitidas} se omitieron por errores de formato.` : "") +
+      (vendedores.size ? ` Revendedores: ${vendedores.size}.` : ""),
     filas: resultados,
   };
 }
