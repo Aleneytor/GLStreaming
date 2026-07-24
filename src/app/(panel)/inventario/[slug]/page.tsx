@@ -6,7 +6,11 @@ import { uno } from "@/lib/supabase/util";
 import { descifrarSecreto } from "@/lib/crypto";
 import { badgeVencimiento, diasParaRenovar } from "@/domain/fechas";
 import { FiltrosInventario } from "@/features/inventario/filtros";
-import { TablaInventario, type FilaInventario } from "@/features/inventario/tabla-inventario";
+import {
+  TablaInventario,
+  type BloqueCuenta,
+  type CupoFila,
+} from "@/features/inventario/tabla-inventario";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +68,7 @@ export default async function PlataformaPage({
     .select(
       `id, alias, capacidad, capacidad_vendible_habilitada, estado, created_at, notas,
        productos_plataforma!inner ( id, nombre, codigo, tipo_inventario, plataforma_id ),
+       proveedores ( nombre_o_alias ),
        credenciales_cuenta ( login_cifrado, contrasena_cifrada, eliminada_at ),
        unidades_inventario ( id, numero_slot, nombre_visible, secretos_unidad ( pin_cifrado ) ),
        asignaciones_inventario (
@@ -102,14 +107,15 @@ export default async function PlataformaPage({
     };
   };
 
-  const grupos = new Map<string, { nombre: string; filas: FilaInventario[] }>();
+  // Un bloque por CUENTA, con sus cupos (perfiles/miembros) dentro. Los bloques
+  // se agrupan por producto para que «Netflix cuenta» y «Netflix extra» —o
+  // Spotify individual y familiar— salgan en secciones separadas.
+  const grupos = new Map<string, { nombre: string; cuentas: BloqueCuenta[] }>();
 
   for (const c of cuentas ?? []) {
     const prod = uno(c.productos_plataforma);
     if (!prod) continue;
     const cred = uno(c.credenciales_cuenta);
-    const correo = desc(cred?.login_cifrado);
-    const contrasena = desc(cred?.contrasena_cifrada);
 
     const abiertas = (c.asignaciones_inventario ?? []).filter((a) => a.fin === null);
     const completa = abiertas.find((a) => a.alcance === "cuenta");
@@ -118,20 +124,11 @@ export default async function PlataformaPage({
       abiertas.filter((a) => a.unidad_id).map((a) => [a.unidad_id as string, a]),
     );
 
-    const grupo = grupos.get(prod.id) ?? { nombre: prod.nombre as string, filas: [] };
-
-    const base = {
-      cuentaId: c.id as string,
-      correo,
-      contrasena,
-      cuentaEstado: c.estado as string,
-    };
+    const filas: CupoFila[] = [];
 
     if (completa) {
-      // Vendida entera a un cliente (individuales y cuentas completas).
       const v = datosVenta(completa);
-      grupo.filas.push({
-        ...base,
+      filas.push({
         clave: `${c.id}-completa`,
         cupo: "Cuenta completa",
         cliente: v?.cliente ?? null,
@@ -143,15 +140,12 @@ export default async function PlataformaPage({
         suscEstado: v?.estado ?? null,
       });
     } else if (prod.tipo_inventario === "cuenta_con_unidades") {
-      // Una fila por perfil/cupo (vendido o libre).
       const unidades = [...(c.unidades_inventario ?? [])].sort(
         (a, b) => a.numero_slot - b.numero_slot,
       );
       for (const u of unidades) {
-        const asig = porUnidad.get(u.id);
-        const v = datosVenta(asig);
-        grupo.filas.push({
-          ...base,
+        const v = datosVenta(porUnidad.get(u.id));
+        filas.push({
           clave: `${c.id}-u${u.id}`,
           cupo: u.nombre_visible ?? `Cupo ${u.numero_slot}`,
           cliente: v?.cliente ?? null,
@@ -163,11 +157,9 @@ export default async function PlataformaPage({
           suscEstado: v?.estado ?? null,
         });
       }
-      // El uso de la madre (Spotify familiar) no ocupa cupo: fila aparte.
       if (principal) {
         const v = datosVenta(principal);
-        grupo.filas.push({
-          ...base,
+        filas.push({
           clave: `${c.id}-madre`,
           cupo: "Uso de la madre",
           cliente: v?.cliente ?? null,
@@ -181,8 +173,7 @@ export default async function PlataformaPage({
       }
     } else {
       // Recurso indivisible sin venta abierta: una fila libre.
-      grupo.filas.push({
-        ...base,
+      filas.push({
         clave: `${c.id}-solo`,
         cupo: "—",
         cliente: null,
@@ -195,26 +186,40 @@ export default async function PlataformaPage({
       });
     }
 
+    const grupo = grupos.get(prod.id) ?? { nombre: prod.nombre as string, cuentas: [] };
+    grupo.cuentas.push({
+      cuentaId: c.id as string,
+      correo: desc(cred?.login_cifrado),
+      contrasena: desc(cred?.contrasena_cifrada),
+      cuentaEstado: c.estado as string,
+      proveedor: uno(c.proveedores)?.nombre_o_alias ?? null,
+      filas,
+    });
     grupos.set(prod.id, grupo);
   }
 
-  // Búsqueda (sobre datos ya descifrados): cliente, correo de cuenta o su login.
+  // Búsqueda (sobre datos ya descifrados): si el correo de la cuenta coincide,
+  // se mantiene el bloque entero; si no, solo los cupos que casan (cliente o su
+  // propio login). Así una familia entera aparece al buscar su correo madre.
   const busqueda = (q ?? "").trim().toLowerCase();
   let totalFilas = 0;
   const gruposFiltrados = [...grupos.values()]
     .map((g) => {
-      const filas = busqueda
-        ? g.filas.filter(
+      const cuentasFiltradas = g.cuentas
+        .map((cta) => {
+          if (!busqueda || cta.correo.toLowerCase().includes(busqueda)) return cta;
+          const filas = cta.filas.filter(
             (f) =>
               f.cliente?.toLowerCase().includes(busqueda) ||
-              f.correo.toLowerCase().includes(busqueda) ||
               f.clienteLogin?.toLowerCase().includes(busqueda),
-          )
-        : g.filas;
-      totalFilas += filas.length;
-      return { ...g, filas };
+          );
+          return { ...cta, filas };
+        })
+        .filter((cta) => cta.filas.length > 0);
+      totalFilas += cuentasFiltradas.reduce((n, cta) => n + cta.filas.length, 0);
+      return { ...g, cuentas: cuentasFiltradas };
     })
-    .filter((g) => g.filas.length > 0);
+    .filter((g) => g.cuentas.length > 0);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -261,9 +266,9 @@ export default async function PlataformaPage({
         gruposFiltrados.map((g) => (
           <section key={g.nombre} className="space-y-2">
             <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-              {g.nombre} ({g.filas.length})
+              {g.nombre} ({g.cuentas.length} {g.cuentas.length === 1 ? "cuenta" : "cuentas"})
             </h2>
-            <TablaInventario filas={g.filas} />
+            <TablaInventario cuentas={g.cuentas} />
           </section>
         ))
       )}
