@@ -164,10 +164,13 @@ export function FormImportacion({
             vence, cliente, celular, vendió, inversión, proveedor, renovar</strong>.
           </p>
           <p>
-            <strong>Cuenta completa</strong> (Netflix, Disney…): elige el producto «cuenta»
-            y pega los perfiles; el <strong>correo, la contraseña, la inversión, el
-            proveedor y la renovación van solo en la primera fila</strong> (son de la
-            cuenta, no del perfil). <strong>Perfiles extra:</strong> elige «perfil extra».
+            <strong>Por perfiles</strong> (una cuenta compartida entre varios clientes):
+            elige la modalidad «Perfil individual» y pega los perfiles; el{" "}
+            <strong>correo, la contraseña, la inversión, el proveedor y la renovación van
+            solo en la primera fila</strong> (son de la cuenta, no del perfil).{" "}
+            <strong>Cuenta completa</strong> (toda la cuenta a un cliente): elige la
+            modalidad «Cuenta completa» y pon una fila por cuenta. En Netflix, los{" "}
+            <strong>extra</strong> van con el producto «perfil extra».
           </p>
           <p>
             La <strong>inversión</strong> es lo que le pagas al proveedor y <strong>renovar</strong>

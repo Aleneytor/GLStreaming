@@ -39,8 +39,10 @@ export default async function MigracionPage() {
       const modalidades = (p.producto_modalidades ?? [])
         .map((pm) => uno(pm.modalidades))
         .filter((m): m is NonNullable<typeof m> => Boolean(m))
-        // La importación asigna cada fila a un perfil: solo modalidades de unidad.
-        .filter((m) => m.alcance_asignacion === "unidad")
+        // Se importan las dos formas: por perfil (unidad) y cuenta completa.
+        .filter((m) => m.alcance_asignacion === "unidad" || m.alcance_asignacion === "cuenta")
+        // Perfil individual primero (es lo más común al migrar).
+        .sort((a, b) => (a.alcance_asignacion === "unidad" ? -1 : 1))
         .map((m) => ({ id: m.id, nombre: m.nombre }));
 
       const capacidad =

@@ -14,8 +14,9 @@ update public.usuarios set rol = 'admin' where id = :'admin_id';
 select id as prod from public.productos_plataforma where codigo = 'netflix' \gset
 select id as prod_extra from public.productos_plataforma where codigo = 'netflix-extra' \gset
 select plataforma_id as plat from public.productos_plataforma where id = :'prod' \gset
-select id as m_perfil from public.modalidades where plataforma_id = :'plat' and tipo_modalidad = 'perfil' \gset
-select id as m_extra  from public.modalidades where plataforma_id = :'plat' and tipo_modalidad = 'extra' \gset
+select id as m_perfil   from public.modalidades where plataforma_id = :'plat' and tipo_modalidad = 'perfil' \gset
+select id as m_extra    from public.modalidades where plataforma_id = :'plat' and tipo_modalidad = 'extra' \gset
+select id as m_completa from public.modalidades where plataforma_id = :'plat' and tipo_modalidad = 'cuenta_completa' \gset
 
 -- Tasas controladas: 100 Bs/USD (BCV) y 50 (paralela).
 insert into public.tasas_cambio (tipo, bs_por_usd, fecha_vigencia, fuente, fuente_registro_id, observada_fuente_at, revalidada_at, estado)
@@ -170,6 +171,46 @@ select 'El extra crea su propia cuenta madre' as prueba,
        (:'rx'::jsonb ->> 'cuenta_creada')::boolean = true as pass
 union all select 'El extra queda vendido a su cliente',
        (:'rx'::jsonb ->> 'vendida')::boolean = true;
+
+-- ---------------------------------------------------------------------------
+-- 4b. Venta de CUENTA COMPLETA (modalidad de alcance «cuenta»)
+-- ---------------------------------------------------------------------------
+select public.importar_servicio_existente(
+  :'sesion', :'prod', 5, 'cif-correo-C', 'huella-C', 'cif-pass',
+  null, 1, 'Cuenta Completa', null, :'m_completa',
+  'Vicente', '04124907249', '2026-07-17'::date, '2026-08-16'::date, 500, null,
+  5.00, '@CapyVentas', '2026-07-16'::date
+) as rc \gset
+
+select set_config('pruebas.cuentaC', (:'rc'::jsonb ->> 'cuenta_id'), true);
+select set_config('pruebas.suscC', (:'rc'::jsonb ->> 'suscripcion_id'), true);
+
+select 'La venta completa se registra con alcance cuenta' as prueba,
+       (:'rc'::jsonb ->> 'alcance') = 'cuenta' as pass
+union all select 'La asignacion consume toda la capacidad (5)',
+       (select capacidad_vendible_consumida_snapshot from public.asignaciones_inventario
+        where suscripcion_id = current_setting('pruebas.suscC')::uuid and fin is null) = 5
+union all select 'La asignacion NO apunta a un perfil concreto',
+       (select unidad_id from public.asignaciones_inventario
+        where suscripcion_id = current_setting('pruebas.suscC')::uuid and fin is null) is null
+union all select 'Se cobro la cuenta completa (500 Bs)',
+       (select monto_ves from public.pagos_cliente pc
+        join public.periodos_servicio ps on ps.id = pc.periodo_servicio_id
+        where ps.suscripcion_id = current_setting('pruebas.suscC')::uuid and pc.tipo = 'cobro') = 500;
+
+-- Con la cuenta vendida completa, no se puede además vender uno de sus perfiles.
+do $$
+declare ok boolean := false;
+begin
+  begin
+    perform public.importar_servicio_existente(
+      current_setting('pruebas.sesion')::uuid, current_setting('pruebas.prod')::uuid, 5,
+      'cif-correo-C', 'huella-C', 'cif-pass', null, 1, 'Intruso', null,
+      current_setting('pruebas.mperfil')::uuid, 'Otro', null, null, null, null, null);
+  exception when others then ok := true;
+  end;
+  raise notice 'Una cuenta vendida completa no admite vender sus perfiles: %', case when ok then 'PASS' else 'FAIL' end;
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- 5. No se puede pasar de la capacidad ni pisar un perfil ocupado

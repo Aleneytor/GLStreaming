@@ -113,7 +113,7 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 
 ## Estado actual
 
-**Fase 4 (motor financiero): COMPLETA (2026-07-23).** Migraciones `0016..0024`.
+**Fase 4 (motor financiero): COMPLETA (2026-07-23).** Migraciones `0016..0025`.
 El negocio ya se cuadra dentro de la app, en las tres monedas.
 - **Tasas** (`/tasas`): BCV (API propia) y paralela (Kuanto **en vivo**, solo
   lectura con la clave anon). Validación defensiva: rechaza saltos > 50 % frente a la última
@@ -141,7 +141,7 @@ El negocio ya se cuadra dentro de la app, en las tres monedas.
 - **Importar cartera** (`/migracion`, solo escritorio): `importar_servicio_existente()`
   carga filas pegadas del Excel, cada una un `carga_inicial` atómico (`DEC-104`).
   El analizador puro está en `src/domain/importacion.ts` y lo comparten la vista
-  previa y el guardado. La `carga_inicial` no cuenta como venta del día. Maneja
+  previa y el guardado. La `carga_inicial` no cuenta como venta del día. Es **agnóstica de plataforma** (Netflix, HBO, Disney+, Prime) y según la modalidad importa **por perfil** (alcance unidad) o **cuenta completa** (alcance cuenta, consume toda la capacidad). Maneja
   cuentas completas (correo/costo heredados de la primera fila, celdas combinadas)
   y extras (uno por fila); los **montos van en divisas** y se convierten a Bs a
   BCV; la columna **Vendió** crea/resuelve revendedores; y la **Inversión** (costo
@@ -166,7 +166,7 @@ pacta en USD: el hecho fuente es el monto en Bs que entrega el cliente, que var�
 cada mes. El USD es una lectura derivada (`monto_ves / BCV`). Cualquier código o
 doc que aún hable de «el cobro iguala `precio × BCV`» está desactualizado.
 
-Estado de pruebas: **190 comprobaciones SQL + 84 unitarias**, todas en verde.
+Estado de pruebas: **195 comprobaciones SQL + 84 unitarias**, todas en verde.
 
 **Falta de la Fase 4** (deliberado, no es un bug): el desglose fino de los
 días-unidad ocupados sin período pagado — cortesía, pausa, reserva, bloqueo y
