@@ -18,13 +18,16 @@ insert into public.proveedores (tipo, nombre_o_alias, activo)
 values ('propio', 'Yo', true);
 
 -- Categorías iniciales de gastos operativos (docs/01-alcance-y-reglas.md).
+-- La migración 0017 ya siembra estas categorías; el seed las deja como estaban
+-- sin chocar (idempotente) para poder reejecutar el reset sin errores.
 insert into public.categorias_gasto (nombre) values
   ('recarga_banco'),
   ('compra_producto'),
   ('comision'),
   ('servicio_herramienta'),
   ('publicidad'),
-  ('otro_negocio');
+  ('otro_negocio')
+on conflict (nombre) do nothing;
 
 -- ----------------------------------------------------------------------------
 -- Mecanismos de entrega
