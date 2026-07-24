@@ -37,6 +37,8 @@ export default async function PanelLayout({
           incluye: ["/cobros", "/egresos", "/cierre", "/tasas"],
         },
         { href: "/catalogo", etiqueta: "Catálogo", icono: "⚙️" },
+        // Migración masiva: tarea de escritorio (copiar/pegar del Excel).
+        { href: "/migracion", etiqueta: "Importar", icono: "📥", soloEscritorio: true },
       ]
     : [{ href: "/dashboard", etiqueta: "Mis ventas", icono: "🧾" }];
 

@@ -9,6 +9,8 @@ export type ItemNav = {
   icono: string;
   /** Otras rutas que también deben marcar este elemento como activo. */
   incluye?: string[];
+  /** No se muestra en la barra inferior del móvil (tarea de escritorio). */
+  soloEscritorio?: boolean;
 };
 
 /**
@@ -34,7 +36,9 @@ export function NavPanel({ items }: { items: ItemNav[] }) {
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <ul className="flex">
-          {items.map((item) => (
+          {items
+            .filter((item) => !item.soloEscritorio)
+            .map((item) => (
             <li key={item.href} className="flex-1">
               <Link
                 href={item.href}

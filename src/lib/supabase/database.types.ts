@@ -2844,6 +2844,10 @@ export type Database = {
       }
     }
     Functions: {
+      abrir_sesion_carga: {
+        Args: { p_motivo?: string; p_producto_id?: string }
+        Returns: string
+      }
       actualizar_cuenta: {
         Args: {
           p_alias?: string
@@ -2877,6 +2881,10 @@ export type Database = {
         Returns: string
       }
       cerrar_mes: { Args: { p_mes: string }; Returns: string }
+      cerrar_sesion_carga: {
+        Args: { p_motivo?: string; p_sesion_id: string }
+        Returns: undefined
+      }
       confirmar_limpieza: {
         Args: { p_evidencia?: string; p_operacion_id: string }
         Returns: undefined
@@ -2904,6 +2912,28 @@ export type Database = {
       fijar_recordatorio: {
         Args: { p_fecha?: string; p_nota?: string; p_suscripcion_id: string }
         Returns: undefined
+      }
+      importar_servicio_existente: {
+        Args: {
+          p_alias?: string
+          p_capacidad: number
+          p_cliente_nombre?: string
+          p_cliente_whatsapp?: string
+          p_contrasena_cifrada: string
+          p_fecha_renovacion?: string
+          p_inicio?: string
+          p_login_cifrado: string
+          p_login_fingerprint: string
+          p_modalidad_id?: string
+          p_monto_ves?: number
+          p_nombre_perfil?: string
+          p_numero_slot?: number
+          p_pin_cifrado?: string
+          p_producto_id: string
+          p_sesion_id: string
+          p_vendedor_id?: string
+        }
+        Returns: Json
       }
       reabrir_mes: {
         Args: { p_mes: string; p_motivo: string }
