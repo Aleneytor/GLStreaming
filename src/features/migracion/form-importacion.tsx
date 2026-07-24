@@ -70,6 +70,8 @@ export function FormImportacion({
     <form action={action} className="space-y-5">
       <input type="hidden" name="producto_id" value={productoId} />
       <input type="hidden" name="capacidad" value={capacidad} />
+      {/* Spotify se importa por otro camino (identidad + cobertura). */}
+      <input type="hidden" name="producto_codigo" value={producto?.codigo ?? ""} />
       <input type="hidden" name="moneda" value={moneda} />
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -176,6 +178,15 @@ export function FormImportacion({
             La <strong>inversión</strong> es lo que le pagas al proveedor y <strong>renovar</strong>
             es cuándo le toca pagarle; con ellas la app calcula tu margen y te avisa el pago.
             Déjalas vacías (o proveedor «yo») si la cuenta es tuya.
+          </p>
+          <p>
+            <strong>Spotify</strong> va aparte porque tiene dos capas. En una{" "}
+            <strong>familia</strong>, la madre da el Premium y cada miembro entra con su
+            propio login: van en las columnas <strong>Correo Cliente</strong> y{" "}
+            <strong>Clave Cliente</strong>. Importa <strong>primero las familias</strong> y
+            luego los individuales: así, si un correo individual resulta ser una madre ya
+            cargada, se registra como <strong>«Uso de la madre»</strong> —la sexta venta de
+            esa familia— en vez de duplicar la cuenta.
           </p>
           <p>
             ¿Pagaste con tarjeta? Anota en <strong>proveedor</strong> el banco y los{" "}

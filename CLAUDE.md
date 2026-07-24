@@ -77,7 +77,7 @@ supabase/migrations Migraciones numeradas 0001.. (fuente de verdad del esquema)
 supabase/seed.sql   Catálogo sintético (sin secretos)
 supabase/tests/     Suites SQL: rls, alta_cuenta, editar_cuenta, editar_unidades,
                     ciclo_proveedor, criterios_fase2, venta_unidad, ciclo_vida,
-                    finanzas, importacion
+                    finanzas, importacion, borrado, spotify
 scripts/            crear-usuarios-dev.mjs
 tests/unit/         Pruebas Vitest
 docs/               Especificación de dominio (ver más abajo)
@@ -113,7 +113,7 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 
 ## Estado actual
 
-**Fase 4 (motor financiero): COMPLETA (2026-07-23).** Migraciones `0016..0027`.
+**Fase 4 (motor financiero): COMPLETA (2026-07-23).** Migraciones `0016..0028`.
 El negocio ya se cuadra dentro de la app, en las tres monedas.
 - **Tasas** (`/tasas`): BCV (API propia) y paralela (Kuanto **en vivo**, solo
   lectura con la clave anon). Validación defensiva: rechaza saltos > 50 % frente a la última
@@ -149,7 +149,12 @@ El negocio ya se cuadra dentro de la app, en las tres monedas.
   BCV; la columna **Vendió** crea/resuelve revendedores; y la **Inversión** (costo
   del proveedor, por cuenta) se registra valorizada a **paralela**, sin pago en
   Caja. Columnas: correo·contraseña·perfil·pin·monto·inicio·vence·cliente·
-  whatsapp·vendió·inversión·proveedor·renovar. Las columnas se reconocen por su ENCABEZADO (mapa por nombre en `src/domain/importacion.ts`), así el orden y las columnas de más (días, alerta, aviso) no importan.
+  whatsapp·vendió·inversión·proveedor·renovar. **Spotify va por su propia ruta**
+  (`importar_spotify_familiar` / `importar_spotify_individual`, migración 0028)
+  porque separa COBERTURA (de dónde sale el Premium) de IDENTIDAD (el login del
+  cliente): en una familia cada miembro trae su propio correo/clave, y si un
+  «individual» resulta ser una madre ya cargada se registra como **uso de la
+  madre** (alcance `principal`, sin consumir cupo). Las columnas se reconocen por su ENCABEZADO (mapa por nombre en `src/domain/importacion.ts`), así el orden y las columnas de más (días, alerta, aviso) no importan.
 
 ⚠️ **Una tasa `simulada` no congela dinero** (migración 0020). Sirve para ver la
 pantalla y desarrollar, pero `tasa_utilizable` la descarta: antes de eso, un
@@ -168,7 +173,7 @@ pacta en USD: el hecho fuente es el monto en Bs que entrega el cliente, que var�
 cada mes. El USD es una lectura derivada (`monto_ves / BCV`). Cualquier código o
 doc que aún hable de «el cobro iguala `precio × BCV`» está desactualizado.
 
-Estado de pruebas: **207 comprobaciones SQL + 86 unitarias**, todas en verde.
+Estado de pruebas: **227 comprobaciones SQL + 103 unitarias**, todas en verde.
 
 **Falta de la Fase 4** (deliberado, no es un bug): el desglose fino de los
 días-unidad ocupados sin período pagado — cortesía, pausa, reserva, bloqueo y

@@ -2915,6 +2915,15 @@ export type Database = {
         Args: { p_fecha?: string; p_nota?: string; p_suscripcion_id: string }
         Returns: undefined
       }
+      identidad_spotify_por_huella: {
+        Args: {
+          p_contrasena_cifrada: string
+          p_login_cifrado: string
+          p_login_fingerprint: string
+          p_tipo_correo?: string
+        }
+        Returns: string
+      }
       importar_cliente: {
         Args: { p_nombre: string; p_whatsapp: string }
         Returns: string
@@ -2936,6 +2945,56 @@ export type Database = {
           p_nombre_perfil?: string
           p_numero_slot?: number
           p_pin_cifrado?: string
+          p_producto_id: string
+          p_prov_inicio?: string
+          p_proveedor_nombre?: string
+          p_sesion_id: string
+          p_vendedor_id?: string
+        }
+        Returns: Json
+      }
+      importar_spotify_familiar: {
+        Args: {
+          p_capacidad: number
+          p_cliente_nombre?: string
+          p_cliente_whatsapp?: string
+          p_costo_usdt?: number
+          p_fecha_renovacion?: string
+          p_inicio?: string
+          p_madre_contrasena_cifrada: string
+          p_madre_login_cifrado: string
+          p_madre_login_fingerprint: string
+          p_miembro_contrasena_cifrada?: string
+          p_miembro_login_cifrado?: string
+          p_miembro_login_fingerprint?: string
+          p_miembro_tipo_correo?: string
+          p_modalidad_id?: string
+          p_monto_ves?: number
+          p_numero_slot?: number
+          p_producto_id: string
+          p_prov_inicio?: string
+          p_proveedor_nombre?: string
+          p_sesion_id: string
+          p_vendedor_id?: string
+        }
+        Returns: Json
+      }
+      importar_spotify_individual: {
+        Args: {
+          p_cliente_nombre?: string
+          p_cliente_whatsapp?: string
+          p_cobertura_tipo?: string
+          p_contrasena_cifrada: string
+          p_costo_usdt?: number
+          p_fecha_renovacion?: string
+          p_gmail_pagador_cifrado?: string
+          p_gmail_pagador_fingerprint?: string
+          p_inicio?: string
+          p_login_cifrado: string
+          p_login_fingerprint: string
+          p_modalidad_id?: string
+          p_monto_ves?: number
+          p_origen_gpay?: string
           p_producto_id: string
           p_prov_inicio?: string
           p_proveedor_nombre?: string

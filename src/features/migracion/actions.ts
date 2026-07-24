@@ -43,6 +43,18 @@ function hoyCaracas(): string {
   }).format(new Date());
 }
 
+/**
+ * Clasifica el correo de una identidad de Spotify. Los del dominio propio son
+ * reutilizables tras sanear; el resto se anota como Gmail del negocio (si
+ * resultara ser del cliente, se corrige a mano: no se adivina).
+ */
+function tipoCorreo(correo: string | null): string {
+  if (!correo) return "gmail_propio";
+  return /@(glstreaming\.org|glcuenta\.com)$/i.test(correo.trim())
+    ? "dominio_gl"
+    : "gmail_propio";
+}
+
 function sumarUnMes(iso: string): string {
   const [a, m, d] = iso.split("-").map(Number);
   const mes = m === 12 ? 1 : m + 1;
@@ -91,6 +103,11 @@ export async function importarAction(
   const capacidad = Number(formData.get("capacidad") ?? 0);
   // Por defecto los montos vienen en dólares (así está el Excel del negocio).
   const moneda = String(formData.get("moneda") ?? "usd") === "ves" ? "ves" : "usd";
+  // Spotify va por su propio camino: tiene identidad (el login del cliente)
+  // separada de la cobertura (de dónde sale el Premium).
+  const codigo = String(formData.get("producto_codigo") ?? "");
+  const esFamiliar = codigo === "spotify-familiar";
+  const esIndividualSpotify = codigo === "spotify-individual";
 
   if (!texto.trim()) return { error: "No pegaste ninguna fila." };
   if (!productoId || !modalidadId || !capacidad) {
@@ -146,33 +163,90 @@ export async function importarAction(
     }
 
     const vendedorId = d.vendio ? (vendedores.get(d.vendio.toLowerCase()) ?? null) : null;
+    // El ciclo del proveedor empieza un mes antes de renovar, así su próxima
+    // renovación cae exactamente en la fecha del Excel.
+    const provInicio = d.renovarProveedor ? restarUnMes(d.renovarProveedor) : null;
+    // El costo va en USD tal cual: la base lo valoriza a PARALELA (no BCV),
+    // porque los egresos nacen en USDT. Se registra una sola vez por cuenta.
 
-    const { data, error } = await supabase.rpc("importar_servicio_existente", {
-      p_sesion_id: sesionId as unknown as string,
-      p_producto_id: productoId,
-      p_capacidad: capacidad,
-      p_login_cifrado: cifrarSecreto(d.correo),
-      p_login_fingerprint: huellaSecreto(d.correo),
-      p_contrasena_cifrada: cifrarSecreto(d.contrasena),
-      p_alias: null,
-      p_numero_slot: fila.slot,
-      p_nombre_perfil: d.perfil ?? d.cliente ?? null,
-      p_pin_cifrado: d.pin ? cifrarSecreto(d.pin) : null,
-      p_modalidad_id: modalidadId,
-      p_cliente_nombre: d.cliente,
-      p_cliente_whatsapp: d.whatsapp,
-      p_inicio: inicio,
-      p_fecha_renovacion: vence,
-      p_monto_ves: montoVes,
-      p_vendedor_id: vendedorId,
-      // El costo va en USD tal cual: la base lo valoriza a PARALELA (no BCV),
-      // porque los egresos nacen en USDT. Se registra una sola vez por cuenta.
-      p_costo_usdt: d.inversion,
-      p_proveedor_nombre: d.proveedor,
-      // Fecha de pago al proveedor: el ciclo empieza un mes antes de renovar,
-      // así su próxima renovación cae exactamente en la fecha del Excel.
-      p_prov_inicio: d.renovarProveedor ? restarUnMes(d.renovarProveedor) : null,
-    });
+    let data: unknown;
+    let error: { message: string } | null;
+
+    if (esFamiliar) {
+      // Una fila = un miembro. La madre da el Premium; el miembro entra con su
+      // propio login (columnas «Correo Cliente» / «Clave Cliente»).
+      ({ data, error } = await supabase.rpc("importar_spotify_familiar", {
+        p_sesion_id: sesionId as unknown as string,
+        p_producto_id: productoId,
+        p_capacidad: capacidad,
+        p_madre_login_cifrado: cifrarSecreto(d.correo),
+        p_madre_login_fingerprint: huellaSecreto(d.correo),
+        p_madre_contrasena_cifrada: cifrarSecreto(d.contrasena),
+        p_miembro_login_cifrado: d.correoCliente ? cifrarSecreto(d.correoCliente) : null,
+        p_miembro_login_fingerprint: d.correoCliente ? huellaSecreto(d.correoCliente) : null,
+        p_miembro_contrasena_cifrada: d.claveCliente ? cifrarSecreto(d.claveCliente) : null,
+        p_miembro_tipo_correo: tipoCorreo(d.correoCliente),
+        p_numero_slot: fila.slot,
+        p_modalidad_id: modalidadId,
+        p_cliente_nombre: d.cliente,
+        p_cliente_whatsapp: d.whatsapp,
+        p_inicio: inicio,
+        p_fecha_renovacion: vence,
+        p_monto_ves: montoVes,
+        p_vendedor_id: vendedorId,
+        p_costo_usdt: d.inversion,
+        p_proveedor_nombre: d.proveedor,
+        p_prov_inicio: provInicio,
+      }));
+    } else if (esIndividualSpotify) {
+      // Si el correo resulta ser una familia ya importada, la base lo detecta
+      // sola y lo registra como venta del USO DE LA MADRE.
+      const gpay = /gpay/i.test(d.proveedor ?? "");
+      ({ data, error } = await supabase.rpc("importar_spotify_individual", {
+        p_sesion_id: sesionId as unknown as string,
+        p_producto_id: productoId,
+        p_login_cifrado: cifrarSecreto(d.correo),
+        p_login_fingerprint: huellaSecreto(d.correo),
+        p_contrasena_cifrada: cifrarSecreto(d.contrasena),
+        p_modalidad_id: modalidadId,
+        p_cobertura_tipo: gpay ? "individual_gpay_propio" : "individual_proveedor",
+        p_gmail_pagador_cifrado: d.gmailPagador ? cifrarSecreto(d.gmailPagador) : null,
+        p_gmail_pagador_fingerprint: d.gmailPagador ? huellaSecreto(d.gmailPagador) : null,
+        p_origen_gpay: gpay ? (/nigeria/i.test(d.proveedor ?? "") ? "gpay_nigeria" : "gpay_usa") : null,
+        p_cliente_nombre: d.cliente,
+        p_cliente_whatsapp: d.whatsapp,
+        p_inicio: inicio,
+        p_fecha_renovacion: vence,
+        p_monto_ves: montoVes,
+        p_vendedor_id: vendedorId,
+        p_costo_usdt: d.inversion,
+        p_proveedor_nombre: d.proveedor,
+        p_prov_inicio: provInicio,
+      }));
+    } else {
+      ({ data, error } = await supabase.rpc("importar_servicio_existente", {
+        p_sesion_id: sesionId as unknown as string,
+        p_producto_id: productoId,
+        p_capacidad: capacidad,
+        p_login_cifrado: cifrarSecreto(d.correo),
+        p_login_fingerprint: huellaSecreto(d.correo),
+        p_contrasena_cifrada: cifrarSecreto(d.contrasena),
+        p_alias: null,
+        p_numero_slot: fila.slot,
+        p_nombre_perfil: d.perfil ?? d.cliente ?? null,
+        p_pin_cifrado: d.pin ? cifrarSecreto(d.pin) : null,
+        p_modalidad_id: modalidadId,
+        p_cliente_nombre: d.cliente,
+        p_cliente_whatsapp: d.whatsapp,
+        p_inicio: inicio,
+        p_fecha_renovacion: vence,
+        p_monto_ves: montoVes,
+        p_vendedor_id: vendedorId,
+        p_costo_usdt: d.inversion,
+        p_proveedor_nombre: d.proveedor,
+        p_prov_inicio: provInicio,
+      }));
+    }
 
     // Cortesía (monto 0): el servicio queda resuelto, no pendiente de cobro.
     const periodoId = (data as { periodo_id?: string } | null)?.periodo_id;

@@ -53,6 +53,12 @@ export type FilaImportacion = {
   proveedor: string | null;
   /** Cuándo toca pagarle al proveedor (columna «Renovar»), en ISO. Por cuenta. */
   renovarProveedor: string | null;
+  /** Spotify: login propio del miembro de una familia («Correo Cliente»). */
+  correoCliente: string | null;
+  /** Spotify: contraseña de ese login («Clave Cliente»). */
+  claveCliente: string | null;
+  /** Spotify: Gmail que paga la individual por GPay (solo referencia). */
+  gmailPagador: string | null;
 };
 
 export type FilaAnalizada = {
@@ -183,7 +189,12 @@ type Campo =
   | "vendio"
   | "inversion"
   | "proveedor"
-  | "renovar";
+  | "renovar"
+  // Solo Spotify: el miembro de una familia entra con SU propio login, y un
+  // individual de GPay lleva anotado el Gmail que lo paga.
+  | "correoCliente"
+  | "claveCliente"
+  | "gmailPagador";
 
 /** Orden por defecto cuando NO se pega la fila de títulos. */
 const ORDEN_POSICIONAL: Campo[] = [
@@ -208,6 +219,12 @@ function campoDeCabecera(titulo: string): Campo | null {
   const h = norm(titulo);
   if (!h) return null;
   if (/(dias|alerta|aviso)/.test(h)) return null; // columnas calculadas
+  // OJO al orden: «Correo Cliente» y «Clave Cliente» (Spotify) contienen las
+  // palabras «correo», «clave» y «cliente», así que se resuelven ANTES que las
+  // columnas genéricas para que no se las lleve la que no es.
+  if (/cliente/.test(h) && /(correo|mail)/.test(h)) return "correoCliente";
+  if (/cliente/.test(h) && /(clave|contrase|pass)/.test(h)) return "claveCliente";
+  if (/pagador|gpay|paga/.test(h)) return "gmailPagador";
   if (/(correo|e-?mail|gmail)/.test(h)) return "correo";
   if (/(contrase|clave|password|pass)/.test(h)) return "contrasena";
   if (h.includes("perfil")) return "perfil";
@@ -350,10 +367,17 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
       !leer(c, "correo") &&
       !leer(c, "perfil") &&
       !leer(c, "cliente") &&
+      !leer(c, "correoCliente") &&
       !leer(c, "monto") &&
       !leer(c, "whatsapp") &&
       !leer(c, "vendio");
-    return !sinDatos;
+    if (sinDatos) return false;
+
+    // Marcas de la hoja para un cupo que no existe o no se puede usar. No son
+    // nombres de cliente: si pasaran, crearían un cliente llamado «no se puede».
+    const NO_SON_DATOS = ["vacio", "vacío", "no se puede", "-", "n/a"];
+    const marca = norm(leer(c, "cliente") || leer(c, "correoCliente"));
+    return !NO_SON_DATOS.includes(marca);
   });
 
   const slotsPorCuenta = new Map<string, number>();
@@ -385,6 +409,10 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
     const proveedorCrudo = enmascararTarjeta(leer(c, "proveedor"));
     const proveedor = proveedorCrudo.valor || null;
     const renovarCrudo = leer(c, "renovar");
+    // Spotify: el paréntesis con el que se anota el Gmail pagador se descarta.
+    const correoCliente = leer(c, "correoCliente") || null;
+    const claveCliente = leer(c, "claveCliente") || null;
+    const gmailPagador = leer(c, "gmailPagador").replace(/[()]/g, "").trim() || null;
 
     // --- Arrastre de la cuenta madre (celda combinada del Excel) -------------
     let heredaCuenta = false;
@@ -478,6 +506,9 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
         inversion: inversion === "invalido" ? null : inversion,
         proveedor,
         renovarProveedor,
+        correoCliente,
+        claveCliente,
+        gmailPagador,
       },
       errores,
       avisos,
