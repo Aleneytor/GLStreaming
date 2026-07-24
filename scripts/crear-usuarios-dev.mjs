@@ -60,11 +60,16 @@ for (const u of usuarios) {
     id = (await alta.json()).id;
     console.log(`  creado: ${u.email}`);
   } else {
-    // Ya existía: se busca su id para asegurar el rol.
+    // Puede fallar porque ya existía (normal) o por otra razón (a mostrar).
+    const detalle = await alta.text();
     const lista = await fetch(`${url}/auth/v1/admin/users`, { headers });
     const { users = [] } = await lista.json();
     id = users.find((x) => x.email === u.email)?.id;
-    console.log(`  ya existía: ${u.email}`);
+    if (id) {
+      console.log(`  ya existía: ${u.email}`);
+    } else {
+      console.error(`  ⚠️ no se pudo crear ${u.email} (HTTP ${alta.status}): ${detalle}`);
+    }
   }
 
   // 2. Asegurar el rol (el trigger los crea siempre como `revendedor`).
