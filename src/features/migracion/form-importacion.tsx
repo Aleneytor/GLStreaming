@@ -178,6 +178,11 @@ export function FormImportacion({
             Déjalas vacías (o proveedor «yo») si la cuenta es tuya.
           </p>
           <p>
+            ¿Pagaste con tarjeta? Anota en <strong>proveedor</strong> el banco y los{" "}
+            <strong>últimos 4</strong> (ej. «Bancamiga 0477»): identifica la tarjeta sin
+            riesgo. Si pegas el número completo, se guarda solo el final —nunca el CVV.
+          </p>
+          <p>
             Si el <strong>cliente</strong> está vacío pero hay monto o teléfono, se usa el
             nombre del perfil. Sin nada de eso, el perfil se carga <strong>libre</strong>.
           </p>

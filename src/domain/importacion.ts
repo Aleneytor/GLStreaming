@@ -77,11 +77,97 @@ export type ResultadoAnalisis = {
   vendedores: string[];
 };
 
-/** Divide respetando tabulador (Excel), punto y coma o coma. */
-function separar(linea: string): string[] {
-  if (linea.includes("\t")) return linea.split("\t");
-  if (linea.includes(";")) return linea.split(";");
-  return linea.split(",");
+/**
+ * Convierte el texto pegado en filas de celdas.
+ *
+ * NO basta con partir por saltos de línea: una celda de Excel puede contener
+ * saltos dentro (por ejemplo un dato escrito con Alt+Enter). Al copiarla, Excel
+ * la envuelve en comillas y conserva esos saltos, así que una sola fila llega
+ * repartida en varias líneas físicas. Partir a lo bruto descuadraba la tabla
+ * entera. Aquí se respeta el entrecomillado (`""` es una comilla literal).
+ */
+export function parsearTabla(texto: string): string[][] {
+  const delim = texto.includes("\t") ? "\t" : texto.includes(";") ? ";" : ",";
+
+  const filas: string[][] = [];
+  let fila: string[] = [];
+  let campo = "";
+  let enComillas = false;
+
+  for (let i = 0; i < texto.length; i++) {
+    const ch = texto[i];
+
+    if (enComillas) {
+      if (ch === '"') {
+        if (texto[i + 1] === '"') {
+          campo += '"';
+          i++;
+        } else {
+          enComillas = false;
+        }
+      } else {
+        campo += ch;
+      }
+      continue;
+    }
+
+    if (ch === '"') enComillas = true;
+    else if (ch === delim) {
+      fila.push(campo);
+      campo = "";
+    } else if (ch === "\n") {
+      fila.push(campo);
+      filas.push(fila);
+      fila = [];
+      campo = "";
+    } else if (ch !== "\r") {
+      campo += ch;
+    }
+  }
+  if (campo !== "" || fila.length > 0) {
+    fila.push(campo);
+    filas.push(fila);
+  }
+
+  // Cada celda se limpia, y las filas totalmente vacías se descartan.
+  return filas
+    .map((r) => r.map((c) => c.trim()))
+    .filter((r) => r.some((c) => c !== ""));
+}
+
+/**
+ * Oculta un número de tarjeta si aparece en el texto (red de seguridad).
+ *
+ * Para recordar CON QUÉ tarjeta se pagó una cuenta basta el banco y los últimos
+ * cuatro dígitos. Guardar el número completo —y menos aún el CVV— es un riesgo
+ * innecesario: no aporta nada para identificarla y sí es peligroso si los datos
+ * se filtran. Así que si alguien pega el número entero, aquí se recorta.
+ */
+export function enmascararTarjeta(valor: string): { valor: string; oculto: boolean } {
+  const t = valor.replace(/\s+/g, " ").trim();
+  if (!t) return { valor: t, oculto: false };
+
+  // Tramos de dígitos (admite espacios o guiones entre grupos, como se escriben
+  // las tarjetas). Interesa el más largo: el número, no el CVV ni la fecha.
+  const tramos = t.match(/\d[\d -]*\d/g) ?? [];
+  let mejor = "";
+  let mejorDigitos = "";
+  for (const tramo of tramos) {
+    const digitos = tramo.replace(/\D/g, "");
+    if (digitos.length > mejorDigitos.length) {
+      mejor = tramo;
+      mejorDigitos = digitos;
+    }
+  }
+  if (mejorDigitos.length < 13) return { valor: t, oculto: false };
+
+  // Una tarjeta tiene 13-19 dígitos; si el tramo arrastró la fecha o el CVV,
+  // los de más se ignoran quedándose con los primeros 16.
+  const ultimos = mejorDigitos.slice(0, 16).slice(-4);
+
+  // Se conserva el texto anterior al número (el banco o apodo, si lo hay).
+  const antes = t.slice(0, t.indexOf(mejor)).replace(/[^\p{L}\p{N} .]/gu, "").trim();
+  return { valor: `${antes || "tarjeta"} ···${ultimos}`, oculto: true };
 }
 
 type Campo =
@@ -237,19 +323,15 @@ export function restarUnMes(iso: string): string {
 }
 
 export function analizarFilas(texto: string, capacidad: number): ResultadoAnalisis {
-  const lineas = texto
-    .split(/\r?\n/)
-    .map((l) => l.trimEnd())
-    .filter((l) => l.trim() !== "");
+  // Respeta las celdas con saltos de línea dentro (ver `parsearTabla`).
+  const filasCrudas = parsearTabla(texto);
 
   // Las columnas se reconocen por su título si se pegó la fila de encabezados;
   // así el orden y las columnas de más (días, alerta, renovar…) no importan.
-  const { mapa } = resolverColumnas(
-    lineas.length > 0 ? separar(lineas[0]).map((x) => x.trim()) : [],
-  );
+  const { mapa } = resolverColumnas(filasCrudas[0] ?? []);
   // Se quitan TODAS las filas de títulos: al pegar varios bloques, cada uno
   // trae la suya, y una fila de títulos en medio no es un dato.
-  const datos = lineas.filter((l) => !esFilaCabecera(separar(l).map((x) => x.trim())));
+  const datos = filasCrudas.filter((c) => !esFilaCabecera(c));
 
   const slotsPorCuenta = new Map<string, number>();
   const vendedores = new Map<string, string>(); // clave en minúsculas → nombre visible
@@ -266,8 +348,7 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
     return idx === undefined ? "" : (c[idx] ?? "").trim();
   };
 
-  datos.forEach((linea, i) => {
-    const c = separar(linea).map((x) => x.trim());
+  datos.forEach((c, i) => {
     const errores: string[] = [];
     const avisos: string[] = [];
 
@@ -282,7 +363,10 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
     const whatsapp = leer(c, "whatsapp") || null;
     const vendio = leer(c, "vendio") || null;
     const inversionCruda = leer(c, "inversion");
-    const proveedor = leer(c, "proveedor") || null;
+    // El proveedor a veces es la tarjeta con la que se pagó: si viene el número
+    // completo, se guarda solo el final (ver `enmascararTarjeta`).
+    const proveedorCrudo = enmascararTarjeta(leer(c, "proveedor"));
+    const proveedor = proveedorCrudo.valor || null;
     const renovarCrudo = leer(c, "renovar");
 
     // --- Arrastre de la cuenta madre (celda combinada del Excel) -------------
@@ -318,6 +402,12 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
     const renovarProveedor = normalizarFecha(renovarCrudo);
     if (renovarCrudo && !renovarProveedor) {
       avisos.push(`Renovación del proveedor no entendida («${renovarCrudo}»): se calculará sola.`);
+    }
+
+    if (proveedorCrudo.oculto) {
+      avisos.push(
+        `Se ocultó el número de tarjeta por seguridad: se guarda «${proveedorCrudo.valor}».`,
+      );
     }
 
     // --- Cliente: la columna, o el nombre del perfil si hay señal de venta ---

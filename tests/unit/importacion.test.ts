@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   analizarFilas,
+  enmascararTarjeta,
   normalizarFecha,
   normalizarMonto,
+  parsearTabla,
   restarUnMes,
 } from "@/domain/importacion";
 
@@ -70,6 +72,57 @@ describe("restarUnMes", () => {
 
   it("cruza el cambio de año", () => {
     expect(restarUnMes("2026-01-15")).toBe("2025-12-15");
+  });
+});
+
+describe("parsearTabla", () => {
+  it("mantiene junta una celda que trae saltos de línea dentro", () => {
+    // Excel envuelve en comillas la celda escrita con Alt+Enter y conserva los
+    // saltos: la fila llega repartida en varias líneas físicas.
+    const texto = 'a\tb\t"linea1\nlinea2\nlinea3"\td\ne\tf\tg\th';
+    const filas = parsearTabla(texto);
+
+    expect(filas).toHaveLength(2); // dos filas, no cuatro
+    expect(filas[0]).toEqual(["a", "b", "linea1\nlinea2\nlinea3", "d"]);
+    expect(filas[1]).toEqual(["e", "f", "g", "h"]);
+  });
+
+  it("entiende la comilla escapada («\"\"»)", () => {
+    expect(parsearTabla('x\t"dijo ""hola"""')[0]).toEqual(["x", 'dijo "hola"']);
+  });
+
+  it("descarta las filas totalmente vacías", () => {
+    expect(parsearTabla("a\tb\n\n\nc\td")).toHaveLength(2);
+  });
+});
+
+describe("enmascararTarjeta", () => {
+  it("oculta el número completo y deja solo los últimos 4", () => {
+    // Lo que el usuario tenía anotado: número + vencimiento + CVV.
+    const r = enmascararTarjeta("4130371000040477 01/28 766");
+    expect(r.oculto).toBe(true);
+    expect(r.valor).toBe("tarjeta ···0477");
+    expect(r.valor).not.toContain("766"); // el CVV no se guarda
+    expect(r.valor).not.toContain("4130371000040477");
+  });
+
+  it("conserva el banco si viene delante del número", () => {
+    // Escrito en grupos de cuatro, como en las tarjetas.
+    expect(enmascararTarjeta("Bancamiga 4130 3710 0004 0477").valor).toBe(
+      "Bancamiga ···0477",
+    );
+  });
+
+  it("no toca un proveedor normal ni unos últimos 4 ya escritos a mano", () => {
+    expect(enmascararTarjeta("Bancamiga 4477")).toEqual({
+      valor: "Bancamiga 4477",
+      oculto: false,
+    });
+    expect(enmascararTarjeta("@CapyVentas")).toEqual({
+      valor: "@CapyVentas",
+      oculto: false,
+    });
+    expect(enmascararTarjeta("yo bancamiga").oculto).toBe(false);
   });
 });
 
