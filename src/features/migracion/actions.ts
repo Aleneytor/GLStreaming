@@ -147,7 +147,7 @@ export async function importarAction(
 
     const vendedorId = d.vendio ? (vendedores.get(d.vendio.toLowerCase()) ?? null) : null;
 
-    const { error } = await supabase.rpc("importar_servicio_existente", {
+    const { data, error } = await supabase.rpc("importar_servicio_existente", {
       p_sesion_id: sesionId as unknown as string,
       p_producto_id: productoId,
       p_capacidad: capacidad,
@@ -174,14 +174,25 @@ export async function importarAction(
       p_prov_inicio: d.renovarProveedor ? restarUnMes(d.renovarProveedor) : null,
     });
 
+    // Cortesía (monto 0): el servicio queda resuelto, no pendiente de cobro.
+    const periodoId = (data as { periodo_id?: string } | null)?.periodo_id;
+    if (!error && d.cliente && d.monto === 0 && periodoId) {
+      await supabase.rpc("marcar_periodo_cortesia", { p_periodo_id: periodoId });
+    }
+
     const etiquetaVendedor = d.vendio ? ` · vendió ${d.vendio}` : "";
+    const etiquetaCobro = montoVes
+      ? ` · ${montoVes.toLocaleString("es-VE")} Bs`
+      : d.monto === 0
+        ? " · cortesía"
+        : " · sin cobro";
     resultados.push({
       numero: fila.numero,
       ok: !error,
       mensaje: error
         ? error.message
         : d.cliente
-          ? `${d.cliente} · vence ${vence}${montoVes ? ` · ${montoVes.toLocaleString("es-VE")} Bs` : " · sin cobro"}${etiquetaVendedor}`
+          ? `${d.cliente} · vence ${vence}${etiquetaCobro}${etiquetaVendedor}`
           : `Perfil ${fila.slot} cargado libre`,
     });
   }

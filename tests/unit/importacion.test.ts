@@ -49,6 +49,13 @@ describe("normalizarMonto", () => {
     expect(normalizarMonto("abc")).toBe("invalido");
     expect(normalizarMonto("-5")).toBe("invalido");
   });
+
+  it("«$ -» y un guion suelto son cero contable (servicio de cortesía)", () => {
+    expect(normalizarMonto("$ -")).toBe(0);
+    expect(normalizarMonto("-")).toBe(0);
+    expect(normalizarMonto("—")).toBe(0);
+    expect(normalizarMonto("0")).toBe(0);
+  });
 });
 
 describe("restarUnMes", () => {
@@ -144,6 +151,19 @@ describe("analizarFilas", () => {
     expect(r.conError).toBe(0);
     expect(r.filas[0].datos.cliente).toBe("Maurifred");
     expect(r.filas[0].avisos.join(" ")).toContain("tomado del perfil");
+  });
+
+  it("un servicio de costo 0 (familiar) no es error: es cortesía", () => {
+    // La fila de Abigail: ingresos «$ -», inversión «$ -», proveedor «yo».
+    const r = analizarFilas(
+      fila("netab@gls.org", "gls2020", "Abigail", "0", "$ -", "23/4/2027", "23/5/2027", "", "", "", "$ -", "yo"),
+      1,
+    );
+    expect(r.conError).toBe(0);
+    expect(r.filas[0].datos.monto).toBe(0);
+    expect(r.filas[0].datos.inversion).toBe(0);
+    expect(r.filas[0].datos.cliente).toBe("Abigail"); // el perfil es la clienta
+    expect(r.filas[0].avisos.join(" ")).toContain("Cortesía");
   });
 
   it("un perfil sin ninguna señal de venta se carga libre", () => {

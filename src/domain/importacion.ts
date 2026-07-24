@@ -207,6 +207,9 @@ export function normalizarMonto(valor: string): number | null | "invalido" {
   const v = valor.trim().replace(/\s|Bs\.?|\$/gi, "");
   if (!v) return null;
 
+  // En Excel, "$ -" (o un guion suelto) es el cero contable: servicio gratis.
+  if (/^[-–—]+$/.test(v)) return 0;
+
   // Si hay coma, se asume formato con coma decimal (VE): el punto separa miles.
   const limpio = v.includes(",") ? v.replace(/\./g, "").replace(",", ".") : v;
   const n = Number(limpio);
@@ -318,6 +321,7 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
     }
     if (cliente && !vence) avisos.push("Sin vencimiento: se calculará como inicio + 1 mes.");
     if (cliente && monto === null) avisos.push("Sin monto: quedará en «Por cobrar».");
+    if (cliente && monto === 0) avisos.push("Cortesía: se registra sin cobro.");
 
     if (vendio) {
       const clave = vendio.toLowerCase();

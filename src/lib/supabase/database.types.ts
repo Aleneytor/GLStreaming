@@ -2904,6 +2904,8 @@ export type Database = {
         }
         Returns: string
       }
+      eliminar_cliente: { Args: { p_cliente_id: string }; Returns: undefined }
+      eliminar_cuenta: { Args: { p_cuenta_id: string }; Returns: undefined }
       es_admin: { Args: never; Returns: boolean }
       fecha_renovacion_cliente: {
         Args: { p_inicio: string; p_meses?: number }
@@ -2913,6 +2915,10 @@ export type Database = {
         Args: { p_fecha?: string; p_nota?: string; p_suscripcion_id: string }
         Returns: undefined
       }
+      importar_cliente: {
+        Args: { p_nombre: string; p_whatsapp: string }
+        Returns: string
+      }
       importar_servicio_existente: {
         Args: {
           p_alias?: string
@@ -2920,6 +2926,7 @@ export type Database = {
           p_cliente_nombre?: string
           p_cliente_whatsapp?: string
           p_contrasena_cifrada: string
+          p_costo_usdt?: number
           p_fecha_renovacion?: string
           p_inicio?: string
           p_login_cifrado: string
@@ -2930,10 +2937,16 @@ export type Database = {
           p_numero_slot?: number
           p_pin_cifrado?: string
           p_producto_id: string
+          p_prov_inicio?: string
+          p_proveedor_nombre?: string
           p_sesion_id: string
           p_vendedor_id?: string
         }
         Returns: Json
+      }
+      marcar_periodo_cortesia: {
+        Args: { p_periodo_id: string }
+        Returns: undefined
       }
       reabrir_mes: {
         Args: { p_mes: string; p_motivo: string }

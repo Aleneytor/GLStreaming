@@ -173,6 +173,28 @@ union all select 'El extra queda vendido a su cliente',
        (:'rx'::jsonb ->> 'vendida')::boolean = true;
 
 -- ---------------------------------------------------------------------------
+-- 3b. Servicio de CORTESÍA (monto 0): se registra pero no queda por cobrar
+-- ---------------------------------------------------------------------------
+select public.importar_servicio_existente(
+  :'sesion', :'prod', 5, 'cif-correo-A', 'huella-A', 'cif-pass',
+  'Cuenta A', 5, 'Abigail', null, :'m_perfil',
+  'Abigail', null, '2026-07-01'::date, '2026-08-01'::date, 0, null
+) as rcort \gset
+
+select set_config('pruebas.periCort', (:'rcort'::jsonb ->> 'periodo_id'), true);
+-- El importador marca la cortesía (lo hace la acción; aquí se simula).
+select public.marcar_periodo_cortesia((:'rcort'::jsonb ->> 'periodo_id')::uuid);
+
+select 'La cortesia se registra como vendida' as prueba,
+       (:'rcort'::jsonb ->> 'vendida')::boolean = true as pass
+union all select 'La cortesia NO genera cobro',
+       not exists (select 1 from public.pagos_cliente
+                   where periodo_servicio_id = current_setting('pruebas.periCort')::uuid)
+union all select 'La cortesia NO aparece en «Por cobrar»',
+       not exists (select 1 from public.v_periodos_por_cobrar
+                   where periodo_id = current_setting('pruebas.periCort')::uuid);
+
+-- ---------------------------------------------------------------------------
 -- 4b. Venta de CUENTA COMPLETA (modalidad de alcance «cuenta»)
 -- ---------------------------------------------------------------------------
 select public.importar_servicio_existente(
