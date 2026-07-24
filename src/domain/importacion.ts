@@ -51,6 +51,8 @@ export type FilaImportacion = {
   inversion: number | null;
   /** Proveedor al que se le compra la cuenta (columna «Proveedor»). */
   proveedor: string | null;
+  /** Cuándo toca pagarle al proveedor (columna «Renovar»), en ISO. Por cuenta. */
+  renovarProveedor: string | null;
 };
 
 export type FilaAnalizada = {
@@ -75,13 +77,93 @@ export type ResultadoAnalisis = {
   vendedores: string[];
 };
 
-const CABECERAS = ["correo", "contrasena", "contraseña", "email", "e-mail"];
-
 /** Divide respetando tabulador (Excel), punto y coma o coma. */
 function separar(linea: string): string[] {
   if (linea.includes("\t")) return linea.split("\t");
   if (linea.includes(";")) return linea.split(";");
   return linea.split(",");
+}
+
+type Campo =
+  | "correo"
+  | "contrasena"
+  | "perfil"
+  | "pin"
+  | "monto"
+  | "inicio"
+  | "vence"
+  | "cliente"
+  | "whatsapp"
+  | "vendio"
+  | "inversion"
+  | "proveedor"
+  | "renovar";
+
+/** Orden por defecto cuando NO se pega la fila de títulos. */
+const ORDEN_POSICIONAL: Campo[] = [
+  "correo", "contrasena", "perfil", "pin", "monto", "inicio",
+  "vence", "cliente", "whatsapp", "vendio", "inversion", "proveedor", "renovar",
+];
+
+/** Normaliza un texto para comparar: minúsculas y sin acentos ni signos. */
+function norm(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // quita los acentos combinados
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Traduce el título de una columna del Excel al campo interno. Devuelve null
+ * para las columnas calculadas que no se importan (días, alerta, renovar…).
+ */
+function campoDeCabecera(titulo: string): Campo | null {
+  const h = norm(titulo);
+  if (!h) return null;
+  if (/(dias|alerta|aviso)/.test(h)) return null; // columnas calculadas
+  if (/(correo|e-?mail|gmail)/.test(h)) return "correo";
+  if (/(contrase|clave|password|pass)/.test(h)) return "contrasena";
+  if (h.includes("perfil")) return "perfil";
+  if (h === "pin") return "pin";
+  if (/(ingreso|monto|precio)/.test(h)) return "monto";
+  if (h.includes("inicio") || h.includes("desde")) return "inicio";
+  if (/(vence|vencim|hasta)/.test(h)) return "vence";
+  if (h.includes("cliente")) return "cliente";
+  if (/(celular|whatsapp|telefono|movil|numero|\btel\b)/.test(h)) return "whatsapp";
+  if (h.includes("vend")) return "vendio"; // vendió / vendedor
+  if (/(inversion|costo)/.test(h) || h === "inv") return "inversion";
+  if (h.includes("proveedor")) return "proveedor";
+  if (h.includes("renov")) return "renovar"; // fecha de pago al proveedor
+  return null;
+}
+
+/**
+ * Decide el mapa columna→campo. Si la primera línea es una fila de títulos, se
+ * mapea POR NOMBRE (así el orden y las columnas de más no importan). Si no, se
+ * usa el orden posicional por defecto.
+ */
+function resolverColumnas(primeraLinea: string[]): {
+  mapa: Partial<Record<Campo, number>>;
+  hayCabecera: boolean;
+} {
+  const reconocidos = primeraLinea.map((t) => campoDeCabecera(t));
+  const cuantos = reconocidos.filter(Boolean).length;
+  // Es cabecera si la primera celda no es un correo y reconoce varias columnas.
+  const primeraEsCorreo = (primeraLinea[0] ?? "").includes("@");
+  const hayCabecera = !primeraEsCorreo && cuantos >= 4;
+
+  const mapa: Partial<Record<Campo, number>> = {};
+  if (hayCabecera) {
+    reconocidos.forEach((campo, i) => {
+      if (campo && mapa[campo] === undefined) mapa[campo] = i;
+    });
+  } else {
+    ORDEN_POSICIONAL.forEach((campo, i) => {
+      mapa[campo] = i;
+    });
+  }
+  return { mapa, hayCabecera };
 }
 
 /**
@@ -147,11 +229,12 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
     .map((l) => l.trimEnd())
     .filter((l) => l.trim() !== "");
 
-  // Si la primera línea parece una cabecera, se descarta.
-  if (lineas.length > 0) {
-    const primera = separar(lineas[0])[0]?.trim().toLowerCase() ?? "";
-    if (CABECERAS.includes(primera)) lineas.shift();
-  }
+  // Las columnas se reconocen por su título si se pegó la fila de encabezados;
+  // así el orden y las columnas de más (días, alerta, renovar…) no importan.
+  const { mapa, hayCabecera } = resolverColumnas(
+    lineas.length > 0 ? separar(lineas[0]).map((x) => x.trim()) : [],
+  );
+  if (hayCabecera) lineas.shift();
 
   const slotsPorCuenta = new Map<string, number>();
   const vendedores = new Map<string, string>(); // clave en minúsculas → nombre visible
@@ -162,23 +245,30 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
   let ultimoCorreo = "";
   let ultimaContrasena = "";
 
+  // Lee una columna por su campo, sin depender de la posición absoluta.
+  const leer = (c: string[], campo: Campo): string => {
+    const idx = mapa[campo];
+    return idx === undefined ? "" : (c[idx] ?? "").trim();
+  };
+
   lineas.forEach((linea, i) => {
     const c = separar(linea).map((x) => x.trim());
     const errores: string[] = [];
     const avisos: string[] = [];
 
-    let correo = c[0] ?? "";
-    let contrasena = c[1] ?? "";
-    const perfil = c[2] || null;
-    const pin = c[3] || null;
-    const montoCrudo = c[4] ?? "";
-    const inicioCrudo = c[5] ?? "";
-    const venceCrudo = c[6] ?? "";
-    const clienteCol = c[7] || null;
-    const whatsapp = c[8] || null;
-    const vendio = c[9] || null;
-    const inversionCruda = c[10] ?? "";
-    const proveedor = c[11] || null;
+    let correo = leer(c, "correo");
+    let contrasena = leer(c, "contrasena");
+    const perfil = leer(c, "perfil") || null;
+    const pin = leer(c, "pin") || null;
+    const montoCrudo = leer(c, "monto");
+    const inicioCrudo = leer(c, "inicio");
+    const venceCrudo = leer(c, "vence");
+    const clienteCol = leer(c, "cliente") || null;
+    const whatsapp = leer(c, "whatsapp") || null;
+    const vendio = leer(c, "vendio") || null;
+    const inversionCruda = leer(c, "inversion");
+    const proveedor = leer(c, "proveedor") || null;
+    const renovarCrudo = leer(c, "renovar");
 
     // --- Arrastre de la cuenta madre (celda combinada del Excel) -------------
     let heredaCuenta = false;
@@ -209,6 +299,11 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
     // El costo es secundario: si no se entiende, se avisa pero no se bloquea.
     const inversion = normalizarMonto(inversionCruda);
     if (inversion === "invalido") avisos.push(`Costo no entendido («${inversionCruda}»): se importará sin costo.`);
+
+    const renovarProveedor = normalizarFecha(renovarCrudo);
+    if (renovarCrudo && !renovarProveedor) {
+      avisos.push(`Renovación del proveedor no entendida («${renovarCrudo}»): se calculará sola.`);
+    }
 
     // --- Cliente: la columna, o el nombre del perfil si hay señal de venta ---
     const haySenalVenta = Boolean(
@@ -256,6 +351,7 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
         monto: monto === "invalido" ? null : monto,
         inversion: inversion === "invalido" ? null : inversion,
         proveedor,
+        renovarProveedor,
       },
       errores,
       avisos,

@@ -15,14 +15,14 @@ export type OpcionProducto = {
   modalidades: { id: string; nombre: string }[];
 };
 
-// Ejemplo de cuenta completa: el correo (y la inversión/proveedor, que son por
-// cuenta) van SOLO en la primera fila, como en el Excel con celdas combinadas.
-// Columnas: correo·contraseña·perfil·pin·monto·inicio·vence·cliente·whatsapp·
-// vendió·inversión·proveedor
+// Ejemplo de cuenta completa CON la fila de títulos (así se reconocen las
+// columnas por su nombre). El correo, la inversión, el proveedor y la
+// renovación son de la cuenta: van solo en la primera fila.
 const EJEMPLO = [
-  "madre@correo.com\tgls3030\tMaurifred\t7449\t2.50\t24/7/2026\t23/8/2026\t\t+58 412-4067449\tGabriel Nadales\t3.50\t@CapyVentas",
-  "\t\tNana\t3334\t5.00\t10/7/2026\t9/8/2026\tNana\t\t\t\t",
-  "\t\tNorelys\t5555\t3.00\t27/6/2026\t27/7/2026\t\t+58 424-1991901\tEdgar Espinoza\t\t",
+  "Correo\tContraseña\tPerfil\tPin\tIngresos\tInicio\tVence\tCliente\tCelular\tVendió\tInversión\tProveedor\tRenovar",
+  "madre@correo.com\tgls3030\tMaurifred\t7449\t2.50\t24/7/2026\t23/8/2026\t\t+58 412-4067449\tGabriel Nadales\t3.50\t@CapyVentas\t9/8/2026",
+  "\t\tNana\t3334\t5.00\t10/7/2026\t9/8/2026\tNana\t\t\t\t\t",
+  "\t\tNorelys\t5555\t3.00\t27/6/2026\t27/7/2026\t\t+58 424-1991901\tEdgar Espinoza\t\t\t",
 ].join("\n");
 
 export function FormImportacion({
@@ -155,24 +155,24 @@ export function FormImportacion({
         />
         <div className="mt-1 space-y-1 text-xs text-neutral-500 dark:text-neutral-400">
           <p>
-            Doce columnas, en este orden:{" "}
-            <strong>
-              correo · contraseña · perfil · pin · monto · inicio · vence · cliente · whatsapp ·
-              vendió · inversión · proveedor
-            </strong>
-            .
+            <strong>Pega tu Excel con la fila de títulos.</strong> La app reconoce las
+            columnas por su nombre —en cualquier orden— y descarta las que no usa (Días,
+            Alerta, Aviso). No necesitas borrar ni reordenar nada.
+          </p>
+          <p>
+            Reconoce: <strong>correo, contraseña, perfil, pin, ingresos/monto, inicio,
+            vence, cliente, celular, vendió, inversión, proveedor, renovar</strong>.
           </p>
           <p>
             <strong>Cuenta completa</strong> (Netflix, Disney…): elige el producto «cuenta»
-            y pega los perfiles; el <strong>correo, la contraseña, la inversión y el
-            proveedor van solo en la primera fila</strong> (son de la cuenta, no del
-            perfil), como en tu Excel. <strong>Perfiles extra:</strong> elige «perfil
-            extra» y cada fila lleva lo suyo.
+            y pega los perfiles; el <strong>correo, la contraseña, la inversión, el
+            proveedor y la renovación van solo en la primera fila</strong> (son de la
+            cuenta, no del perfil). <strong>Perfiles extra:</strong> elige «perfil extra».
           </p>
           <p>
-            La <strong>inversión</strong> es lo que le pagas al proveedor por la cuenta; con
-            ella la app calcula tu margen. Déjala vacía (o proveedor «yo») si la cuenta es
-            tuya.
+            La <strong>inversión</strong> es lo que le pagas al proveedor y <strong>renovar</strong>
+            es cuándo le toca pagarle; con ellas la app calcula tu margen y te avisa el pago.
+            Déjalas vacías (o proveedor «yo») si la cuenta es tuya.
           </p>
           <p>
             Si el <strong>cliente</strong> está vacío pero hay monto o teléfono, se usa el
@@ -281,11 +281,14 @@ export function FormImportacion({
                         )}
                       </td>
                       <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">
-                        {f.datos.inversion != null ? (
+                        {f.datos.inversion != null || f.datos.proveedor || f.datos.renovarProveedor ? (
                           <>
-                            ${f.datos.inversion}
+                            {f.datos.inversion != null ? `$${f.datos.inversion}` : ""}
                             {f.datos.proveedor ? (
                               <span className="text-neutral-400"> · {f.datos.proveedor}</span>
+                            ) : null}
+                            {f.datos.renovarProveedor ? (
+                              <span className="text-neutral-400"> · paga {f.datos.renovarProveedor}</span>
                             ) : null}
                           </>
                         ) : (

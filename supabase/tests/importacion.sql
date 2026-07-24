@@ -33,12 +33,13 @@ select public.abrir_sesion_carga(:'prod', 'prueba') as sesion \gset
 -- 1. Dos filas del MISMO correo se agrupan en una sola cuenta madre
 -- ---------------------------------------------------------------------------
 -- (huella del correo simulada: en la app la calcula huellaSecreto)
--- La primera fila CREA la cuenta y trae el costo del proveedor (3.50 @CapyVentas).
+-- La primera fila CREA la cuenta con costo (3.50 @CapyVentas) y renovación de
+-- proveedor el 09/08 (se pasa el inicio del ciclo = 09/07).
 select public.importar_servicio_existente(
   :'sesion', :'prod', 5, 'cif-correo-A', 'huella-A', 'cif-pass',
   'Cuenta A', 1, 'Ana', 'cif-pin', :'m_perfil',
   'Ana Perez', '04141234567', '2026-07-01'::date, '2026-08-01'::date, 250, null,
-  3.50, '@CapyVentas'
+  3.50, '@CapyVentas', '2026-07-09'::date
 ) as r1 \gset
 
 -- La segunda fila reutiliza la cuenta: su costo (si lo trajera) NO se vuelve a sumar.
@@ -123,6 +124,12 @@ union all select 'El ciclo guarda el costo en USDT (3.50)',
 union all select 'El costo se valoriza a paralela: 3.50 x 50 = 175 Bs',
        (select costo_ves_snapshot from public.ciclos_proveedor
         where cuenta_id = current_setting('pruebas.cuentaA')::uuid and estado = 'vigente') = 175
+union all select 'La renovacion del proveedor cae el 09/08 (dada por el Excel)',
+       (select proxima_renovacion from public.ciclos_proveedor
+        where cuenta_id = current_setting('pruebas.cuentaA')::uuid and estado = 'vigente') = '2026-08-09'
+union all select 'El dia ancla del proveedor es 9',
+       (select dia_ancla_proveedor from public.ciclos_proveedor
+        where cuenta_id = current_setting('pruebas.cuentaA')::uuid and estado = 'vigente') = 9
 union all select 'La cuenta quedó con el proveedor @CapyVentas',
        (select p.nombre_o_alias from public.proveedores p
         join public.cuentas c on c.proveedor_operativo_id = p.id

@@ -195,12 +195,39 @@ describe("analizarFilas", () => {
     expect(r.filas[0].errores.join(" ")).toContain("Falta el correo");
   });
 
-  it("descarta la fila de cabecera si la pegan sin querer", () => {
+  it("reconoce las columnas por su encabezado, en cualquier orden", () => {
+    // Encabezados del Excel real, con columnas calculadas (Días, Alerta…) que
+    // deben ignorarse, y sin columna Inicio (se deriva del vencimiento).
     const texto = [
-      fila("correo", "contraseña", "perfil", "pin", "monto", "inicio", "vence", "cliente", "whatsapp", "vendió"),
-      fila("a@gls.org", "c1", "P1", "", "5", "", "23/07/2026", "Ana", "", ""),
+      fila("Correo", "Contraseña", "Perfil", "Pin", "Ingresos", "Días", "Vence", "Alerta", "Cliente", "Nº Celular", "Vendió", "Inversión", "Proveedor", "Renovar", "Aviso"),
+      fila("allyson@trxpal.com", "gls4545", "Cristofer Marquez", "0", "$ 4,00", "30", "2/8/2026", "Falta 10 días", "", "+58 412-4067449", "Gabriel Nadales", "$ 3,50", "@CapyVentas", "9/8/2026", "Falta 17 días"),
     ].join("\n");
-    expect(analizarFilas(texto, 5).filas).toHaveLength(1);
+    const r = analizarFilas(texto, 1);
+
+    expect(r.conError).toBe(0);
+    expect(r.filas[0].datos).toMatchObject({
+      correo: "allyson@trxpal.com",
+      contrasena: "gls4545",
+      perfil: "Cristofer Marquez",
+      pin: "0",
+      monto: 4,
+      vence: "2026-08-02",
+      cliente: "Cristofer Marquez", // sin columna Cliente, se toma el perfil
+      whatsapp: "+58 412-4067449",
+      vendio: "Gabriel Nadales",
+      inversion: 3.5,
+      proveedor: "@CapyVentas",
+      renovarProveedor: "2026-08-09",
+    });
+  });
+
+  it("sin encabezado, usa el orden posicional por defecto", () => {
+    const r = analizarFilas(
+      fila("a@gls.org", "c1", "P1", "", "5", "", "23/07/2026", "Ana", "", ""),
+      5,
+    );
+    expect(r.filas).toHaveLength(1);
+    expect(r.filas[0].datos.cliente).toBe("Ana");
   });
 
   it("marca la fecha de vencimiento ilegible como error, no la adivina", () => {

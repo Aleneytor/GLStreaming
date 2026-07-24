@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { cifrarSecreto, huellaSecreto } from "@/lib/crypto";
 import { analizarFilas, restarUnMes } from "@/domain/importacion";
+// `restarUnMes` recorta al último día válido del mes destino.
 import { obtenerTasasVigentes } from "@/features/tasas/actions";
 import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
 
@@ -168,6 +169,9 @@ export async function importarAction(
       // porque los egresos nacen en USDT. Se registra una sola vez por cuenta.
       p_costo_usdt: d.inversion,
       p_proveedor_nombre: d.proveedor,
+      // Fecha de pago al proveedor: el ciclo empieza un mes antes de renovar,
+      // así su próxima renovación cae exactamente en la fecha del Excel.
+      p_prov_inicio: d.renovarProveedor ? restarUnMes(d.renovarProveedor) : null,
     });
 
     const etiquetaVendedor = d.vendio ? ` · vendió ${d.vendio}` : "";
