@@ -27,6 +27,10 @@ const TEXTO = [
 describe("Familia de Spotify: miembros con su propio login", () => {
   const r = analizarFilas(TEXTO, 5);
 
+  it("detecta que la hoja es de Spotify (columnas Correo/Clave Cliente)", () => {
+    expect(r.columnasSpotify).toBe(true);
+  });
+
   it("no da error, ni siquiera la fila sin nombre de cliente", () => {
     expect(r.conError).toBe(0);
     expect(r.filas).toHaveLength(5);

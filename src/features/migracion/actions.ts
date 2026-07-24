@@ -117,6 +117,23 @@ export async function importarAction(
   // Se analiza con el MISMO código que dibujó la vista previa.
   // MISMO modo que la vista previa: si no, se guardaría otra cosa.
   const analisis = analizarFilas(texto, capacidad, modoDeProducto(codigo));
+
+  // Blindaje contra el error que duplicó familias como Netflix: la hoja de
+  // Spotify solo se importa con un producto de Spotify, y viceversa.
+  const productoSpotify = esFamiliar || esIndividualSpotify;
+  if (analisis.columnasSpotify && !productoSpotify) {
+    return {
+      error:
+        "Esta hoja es de Spotify (tiene «Correo Cliente» / «Clave Cliente») pero el producto elegido no lo es. Elige el producto de Spotify que corresponda.",
+    };
+  }
+  if (!analisis.columnasSpotify && productoSpotify) {
+    return {
+      error:
+        "Elegiste un producto de Spotify pero la hoja no trae las columnas «Correo Cliente» / «Clave Cliente».",
+    };
+  }
+
   const validas = analisis.filas.filter((f) => f.errores.length === 0);
   if (validas.length === 0) {
     return { error: "Ninguna fila es válida. Corrige los errores marcados." };

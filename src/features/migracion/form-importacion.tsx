@@ -65,6 +65,14 @@ export function FormImportacion({
     (v) => !vendedoresConocidos.has(v.trim().toLowerCase()),
   );
 
+  // Alerta anti-error: la hoja es de Spotify pero el producto elegido no lo es
+  // (o al revés). Fue lo que duplicó familias de Spotify como si fueran Netflix.
+  const esProductoSpotify = (producto?.codigo ?? "").startsWith("spotify");
+  const desajusteSpotify =
+    analisis != null &&
+    ((analisis.columnasSpotify && !esProductoSpotify) ||
+      (!analisis.columnasSpotify && esProductoSpotify));
+
   const aBs = (monto: number | null) =>
     monto == null ? null : moneda === "usd" && bcv ? monto * bcv : monto;
 
@@ -213,6 +221,30 @@ export function FormImportacion({
           </p>
         </div>
       </div>
+
+      {desajusteSpotify && (
+        <div className="rounded-xl border-2 border-red-400 bg-red-50 p-3 text-sm dark:border-red-800 dark:bg-red-950/40">
+          <p className="font-medium text-red-900 dark:text-red-200">
+            🛑 El producto no coincide con la hoja
+          </p>
+          <p className="mt-1 text-red-800 dark:text-red-300">
+            {analisis?.columnasSpotify ? (
+              <>
+                Esta hoja tiene columnas de <strong>Spotify</strong> («Correo Cliente» /
+                «Clave Cliente») pero elegiste <strong>{producto?.etiqueta}</strong>. Elige
+                arriba el producto de <strong>Spotify</strong> que corresponda (familiar o
+                individual). Importarla así crearía cuentas equivocadas.
+              </>
+            ) : (
+              <>
+                Elegiste un producto de <strong>Spotify</strong> pero esta hoja no trae las
+                columnas «Correo Cliente» / «Clave Cliente». Revisa que sea la hoja de
+                Spotify correcta, o cambia el producto.
+              </>
+            )}
+          </p>
+        </div>
+      )}
 
       {analisis && !analisis.hayCabecera && (
         <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-3 text-sm dark:border-amber-700 dark:bg-amber-950/40">
@@ -366,7 +398,7 @@ export function FormImportacion({
 
       <button
         type="submit"
-        disabled={pendiente || !analisis || analisis.validas === 0}
+        disabled={pendiente || !analisis || analisis.validas === 0 || desajusteSpotify}
         className="rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white transition active:scale-[0.98] disabled:opacity-60 dark:bg-white dark:text-neutral-900"
       >
         {pendiente

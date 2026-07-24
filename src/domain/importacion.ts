@@ -87,6 +87,12 @@ export type ResultadoAnalisis = {
    * columna de más al principio para que TODO se corra un puesto.
    */
   hayCabecera: boolean;
+  /**
+   * `true` si la hoja trae columnas propias de Spotify («Correo Cliente» /
+   * «Clave Cliente»). Sirve para avisar si se eligió un producto que no es
+   * Spotify (el error que duplicó familias como si fueran Netflix).
+   */
+  columnasSpotify: boolean;
 };
 
 /**
@@ -622,5 +628,7 @@ export function analizarFilas(
     conError: filas.filter((f) => f.errores.length > 0).length,
     vendedores: [...vendedores.values()],
     hayCabecera,
+    // La hoja es de Spotify si mapeó alguna de sus columnas propias.
+    columnasSpotify: mapa.correoCliente !== undefined || mapa.claveCliente !== undefined,
   };
 }
