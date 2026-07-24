@@ -227,6 +227,18 @@ const ORDEN_POSICIONAL: Campo[] = [
   "vence", "cliente", "whatsapp", "vendio", "inversion", "proveedor", "renovar",
 ];
 
+/**
+ * Marcas con las que la hoja dice «aquí no hay nada» en vez de dejar la celda
+ * vacía. Se vacían CELDA A CELDA, no descartando la fila: esa misma fila puede
+ * llevar el correo de la cuenta madre (celda combinada), y tirarla dejaría al
+ * resto del bloque colgando de la familia anterior.
+ */
+const MARCAS_VACIAS = ["vacio", "vacío", "no se puede", "-", "n/a", "ninguno"];
+
+function limpiarMarca(valor: string): string {
+  return MARCAS_VACIAS.includes(norm(valor)) ? "" : valor;
+}
+
 /** Normaliza un texto para comparar: minúsculas y sin acentos ni signos. */
 function norm(s: string): string {
   return s
@@ -390,19 +402,13 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
     // con sus 3 cupos y una línea en blanco de separación.
     const sinDatos =
       !leer(c, "correo") &&
-      !leer(c, "perfil") &&
-      !leer(c, "cliente") &&
-      !leer(c, "correoCliente") &&
+      !limpiarMarca(leer(c, "perfil")) &&
+      !limpiarMarca(leer(c, "cliente")) &&
+      !limpiarMarca(leer(c, "correoCliente")) &&
       !leer(c, "monto") &&
-      !leer(c, "whatsapp") &&
-      !leer(c, "vendio");
-    if (sinDatos) return false;
-
-    // Marcas de la hoja para un cupo que no existe o no se puede usar. No son
-    // nombres de cliente: si pasaran, crearían un cliente llamado «no se puede».
-    const NO_SON_DATOS = ["vacio", "vacío", "no se puede", "-", "n/a"];
-    const marca = norm(leer(c, "cliente") || leer(c, "correoCliente"));
-    return !NO_SON_DATOS.includes(marca);
+      !limpiarMarca(leer(c, "whatsapp")) &&
+      !limpiarMarca(leer(c, "vendio"));
+    return !sinDatos;
   });
 
   const slotsPorCuenta = new Map<string, number>();
@@ -420,14 +426,14 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
 
     let correo = leer(c, "correo");
     let contrasena = leer(c, "contrasena");
-    const perfil = leer(c, "perfil") || null;
+    const perfil = limpiarMarca(leer(c, "perfil")) || null;
     const pin = leer(c, "pin") || null;
     const montoCrudo = leer(c, "monto");
     const inicioCrudo = leer(c, "inicio");
     const venceCrudo = leer(c, "vence");
-    const clienteCol = leer(c, "cliente") || null;
-    const whatsapp = leer(c, "whatsapp") || null;
-    const vendio = leer(c, "vendio") || null;
+    const clienteCol = limpiarMarca(leer(c, "cliente")) || null;
+    const whatsapp = limpiarMarca(leer(c, "whatsapp")) || null;
+    const vendio = limpiarMarca(leer(c, "vendio")) || null;
     const inversionCruda = leer(c, "inversion");
     // La celda de proveedor puede traer el Gmail pagador dentro (familias de
     // Spotify con GPay propio): se separa antes de nada. Y si en su lugar
@@ -437,8 +443,8 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
     const proveedor = proveedorCrudo.valor || null;
     const renovarCrudo = leer(c, "renovar");
     // Spotify: el paréntesis con el que se anota el Gmail pagador se descarta.
-    const correoCliente = leer(c, "correoCliente") || null;
-    const claveCliente = leer(c, "claveCliente") || null;
+    const correoCliente = limpiarMarca(leer(c, "correoCliente")) || null;
+    const claveCliente = limpiarMarca(leer(c, "claveCliente")) || null;
     // El pagador puede venir en su propia columna (hoja de individuales) o
     // dentro de la celda de proveedor (hoja de familias).
     const gmailPagador =
@@ -492,8 +498,11 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
     // En Spotify el revendedor suele pasar solo el correo y la clave del
     // cliente, sin su nombre: entonces el cliente queda identificado por su
     // propio correo, que es justo lo que lo distingue.
+    // Un correo de identidad POR SÍ SOLO no es una venta: puede ser un cupo con
+    // su login ya preparado pero sin vender (la hoja lo marca «Vacío»). Hace
+    // falta algo más: nombre, monto, teléfono o revendedor.
     const haySenalVenta = Boolean(
-      clienteCol || typeof monto === "number" || whatsapp || vendio || correoCliente,
+      clienteCol || typeof monto === "number" || whatsapp || vendio,
     );
     const cliente = clienteCol ?? (haySenalVenta ? (perfil ?? correoCliente) : null);
     if (!clienteCol && cliente) {
@@ -504,7 +513,8 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
       );
     }
     if (haySenalVenta && !cliente) {
-      errores.push("Parece una venta pero no hay cliente, ni perfil, ni correo del cliente.");
+      // No se puede saber a quién: mejor dejar el cupo libre que inventar uno.
+      avisos.push("Sin nada que identifique al cliente: el cupo se carga libre.");
     }
     if (cliente && !vence) avisos.push("Sin vencimiento: se calculará como inicio + 1 mes.");
     if (cliente && monto === null) avisos.push("Sin monto: quedará en «Por cobrar».");

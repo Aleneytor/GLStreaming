@@ -71,3 +71,68 @@ describe("Familia de Spotify: miembros con su propio login", () => {
     expect(r.vendedores.sort()).toEqual(["Gabriel Nadales", "NubeDigital"]);
   });
 });
+
+/**
+ * Dos familias pegadas juntas. La trampa: el primer cupo de la SEGUNDA está
+ * marcado «no se puede», y es justo la fila que lleva el correo de esa cuenta
+ * madre (celda combinada). Si esa fila se descartara, las siguientes se
+ * colgarían de la familia anterior y desbordarían sus cinco cupos.
+ */
+describe("Dos familias seguidas, con un cupo «no se puede»", () => {
+  const CAB2 =
+    "N°\tCorreo\tContraseña\tCorreo Cliente\tClave Cliente\tIngresos\tInicio\tDias\tVence\tAlerta\tCliente\tN° Celular\tVendio\tInversion\tProveedor\tRenovar\tAviso\tN° Ctas";
+
+  const TEXTO2 = [
+    CAB2,
+    // Familia 1: su primer cupo tiene login preparado pero sin vender («Vacío»).
+    "1\tspotifyfam005@glstreaming.org (YO)\t28266095Ale$\tspotify176@glstreaming.org\tspotify123*\t\t\t30\t29/1/1900\tVacio\t\t\t\t $ -   \t@annie_r12\t25/7/2026\tTienes 1 días\t1",
+    "2\t\t\tttcreations206@glstreaming.org\tMajojojevi5!\t $ 2,00 \t28/6/2026\t30\t28/7/2026\tFalta 4 días\tVicente\t+58 412-4907249\t\t\t\t\t\t",
+    "3\t\t\tspotify105@glstreaming.org\tpremium2026\t $ 2,00 \t4/7/2026\t30\t3/8/2026\tFalta 10 días\tMichel Romero\t+58 412-2862590\t\t\t\t\t\t",
+    "4\t\t\tspotify152@glstreaming.org\tpremium2028\t $ 2,00 \t22/7/2026\t30\t21/8/2026\tFalta 28 días\tNelsito\t+58 424-3621063\tRoman\t\t\t\t\t",
+    "5\t\t\tspotify149@glstreaming.org\tmusica1234\t $ 2,00 \t10/7/2026\t30\t9/8/2026\tFalta 16 días\tLucia\t+58 424-3550195\tAguaMiel_Store1\t\t\t\t\t",
+    CAB2,
+    // Familia 2: el cupo 1 dice «no se puede» PERO trae el correo de la madre.
+    "1\tspotify260@glstreaming.org\tmusica1234\tno se puede\tno se puede\t $ -   \t24/3/2027\t90\t22/6/2027\tFalta 333 días\tno se puede\tno se puede\tno se puede\t $ -   \tyo(gpay usa) turidovakido@gmail.com\t7/8/2026\tFalta 14 días\t1",
+    "2\t\t\teryckssantana57@gmail.com\tErick15102005\t $ 3,00 \t2/7/2026\t30\t1/8/2026\tFalta 8 días\t\t+58 424-3621063\tRoman\t\t\t\t\t",
+    "3\t\t\tspotify303@glstreaming.org\tpremium2026\t $ 2,00 \t15/8/2026\t30\t14/9/2026\tFalta 52 días\tMaria Victoria\t+58 424-3017557\tPaola Cruz\t\t\t\t\t",
+    "4\t\t\tmerianyelis9@gmail.com\tspotify123*\t $ 3,00 \t1/7/2026\t30\t31/7/2026\tFalta 7 días\t\t\t\t\t\t\t\t",
+    "5\t\t\tjosbermolina7@gmail.com\tLaserLaser*03\t $ 3,00 \t1/7/2026\t30\t31/7/2026\tFalta 7 días\tJosber Molina\t\t\t\t\t\t\t",
+  ].join("\n");
+
+  const r = analizarFilas(TEXTO2, 5);
+
+  it("reconoce DOS familias, no una", () => {
+    expect(r.cuentas).toBe(2);
+    expect(r.conError).toBe(0);
+    expect(r.filas).toHaveLength(10);
+  });
+
+  it("cada familia usa sus propios cinco cupos", () => {
+    expect(r.filas.map((f) => f.slot)).toEqual([1, 2, 3, 4, 5, 1, 2, 3, 4, 5]);
+    expect(r.filas[5].datos.correo).toBe("spotify260@glstreaming.org");
+    expect(r.filas[9].datos.correo).toBe("spotify260@glstreaming.org");
+  });
+
+  it("el cupo «no se puede» conserva la madre pero queda libre", () => {
+    expect(r.filas[5].datos.correo).toBe("spotify260@glstreaming.org"); // la madre se salva
+    expect(r.filas[5].datos.cliente).toBeNull(); // y nadie se llama «no se puede»
+    expect(r.filas[5].datos.correoCliente).toBeNull();
+    expect(r.filas[5].datos.vendio).toBeNull();
+  });
+
+  it("un cupo con login preparado pero sin vender queda libre", () => {
+    // Familia 1, fila 1: tiene «Correo Cliente» pero ni monto ni cliente.
+    expect(r.filas[0].datos.correoCliente).toBe("spotify176@glstreaming.org");
+    expect(r.filas[0].datos.cliente).toBeNull();
+  });
+
+  it("sin nombre pero con venta, identifica al cliente por su correo", () => {
+    expect(r.filas[6].datos.cliente).toBe("eryckssantana57@gmail.com");
+    expect(r.filas[8].datos.cliente).toBe("merianyelis9@gmail.com");
+  });
+
+  it("separa el Gmail pagador de la celda de proveedor de la segunda familia", () => {
+    expect(r.filas[5].datos.proveedor).toBe("yo(gpay usa)");
+    expect(r.filas[5].datos.gmailPagador).toBe("turidovakido@gmail.com");
+  });
+});

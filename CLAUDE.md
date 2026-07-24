@@ -173,7 +173,7 @@ pacta en USD: el hecho fuente es el monto en Bs que entrega el cliente, que var�
 cada mes. El USD es una lectura derivada (`monto_ves / BCV`). Cualquier código o
 doc que aún hable de «el cobro iguala `precio × BCV`» está desactualizado.
 
-Estado de pruebas: **228 comprobaciones SQL + 112 unitarias**, todas en verde.
+Estado de pruebas: **228 comprobaciones SQL + 118 unitarias**, todas en verde.
 
 **Falta de la Fase 4** (deliberado, no es un bug): el desglose fino de los
 días-unidad ocupados sin período pagado — cortesía, pausa, reserva, bloqueo y
