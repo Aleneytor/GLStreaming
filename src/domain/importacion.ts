@@ -139,6 +139,19 @@ function campoDeCabecera(titulo: string): Campo | null {
 }
 
 /**
+ * ¿Esta fila es una fila de TÍTULOS? (no de datos). Sirve tanto para detectar
+ * el encabezado inicial como para saltar los encabezados intermedios cuando se
+ * pegan VARIOS bloques de una vez, cada uno con su propia fila de títulos.
+ */
+function esFilaCabecera(celdas: string[]): boolean {
+  // Una fila de datos empieza por el correo o por el N° de fila, no por un
+  // título; y una de títulos reconoce varias columnas por su nombre.
+  const primeraEsCorreo = (celdas[0] ?? "").includes("@");
+  const cuantos = celdas.filter((t) => campoDeCabecera(t) !== null).length;
+  return !primeraEsCorreo && cuantos >= 4;
+}
+
+/**
  * Decide el mapa columna→campo. Si la primera línea es una fila de títulos, se
  * mapea POR NOMBRE (así el orden y las columnas de más no importan). Si no, se
  * usa el orden posicional por defecto.
@@ -147,15 +160,12 @@ function resolverColumnas(primeraLinea: string[]): {
   mapa: Partial<Record<Campo, number>>;
   hayCabecera: boolean;
 } {
-  const reconocidos = primeraLinea.map((t) => campoDeCabecera(t));
-  const cuantos = reconocidos.filter(Boolean).length;
-  // Es cabecera si la primera celda no es un correo y reconoce varias columnas.
-  const primeraEsCorreo = (primeraLinea[0] ?? "").includes("@");
-  const hayCabecera = !primeraEsCorreo && cuantos >= 4;
+  const hayCabecera = esFilaCabecera(primeraLinea);
 
   const mapa: Partial<Record<Campo, number>> = {};
   if (hayCabecera) {
-    reconocidos.forEach((campo, i) => {
+    primeraLinea.forEach((titulo, i) => {
+      const campo = campoDeCabecera(titulo);
       if (campo && mapa[campo] === undefined) mapa[campo] = i;
     });
   } else {
@@ -234,10 +244,12 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
 
   // Las columnas se reconocen por su título si se pegó la fila de encabezados;
   // así el orden y las columnas de más (días, alerta, renovar…) no importan.
-  const { mapa, hayCabecera } = resolverColumnas(
+  const { mapa } = resolverColumnas(
     lineas.length > 0 ? separar(lineas[0]).map((x) => x.trim()) : [],
   );
-  if (hayCabecera) lineas.shift();
+  // Se quitan TODAS las filas de títulos: al pegar varios bloques, cada uno
+  // trae la suya, y una fila de títulos en medio no es un dato.
+  const datos = lineas.filter((l) => !esFilaCabecera(separar(l).map((x) => x.trim())));
 
   const slotsPorCuenta = new Map<string, number>();
   const vendedores = new Map<string, string>(); // clave en minúsculas → nombre visible
@@ -254,7 +266,7 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
     return idx === undefined ? "" : (c[idx] ?? "").trim();
   };
 
-  lineas.forEach((linea, i) => {
+  datos.forEach((linea, i) => {
     const c = separar(linea).map((x) => x.trim());
     const errores: string[] = [];
     const avisos: string[] = [];

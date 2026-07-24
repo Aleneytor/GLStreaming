@@ -241,6 +241,35 @@ describe("analizarFilas", () => {
     });
   });
 
+  it("salta las filas de títulos de VARIOS bloques pegados juntos", () => {
+    // Cada cuenta completa se pega con su propia fila de encabezados (y con la
+    // columna N° al inicio y columnas ocultas al final, como en el Excel real).
+    const cab = fila("N°", "Correo", "Contraseña", "Perfil", "Pin", "Ingresos", "Inicio", "Dias", "Vence", "Alerta", "Cliente", "N° Celular", "Vendio", "Inversion", "Proveedor", "Renovar", "Aviso");
+    const texto = [
+      cab,
+      fila("1", "palio@gls.org", "gls2020", "Estefani", "4444", "$ 3,00", "5/7/2026", "30", "4/8/2026", "Falta 12", "", "", "Diju", "$ 8,00", "yo bancamiga", "22/08/2026", "Falta 30"),
+      fila("2", "", "", "Felito", "1111", "$ 3,00", "10/7/2026", "30", "9/8/2026", "Falta 17", "Salvador Russo", "", "", "", "", "", ""),
+      cab, // segundo bloque: su fila de títulos NO debe leerse como dato
+      fila("1", "pesa1@gls.org", "gls3030", "Maurifred", "7449", "$ 2,50", "24/7/2026", "30", "23/8/2026", "Falta 31", "", "+58 412", "Gabriel Nadales", "$ -", "yo", "9/8/2026", "Falta 17"),
+      fila("2", "", "", "Nana", "3334", "$ 5,00", "10/7/2026", "30", "9/8/2026", "Falta 17", "Nana", "", "", "", "", "", ""),
+    ].join("\n");
+    const r = analizarFilas(texto, 5);
+
+    expect(r.conError).toBe(0); // la fila de títulos intermedia no genera error
+    expect(r.filas).toHaveLength(4); // 4 datos, sin contar los 2 encabezados
+    expect(r.cuentas).toBe(2); // palio y pesa1
+    // Cada bloque hereda su propia cuenta madre (no se contamina con el otro).
+    expect(r.filas.map((f) => f.datos.correo)).toEqual([
+      "palio@gls.org",
+      "palio@gls.org",
+      "pesa1@gls.org",
+      "pesa1@gls.org",
+    ]);
+    // No se cuela un revendedor fantasma llamado "Vendio".
+    expect(r.vendedores).not.toContain("Vendio");
+    expect(r.filas[2].datos.inversion).toBe(0); // Maurifred: «$ -» = cortesía en costo
+  });
+
   it("sin encabezado, usa el orden posicional por defecto", () => {
     const r = analizarFilas(
       fila("a@gls.org", "c1", "P1", "", "5", "", "23/07/2026", "Ana", "", ""),
