@@ -3,9 +3,10 @@ import Link from "next/link";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { uno } from "@/lib/supabase/util";
-import { BotonCredenciales } from "@/features/inventario/credenciales";
-import { avisoProveedor, badgeVencimiento, diasParaRenovar } from "@/domain/fechas";
+import { descifrarSecreto } from "@/lib/crypto";
+import { badgeVencimiento, diasParaRenovar } from "@/domain/fechas";
 import { FiltrosInventario } from "@/features/inventario/filtros";
+import { TablaInventario, type FilaInventario } from "@/features/inventario/tabla-inventario";
 
 export const dynamic = "force-dynamic";
 
@@ -19,15 +20,21 @@ function hoyCaracas(): string {
   }).format(new Date());
 }
 
-type Unidad = {
-  id: string;
-  numero_slot: number;
-  nombre_visible: string | null;
-  estado_operativo: string;
-  estado_preparacion: string;
-};
+/** Descifra sin reventar la página si una fila quedó con clave vieja. */
+function desc(cifrado: string | null | undefined): string {
+  if (!cifrado) return "";
+  try {
+    return descifrarSecreto(cifrado);
+  } catch {
+    return "⚠ clave cambió";
+  }
+}
 
-/** Cuentas de UNA plataforma, agrupadas por producto (ej. Netflix cuenta vs extra). */
+/**
+ * Inventario de UNA plataforma como tabla densa (solo admin), una fila por cupo
+ * vendible. Las credenciales se descifran aquí, en el servidor, y se muestran a
+ * la vista: en la base siguen cifradas. El revendedor nunca entra (redirige).
+ */
 export default async function PlataformaPage({
   params,
   searchParams,
@@ -56,42 +63,161 @@ export default async function PlataformaPage({
     .from("cuentas")
     .select(
       `id, alias, capacidad, capacidad_vendible_habilitada, estado, created_at, notas,
-       productos_plataforma!inner ( id, nombre, codigo, plataforma_id ),
-       proveedores ( nombre_o_alias ),
-       ciclos_proveedor ( id, costo_usdt, proxima_renovacion, dia_ancla_proveedor, estado ),
-       unidades_inventario ( id, numero_slot, nombre_visible, estado_operativo, estado_preparacion ),
+       productos_plataforma!inner ( id, nombre, codigo, tipo_inventario, plataforma_id ),
+       credenciales_cuenta ( login_cifrado, contrasena_cifrada, eliminada_at ),
+       unidades_inventario ( id, numero_slot, nombre_visible, secretos_unidad ( pin_cifrado ) ),
        asignaciones_inventario (
          id, alcance, unidad_id, fin,
          suscripciones ( id, estado, clientes ( nombre ),
-           periodos_servicio ( fecha_renovacion, inicio ) ) )`,
+           periodos_servicio ( fecha_renovacion ),
+           vinculos_identidad_spotify ( fin,
+             identidades_spotify ( login_cifrado, contrasena_cifrada ) ) ) )`,
     )
     .eq("productos_plataforma.plataforma_id", plataforma.id);
 
-  // Filtros por URL (compartibles y persistentes al recargar).
   if (estado) consulta = consulta.eq("estado", estado);
-  if (q) {
-    const patron = `%${q}%`;
-    consulta = consulta.or(`alias.ilike.${patron},notas.ilike.${patron}`);
-  }
 
   const { data: cuentas } = await consulta.order("created_at", { ascending: false });
 
-  // Agrupar por producto para que "Netflix cuenta" y "Netflix extra" salgan separados.
+  // --- Aplanado: una fila por cupo vendible (o por cuenta si es indivisible) --
   type CuentaFila = NonNullable<typeof cuentas>[number];
-  const porProducto = new Map<string, { nombre: string; cuentas: CuentaFila[] }>();
+
+  const datosVenta = (asig: CuentaFila["asignaciones_inventario"][number] | undefined) => {
+    const susc = uno(asig?.suscripciones);
+    if (!susc) return null;
+    const ult = [...(susc.periodos_servicio ?? [])].sort((a, b) =>
+      a.fecha_renovacion < b.fecha_renovacion ? 1 : -1,
+    )[0];
+    const dias = ult ? diasParaRenovar(ult.fecha_renovacion, hoy) : null;
+    const ident = uno(
+      (susc.vinculos_identidad_spotify ?? []).find((v) => v.fin === null)?.identidades_spotify,
+    );
+    return {
+      cliente: uno(susc.clientes)?.nombre ?? null,
+      estado: susc.estado as string,
+      vence: ult?.fecha_renovacion ?? null,
+      badge: dias === null ? null : badgeVencimiento(dias),
+      clienteLogin: ident ? desc(ident.login_cifrado) : null,
+      clienteClave: ident ? desc(ident.contrasena_cifrada) : null,
+    };
+  };
+
+  const grupos = new Map<string, { nombre: string; filas: FilaInventario[] }>();
+
   for (const c of cuentas ?? []) {
     const prod = uno(c.productos_plataforma);
     if (!prod) continue;
-    const grupo = porProducto.get(prod.id) ?? {
-      nombre: prod.nombre as string,
-      cuentas: [] as CuentaFila[],
+    const cred = uno(c.credenciales_cuenta);
+    const correo = desc(cred?.login_cifrado);
+    const contrasena = desc(cred?.contrasena_cifrada);
+
+    const abiertas = (c.asignaciones_inventario ?? []).filter((a) => a.fin === null);
+    const completa = abiertas.find((a) => a.alcance === "cuenta");
+    const principal = abiertas.find((a) => a.alcance === "principal"); // uso de la madre
+    const porUnidad = new Map(
+      abiertas.filter((a) => a.unidad_id).map((a) => [a.unidad_id as string, a]),
+    );
+
+    const grupo = grupos.get(prod.id) ?? { nombre: prod.nombre as string, filas: [] };
+
+    const base = {
+      cuentaId: c.id as string,
+      correo,
+      contrasena,
+      cuentaEstado: c.estado as string,
     };
-    grupo.cuentas.push(c);
-    porProducto.set(prod.id, grupo);
+
+    if (completa) {
+      // Vendida entera a un cliente (individuales y cuentas completas).
+      const v = datosVenta(completa);
+      grupo.filas.push({
+        ...base,
+        clave: `${c.id}-completa`,
+        cupo: "Cuenta completa",
+        cliente: v?.cliente ?? null,
+        clienteLogin: v?.clienteLogin ?? null,
+        clienteClave: v?.clienteClave ?? null,
+        pin: null,
+        vence: v?.vence ?? null,
+        badge: v?.badge ?? null,
+        suscEstado: v?.estado ?? null,
+      });
+    } else if (prod.tipo_inventario === "cuenta_con_unidades") {
+      // Una fila por perfil/cupo (vendido o libre).
+      const unidades = [...(c.unidades_inventario ?? [])].sort(
+        (a, b) => a.numero_slot - b.numero_slot,
+      );
+      for (const u of unidades) {
+        const asig = porUnidad.get(u.id);
+        const v = datosVenta(asig);
+        grupo.filas.push({
+          ...base,
+          clave: `${c.id}-u${u.id}`,
+          cupo: u.nombre_visible ?? `Cupo ${u.numero_slot}`,
+          cliente: v?.cliente ?? null,
+          clienteLogin: v?.clienteLogin ?? null,
+          clienteClave: v?.clienteClave ?? null,
+          pin: desc(uno(u.secretos_unidad)?.pin_cifrado) || null,
+          vence: v?.vence ?? null,
+          badge: v?.badge ?? null,
+          suscEstado: v?.estado ?? null,
+        });
+      }
+      // El uso de la madre (Spotify familiar) no ocupa cupo: fila aparte.
+      if (principal) {
+        const v = datosVenta(principal);
+        grupo.filas.push({
+          ...base,
+          clave: `${c.id}-madre`,
+          cupo: "Uso de la madre",
+          cliente: v?.cliente ?? null,
+          clienteLogin: v?.clienteLogin ?? null,
+          clienteClave: v?.clienteClave ?? null,
+          pin: null,
+          vence: v?.vence ?? null,
+          badge: v?.badge ?? null,
+          suscEstado: v?.estado ?? null,
+        });
+      }
+    } else {
+      // Recurso indivisible sin venta abierta: una fila libre.
+      grupo.filas.push({
+        ...base,
+        clave: `${c.id}-solo`,
+        cupo: "—",
+        cliente: null,
+        clienteLogin: null,
+        clienteClave: null,
+        pin: null,
+        vence: null,
+        badge: null,
+        suscEstado: null,
+      });
+    }
+
+    grupos.set(prod.id, grupo);
   }
 
+  // Búsqueda (sobre datos ya descifrados): cliente, correo de cuenta o su login.
+  const busqueda = (q ?? "").trim().toLowerCase();
+  let totalFilas = 0;
+  const gruposFiltrados = [...grupos.values()]
+    .map((g) => {
+      const filas = busqueda
+        ? g.filas.filter(
+            (f) =>
+              f.cliente?.toLowerCase().includes(busqueda) ||
+              f.correo.toLowerCase().includes(busqueda) ||
+              f.clienteLogin?.toLowerCase().includes(busqueda),
+          )
+        : g.filas;
+      totalFilas += filas.length;
+      return { ...g, filas };
+    })
+    .filter((g) => g.filas.length > 0);
+
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <div>
         <Link
           href="/inventario"
@@ -103,7 +229,8 @@ export default async function PlataformaPage({
           <div>
             <h1 className="text-xl font-semibold tracking-tight">{plataforma.nombre}</h1>
             <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              {cuentas?.length ?? 0} {cuentas?.length === 1 ? "cuenta" : "cuentas"}
+              {cuentas?.length ?? 0} {cuentas?.length === 1 ? "cuenta" : "cuentas"} ·{" "}
+              {totalFilas} {totalFilas === 1 ? "cupo" : "cupos"}
             </p>
           </div>
           <Link
@@ -124,264 +251,19 @@ export default async function PlataformaPage({
         ]}
       />
 
-      {(cuentas?.length ?? 0) === 0 ? (
+      {gruposFiltrados.length === 0 ? (
         <p className="rounded-xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
           {q || estado
-            ? "Ninguna cuenta coincide con el filtro."
+            ? "Nada coincide con el filtro."
             : `Todavía no hay cuentas de ${plataforma.nombre}.`}
         </p>
       ) : (
-        [...porProducto.entries()].map(([productoId, grupo]) => (
-          <section key={productoId} className="space-y-3">
+        gruposFiltrados.map((g) => (
+          <section key={g.nombre} className="space-y-2">
             <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-              {grupo.nombre}
+              {g.nombre} ({g.filas.length})
             </h2>
-
-            <ul className="space-y-4">
-              {grupo.cuentas.map((c) => {
-                const proveedor = uno(c.proveedores);
-                // Solo interesa el ciclo vigente (puede haber históricos).
-                const ciclo =
-                  (c.ciclos_proveedor ?? []).find((x) => x.estado === "vigente") ?? null;
-                const aviso = ciclo?.proxima_renovacion
-                  ? avisoProveedor(diasParaRenovar(ciclo.proxima_renovacion, hoy))
-                  : null;
-                const unidades = ((c.unidades_inventario ?? []) as Unidad[]).sort(
-                  (a, b) => a.numero_slot - b.numero_slot,
-                );
-
-                // Asignaciones abiertas: qué está vendido ahora mismo.
-                const abiertas = (c.asignaciones_inventario ?? []).filter(
-                  (a) => a.fin === null,
-                );
-                const ventaCompleta = abiertas.find((a) => a.alcance === "cuenta");
-                const porUnidad = new Map(
-                  abiertas
-                    .filter((a) => a.unidad_id)
-                    .map((a) => [a.unidad_id as string, a]),
-                );
-
-                /** Datos de la venta abierta sobre un recurso, si existe. */
-                const datosVenta = (asignacion: (typeof abiertas)[number] | undefined) => {
-                  if (!asignacion) return null;
-                  const susc = uno(asignacion.suscripciones);
-                  if (!susc) return null;
-                  const periodos = susc.periodos_servicio ?? [];
-                  // El período vigente es el de fecha de renovación más lejana.
-                  const ultimo = [...periodos].sort((a, b) =>
-                    a.fecha_renovacion < b.fecha_renovacion ? 1 : -1,
-                  )[0];
-                  const dias = ultimo ? diasParaRenovar(ultimo.fecha_renovacion, hoy) : null;
-                  return {
-                    cliente: uno(susc.clientes)?.nombre ?? "—",
-                    estado: susc.estado,
-                    renovacion: ultimo?.fecha_renovacion ?? null,
-                    badge: dias === null ? null : badgeVencimiento(dias),
-                  };
-                };
-
-                const ventaDeCuenta = datosVenta(ventaCompleta);
-
-                return (
-                  <li
-                    key={c.id}
-                    className="overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800"
-                  >
-                    <div className="flex items-start justify-between gap-3 border-b border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                      <div className="min-w-0">
-                        <p className="truncate font-medium">
-                          {c.alias ?? grupo.nombre}
-                          {c.estado !== "activa" && (
-                            <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                              {c.estado}
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-sm tabular-nums text-neutral-500 dark:text-neutral-400">
-                          {c.capacidad_vendible_habilitada ?? c.capacidad}/{c.capacidad}{" "}
-                          vendible/física
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 gap-2">
-                        {unidades.length > 0 && (
-                          <Link
-                            href={`/inventario/cuenta/${c.id}/perfiles`}
-                            className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm transition active:scale-[0.98] dark:border-neutral-700"
-                          >
-                            Perfiles
-                          </Link>
-                        )}
-                        <Link
-                          href={`/inventario/cuenta/${c.id}/editar`}
-                          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm transition active:scale-[0.98] dark:border-neutral-700"
-                        >
-                          Editar
-                        </Link>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3 border-b border-neutral-200 p-4 dark:border-neutral-800">
-                      {ciclo && (
-                        <div className="flex flex-wrap items-center gap-2 text-sm">
-                          <span className="tabular-nums">
-                            {Number(ciclo.costo_usdt).toFixed(2)} USDT
-                          </span>
-                          <span className="text-neutral-400">·</span>
-                          <span className="text-neutral-500 dark:text-neutral-400">
-                            renueva {ciclo.proxima_renovacion}
-                          </span>
-                          {aviso && (
-                            <span
-                              className={`rounded-full px-2.5 py-0.5 text-xs ${
-                                aviso.nivel === "vencido"
-                                  ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
-                                  : aviso.nivel === "hoy" || aviso.nivel === "proximo"
-                                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                                    : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                              }`}
-                            >
-                              {aviso.etiqueta}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      {(proveedor?.nombre_o_alias || c.notas) && (
-                        <dl className="space-y-1 text-sm">
-                          {proveedor?.nombre_o_alias && (
-                            <div className="flex gap-2">
-                              <dt className="text-neutral-500 dark:text-neutral-400">
-                                Proveedor:
-                              </dt>
-                              <dd>{proveedor.nombre_o_alias}</dd>
-                            </div>
-                          )}
-                          {c.notas && (
-                            <div className="flex gap-2">
-                              <dt className="shrink-0 text-neutral-500 dark:text-neutral-400">
-                                Notas:
-                              </dt>
-                              <dd className="whitespace-pre-wrap">{c.notas}</dd>
-                            </div>
-                          )}
-                        </dl>
-                      )}
-                      <BotonCredenciales cuentaId={c.id} />
-                    </div>
-
-                    {ventaDeCuenta && (
-                      <div className="border-b border-neutral-200 bg-sky-50 px-4 py-3 text-sm dark:border-neutral-800 dark:bg-sky-950/40">
-                        <p className="font-medium">
-                          Vendida completa a {ventaDeCuenta.cliente}
-                        </p>
-                        {ventaDeCuenta.badge && (
-                          <p className="mt-0.5 text-neutral-600 dark:text-neutral-400">
-                            {ventaDeCuenta.badge.etiqueta} · renueva{" "}
-                            {ventaDeCuenta.renovacion}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    {unidades.length > 0 ? (
-                      <ul className="divide-y divide-neutral-100 dark:divide-neutral-900">
-                        {unidades.map((u) => {
-                          const venta = datosVenta(porUnidad.get(u.id));
-                          const bloqueadoPorCuenta = Boolean(ventaCompleta);
-                          const listo =
-                            u.estado_operativo === "habilitada" &&
-                            u.estado_preparacion === "lista";
-
-                          return (
-                            <li key={u.id} className="px-4 py-2.5 text-sm">
-                              <div className="flex items-center justify-between gap-3">
-                                <span className="flex min-w-0 items-center gap-2">
-                                  <span className="w-6 shrink-0 tabular-nums text-neutral-400">
-                                    {u.numero_slot}
-                                  </span>
-                                  <span className="min-w-0">
-                                    <span className="block truncate">
-                                      {u.nombre_visible}
-                                    </span>
-                                    {venta && (
-                                      <span className="block truncate text-xs text-neutral-500 dark:text-neutral-400">
-                                        {venta.cliente}
-                                      </span>
-                                    )}
-                                  </span>
-                                </span>
-
-                                {venta ? (
-                                  <span
-                                    className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs ${
-                                      venta.badge?.color === "rojo"
-                                        ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
-                                        : venta.badge?.color === "amarillo"
-                                          ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                                          : "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-                                    }`}
-                                  >
-                                    {venta.badge?.etiqueta ?? "Vendido"}
-                                  </span>
-                                ) : bloqueadoPorCuenta ? (
-                                  <span className="shrink-0 text-xs text-neutral-400">
-                                    incluido en la venta completa
-                                  </span>
-                                ) : listo ? (
-                                  <Link
-                                    href={`/ventas/nueva?cuenta=${c.id}&unidad=${u.id}`}
-                                    className="shrink-0 rounded-lg bg-neutral-900 px-3 py-1 text-xs font-medium text-white transition active:scale-[0.98] dark:bg-white dark:text-neutral-900"
-                                  >
-                                    Vender
-                                  </Link>
-                                ) : (
-                                  <span className="shrink-0 rounded-full bg-neutral-200 px-2.5 py-0.5 text-xs dark:bg-neutral-700">
-                                    {u.estado_preparacion === "pendiente_limpieza"
-                                      ? "pendiente limpieza"
-                                      : u.estado_operativo}
-                                  </span>
-                                )}
-                              </div>
-
-                              {venta?.estado && venta.estado !== "activa" && (
-                                <p className="mt-1 pl-8 text-xs text-neutral-500 dark:text-neutral-400">
-                                  {venta.estado}
-                                </p>
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    ) : (
-                      <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                        <span className="text-neutral-500 dark:text-neutral-400">
-                          Recurso indivisible (sin perfiles).
-                        </span>
-                        {!ventaCompleta && (
-                          <Link
-                            href={`/ventas/nueva?cuenta=${c.id}`}
-                            className="shrink-0 rounded-lg bg-neutral-900 px-3 py-1 text-xs font-medium text-white dark:bg-white dark:text-neutral-900"
-                          >
-                            Vender
-                          </Link>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Venta de la cuenta completa (solo si no hay perfiles ocupados). */}
-                    {unidades.length > 0 && !ventaCompleta && porUnidad.size === 0 && (
-                      <div className="px-4 py-2.5">
-                        <Link
-                          href={`/ventas/nueva?cuenta=${c.id}`}
-                          className="text-xs text-neutral-500 underline transition hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
-                        >
-                          Vender la cuenta completa
-                        </Link>
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+            <TablaInventario filas={g.filas} />
           </section>
         ))
       )}

@@ -37,7 +37,7 @@ export function FiltrosInventario({
       <input
         type="search"
         inputMode="search"
-        placeholder="Buscar por alias o notas…"
+        placeholder="Buscar por cliente o correo…"
         defaultValue={q}
         onChange={(e) => actualizar("q", e.target.value)}
         aria-label="Buscar cuentas"
