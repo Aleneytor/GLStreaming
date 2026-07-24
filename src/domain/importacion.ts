@@ -227,6 +227,22 @@ type Campo =
   | "claveCliente"
   | "gmailPagador";
 
+/**
+ * Cómo está organizada la hoja.
+ *
+ *   estandar → cada fila trae (o hereda) la cuenta a la que pertenece.
+ *   panel    → UNA fila define la cuenta, escrita como «correo:contraseña» en
+ *              una sola celda, y TODAS las de abajo son clientes: el correo de
+ *              cada fila es el que se invitó al panel, no otra cuenta. Es la
+ *              forma de Canva (un panel educativo con 500 asientos).
+ */
+export type ModoImportacion = "estandar" | "panel";
+
+/** El producto decide la forma de la hoja. */
+export function modoDeProducto(codigo: string): ModoImportacion {
+  return codigo === "canva" ? "panel" : "estandar";
+}
+
 /** Orden por defecto cuando NO se pega la fila de títulos. */
 const ORDEN_POSICIONAL: Campo[] = [
   "correo", "contrasena", "perfil", "pin", "monto", "inicio",
@@ -382,7 +398,11 @@ export function restarUnMes(iso: string): string {
   return armar(destinoAnio, destinoMes, Math.min(d, ultimoDia))!;
 }
 
-export function analizarFilas(texto: string, capacidad: number): ResultadoAnalisis {
+export function analizarFilas(
+  texto: string,
+  capacidad: number,
+  modo: ModoImportacion = "estandar",
+): ResultadoAnalisis {
   // Respeta las celdas con saltos de línea dentro (ver `parsearTabla`).
   const filasCrudas = parsearTabla(texto);
 
@@ -432,8 +452,25 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
 
     let correo = leer(c, "correo");
     let contrasena = leer(c, "contrasena");
-    const perfil = limpiarMarca(leer(c, "perfil")) || null;
+    let perfil = limpiarMarca(leer(c, "perfil")) || null;
     const pin = leer(c, "pin") || null;
+
+    // --- Hoja tipo PANEL (Canva): una fila es la cuenta, el resto clientes ---
+    let esFilaPanel = false;
+    if (modo === "panel") {
+      const dosPuntos = correo.indexOf(":");
+      if (dosPuntos > 0) {
+        // La fila del panel: «correo:contraseña» en la misma celda.
+        esFilaPanel = true;
+        if (!contrasena) contrasena = correo.slice(dosPuntos + 1).trim();
+        correo = correo.slice(0, dosPuntos).trim();
+      } else if (correo) {
+        // Fila de asiento: ese correo es el del CLIENTE invitado al panel, no
+        // otra cuenta. Se guarda como nombre del asiento y la cuenta se hereda.
+        perfil = perfil ?? correo;
+        correo = "";
+      }
+    }
     const montoCrudo = leer(c, "monto");
     const inicioCrudo = leer(c, "inicio");
     const venceCrudo = leer(c, "vence");
@@ -489,7 +526,10 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
     const inversion = normalizarMonto(inversionCruda);
     if (inversion === "invalido") avisos.push(`Costo no entendido («${inversionCruda}»): se importará sin costo.`);
 
-    const renovarProveedor = normalizarFecha(renovarCrudo);
+    let renovarProveedor = normalizarFecha(renovarCrudo);
+    // En la fila del panel, «Vence» es cuándo hay que renovarlo con el
+    // proveedor (Canva se compra por año), no el vencimiento de un cliente.
+    if (esFilaPanel && !renovarProveedor && vence) renovarProveedor = vence;
     if (renovarCrudo && !renovarProveedor) {
       avisos.push(`Renovación del proveedor no entendida («${renovarCrudo}»): se calculará sola.`);
     }
@@ -532,10 +572,17 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
     }
 
     // El slot se asigna por orden de aparición dentro de cada cuenta madre.
+    // La fila del panel crea la cuenta pero NO ocupa asiento: por eso no
+    // adelanta el contador y el primer cliente se queda con el asiento 1.
     const claveCuenta = correo.toLowerCase();
-    const slot = claveCuenta ? (slotsPorCuenta.get(claveCuenta) ?? 0) + 1 : 0;
-    if (claveCuenta) slotsPorCuenta.set(claveCuenta, slot);
-    if (slot > capacidad) {
+    let slot: number;
+    if (esFilaPanel) {
+      slot = 1;
+    } else {
+      slot = claveCuenta ? (slotsPorCuenta.get(claveCuenta) ?? 0) + 1 : 0;
+      if (claveCuenta) slotsPorCuenta.set(claveCuenta, slot);
+    }
+    if (!esFilaPanel && slot > capacidad) {
       errores.push(
         `Esta cuenta ya tiene ${capacidad} perfiles (el máximo): sobra esta fila.`,
       );

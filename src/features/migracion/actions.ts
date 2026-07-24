@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { cifrarSecreto, huellaSecreto } from "@/lib/crypto";
-import { analizarFilas, restarUnMes } from "@/domain/importacion";
+import { analizarFilas, modoDeProducto, restarUnMes } from "@/domain/importacion";
 // `restarUnMes` recorta al último día válido del mes destino.
 import { obtenerTasasVigentes } from "@/features/tasas/actions";
 import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
@@ -115,7 +115,8 @@ export async function importarAction(
   }
 
   // Se analiza con el MISMO código que dibujó la vista previa.
-  const analisis = analizarFilas(texto, capacidad);
+  // MISMO modo que la vista previa: si no, se guardaría otra cosa.
+  const analisis = analizarFilas(texto, capacidad, modoDeProducto(codigo));
   const validas = analisis.filas.filter((f) => f.errores.length === 0);
   if (validas.length === 0) {
     return { error: "Ninguna fila es válida. Corrige los errores marcados." };

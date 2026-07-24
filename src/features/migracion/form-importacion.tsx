@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { analizarFilas } from "@/domain/importacion";
+import { analizarFilas, modoDeProducto } from "@/domain/importacion";
 import { importarAction, type EstadoImportacion } from "./actions";
 
 const CAMPO =
@@ -54,9 +54,11 @@ export function FormImportacion({
 
   // La vista previa usa el MISMO analizador que la importación real, así que lo
   // que se ve aquí es literalmente lo que se va a guardar.
+  // El modo lo decide el producto: Canva es una hoja tipo «panel».
+  const modo = modoDeProducto(producto?.codigo ?? "");
   const analisis = useMemo(
-    () => (texto.trim() ? analizarFilas(texto, capacidad) : null),
-    [texto, capacidad],
+    () => (texto.trim() ? analizarFilas(texto, capacidad, modo) : null),
+    [texto, capacidad, modo],
   );
 
   const nuevosVendedores = (analisis?.vendedores ?? []).filter(
@@ -196,6 +198,13 @@ export function FormImportacion({
           <p>
             Si el <strong>cliente</strong> está vacío pero hay monto o teléfono, se usa el
             nombre del perfil. Sin nada de eso, el perfil se carga <strong>libre</strong>.
+          </p>
+          <p>
+            <strong>Canva</strong> es un panel con asientos: la{" "}
+            <strong>primera fila es la cuenta del panel</strong>, con el correo y la clave
+            juntos separados por dos puntos (<code>correo:clave</code>), y{" "}
+            <strong>todas las de abajo son clientes</strong> —el correo de cada fila es el
+            que invitaste—. Esa primera fila no ocupa asiento.
           </p>
           <p>
             Hay plataformas (FlujoTV, Telelatino) que usan <strong>usuario</strong> en vez

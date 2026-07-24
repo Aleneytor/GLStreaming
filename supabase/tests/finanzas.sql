@@ -5,6 +5,10 @@
 -- OJO: la base de desarrollo tiene datos reales del usuario. Toda comprobación
 -- compara DELTAS o apunta a filas creadas por esta misma suite; nunca a totales
 -- absolutos ni a un `limit 1` cualquiera.
+--
+-- Y por eso las fechas de esta suite viven en 2019: el negocio empezó mucho
+-- después, así que ningún mes de prueba puede chocar con un cierre real. (Pasó:
+-- al cerrar julio de 2026 en la app, `cerrar_mes` reventaba aquí.)
 -- ============================================================================
 begin;
 
@@ -60,7 +64,7 @@ select id as u1 from public.unidades_inventario where cuenta_id = :'cta' and num
 -- Período de 31 días exactos (julio) para que el prorrateo sea comprobable.
 -- Se vende SIN cobrar todavía, para probar el cobro por separado.
 select public.vender_unidad(
-  :'cli', :'cta', :'m_perfil', :'u1', null, '2026-07-01'::date, 1, null, '2026-07-01'::date
+  :'cli', :'cta', :'m_perfil', :'u1', null, '2019-07-01'::date, 1, null, '2019-07-01'::date
 ) as susc \gset
 select id as periodo from public.periodos_servicio where suscripcion_id = :'susc' \gset
 
@@ -103,7 +107,7 @@ end $$;
 -- ---------------------------------------------------------------------------
 -- 2b. Renovar y cobrar son UNA sola operacion (el monto puede variar)
 -- ---------------------------------------------------------------------------
-select public.renovar_y_cobrar(:'susc', '2026-08-01'::date, 1, 450) as periodo2 \gset
+select public.renovar_y_cobrar(:'susc', '2019-08-01'::date, 1, 450) as periodo2 \gset
 
 select 'Renovar y cobrar crea el periodo nuevo' as prueba,
        (select count(*) from public.periodos_servicio
@@ -115,7 +119,7 @@ union all select 'El monto puede diferir del mes anterior (300 -> 450)',
        (select precio_comercial_usd from public.periodos_servicio where id = :'periodo2') = 4.5;
 
 -- Renovar sin monto es valido: queda pendiente de cobro.
-select public.renovar_y_cobrar(:'susc', '2026-09-01'::date, 1, null) as periodo3 \gset
+select public.renovar_y_cobrar(:'susc', '2019-09-01'::date, 1, null) as periodo3 \gset
 
 select 'Renovar sin monto no crea cobro' as prueba,
        not exists (select 1 from public.pagos_cliente where periodo_servicio_id = :'periodo3') as pass
@@ -125,7 +129,7 @@ union all select 'Y queda listado en por cobrar',
 -- ---------------------------------------------------------------------------
 -- 3. Ciclo de proveedor y pago: costo cero no crea salida de caja
 -- ---------------------------------------------------------------------------
-select public.registrar_renovacion_y_pago(:'cta', 2.00, '2026-07-01'::date, null, 'PROV-1', true, '2026-07-01'::date) as ciclo \gset
+select public.registrar_renovacion_y_pago(:'cta', 2.00, '2019-07-01'::date, null, 'PROV-1', true, '2019-07-01'::date) as ciclo \gset
 
 select 'El pago iguala el costo del ciclo (2 USDT)' as prueba,
        (select monto_usdt from public.pagos_proveedor where ciclo_proveedor_id = :'ciclo') = 2.00 as pass
@@ -149,7 +153,7 @@ end $$;
 
 -- Cuenta con costo cero: ciclo válido, sin pago.
 select public.crear_cuenta_con_unidades(:'prod', 5, 'Fin-0', null, 'B', 'hb', 'p', null, null, 'Yo') as cta0 \gset
-select public.registrar_renovacion_y_pago(:'cta0', 0, '2026-07-01'::date, null, null, true, null) as ciclo0 \gset
+select public.registrar_renovacion_y_pago(:'cta0', 0, '2019-07-01'::date, null, null, true, null) as ciclo0 \gset
 
 select 'Costo cero crea el ciclo' as prueba,
        (select count(*) from public.ciclos_proveedor where id = :'ciclo0') = 1 as pass
@@ -160,7 +164,7 @@ union all select 'Costo cero NO crea salida de caja',
 -- 4. Gasto operativo
 -- ---------------------------------------------------------------------------
 select public.registrar_gasto_operativo(
-  'recarga_banco', 20, '2026-07-05'::date, 'Recarga', 'Trader X', null, null, null, 'nairas') as gasto \gset
+  'recarga_banco', 20, '2019-07-05'::date, 'Recarga', 'Trader X', null, null, null, 'nairas') as gasto \gset
 
 select 'El gasto se valoriza a paralela: 20 x 50 = 1000 Bs' as prueba,
        (select monto_ves_snapshot from public.gastos_operativos where id = :'gasto') = 1000 as pass;
@@ -185,7 +189,7 @@ union all select 'El gasto sale con signo negativo',
 select
   'Julio devenga el cobro completo (300 Bs)' as prueba,
   (select round(sum(pc.monto_ves
-      * (least(ps.fecha_renovacion, '2026-08-01'::date) - greatest(ps.inicio, '2026-07-01'::date))
+      * (least(ps.fecha_renovacion, '2019-08-01'::date) - greatest(ps.inicio, '2019-07-01'::date))
       / (ps.fecha_renovacion - ps.inicio)), 2)
    from public.periodos_servicio ps
    join public.pagos_cliente pc on pc.periodo_servicio_id = ps.id and pc.tipo = 'cobro'
@@ -195,7 +199,7 @@ select
 select
   'Medio mes devenga 15/31 del cobro' as prueba,
   (select round(sum(pc.monto_ves
-      * (least(ps.fecha_renovacion, '2026-07-16'::date) - greatest(ps.inicio, '2026-07-01'::date))
+      * (least(ps.fecha_renovacion, '2019-07-16'::date) - greatest(ps.inicio, '2019-07-01'::date))
       / (ps.fecha_renovacion - ps.inicio)), 4)
    from public.periodos_servicio ps
    join public.pagos_cliente pc on pc.periodo_servicio_id = ps.id and pc.tipo = 'cobro'
@@ -205,10 +209,10 @@ select
 select
   'Los dias de julio suman exactamente el mes' as prueba,
   round((select sum(r.resultado_operativo_ves)
-         from generate_series('2026-07-01'::date, '2026-07-31'::date, '1 day') d
+         from generate_series('2019-07-01'::date, '2019-07-31'::date, '1 day') d
          cross join lateral public.resumen_financiero(d::date, d::date + 1) r), 6)
   = round((select resultado_operativo_ves
-           from public.resumen_financiero('2026-07-01', '2026-08-01')), 6) as pass;
+           from public.resumen_financiero('2019-07-01', '2019-08-01')), 6) as pass;
 
 -- ---------------------------------------------------------------------------
 -- 7. Reverso del cobro
@@ -236,7 +240,7 @@ end $$;
 -- ---------------------------------------------------------------------------
 -- 8. Cierre mensual: versionado y protección
 -- ---------------------------------------------------------------------------
-select public.cerrar_mes('2026-07-01') as cierre \gset
+select public.cerrar_mes('2019-07-01') as cierre \gset
 
 select 'El mes queda cerrado' as prueba,
        (select estado from public.cierres_mensuales where id = :'cierre') = 'cerrado' as pass
@@ -247,13 +251,13 @@ do $$
 declare ok boolean := false;
 begin
   begin
-    perform public.calcular_cierre_mensual('2026-07-01');
+    perform public.calcular_cierre_mensual('2019-07-01');
   exception when others then ok := true;
   end;
   raise notice 'Un mes cerrado no se recalcula en silencio: %', case when ok then 'PASS' else 'FAIL' end;
 end $$;
 
-select public.reabrir_mes('2026-07-01', 'Llego un pago tardio') as cierre2 \gset
+select public.reabrir_mes('2019-07-01', 'Llego un pago tardio') as cierre2 \gset
 
 select 'La reapertura crea la version 2' as prueba,
        (select version from public.cierres_mensuales where id = :'cierre2') = 2 as pass
@@ -264,7 +268,7 @@ do $$
 declare ok boolean := false;
 begin
   begin
-    perform public.reabrir_mes('2026-07-01', '');
+    perform public.reabrir_mes('2019-07-01', '');
   exception when others then ok := true;
   end;
   raise notice 'La reapertura exige motivo: %', case when ok then 'PASS' else 'FAIL' end;
