@@ -183,6 +183,31 @@ export async function actualizarCuentaAction(
 }
 
 /**
+ * Borra una cuenta y TODO su historial (ventas, cobros, ciclos). Es una
+ * herramienta de corrección, no el flujo normal: por eso vive detrás de una
+ * confirmación en la UI. La base hace el borrado en el orden correcto.
+ */
+export async function eliminarCuentaAction(
+  _prev: EstadoAlta,
+  formData: FormData,
+): Promise<EstadoAlta> {
+  const usuario = await obtenerUsuarioActual();
+  if (!esAdmin(usuario)) return { error: "No autorizado." };
+
+  const cuentaId = String(formData.get("cuenta_id") ?? "");
+  if (!cuentaId) return { error: "Falta la cuenta." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("eliminar_cuenta", { p_cuenta_id: cuentaId });
+  if (error) return { error: error.message };
+
+  revalidatePath("/inventario");
+  revalidatePath("/clientes");
+  revalidatePath("/vencimientos");
+  redirect("/inventario");
+}
+
+/**
  * Guarda el nombre y el PIN de los perfiles de una cuenta.
  * Los PIN se cifran aquí; vacío significa "no cambiar".
  */

@@ -4,6 +4,7 @@ import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { uno } from "@/lib/supabase/util";
 import { FormEditarCuenta } from "@/features/inventario/form-editar-cuenta";
+import { BotonEliminarCuenta } from "@/features/inventario/boton-eliminar-cuenta";
 import type { ProveedorOpcion } from "@/features/inventario/form-cuenta";
 
 export const dynamic = "force-dynamic";
@@ -70,6 +71,11 @@ export default async function EditarCuentaPage({
           plataforma: plataforma?.nombre ?? "",
         }}
         proveedores={opcionesProveedor}
+      />
+
+      <BotonEliminarCuenta
+        cuentaId={cuenta.id}
+        etiqueta={`${plataforma?.nombre ?? ""} · ${cuenta.alias ?? producto?.nombre ?? "cuenta"}`}
       />
     </div>
   );

@@ -1,7 +1,11 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { guardarClienteAction, type EstadoCliente } from "./actions";
+import {
+  eliminarClienteAction,
+  guardarClienteAction,
+  type EstadoCliente,
+} from "./actions";
 
 const campo =
   "w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base outline-none transition focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-neutral-300";
@@ -19,7 +23,12 @@ export function EditorCliente({ cliente }: { cliente?: ClienteFila }) {
     guardarClienteAction,
     null,
   );
+  const [borrado, accionBorrar, borrando] = useActionState<EstadoCliente, FormData>(
+    eliminarClienteAction,
+    null,
+  );
   const [abierto, setAbierto] = useState(!cliente);
+  const [confirmar, setConfirmar] = useState(false);
 
   if (cliente && !abierto) {
     return (
@@ -110,6 +119,50 @@ export function EditorCliente({ cliente }: { cliente?: ClienteFila }) {
           <p className="text-sm text-emerald-600 dark:text-emerald-400">{estado.ok}</p>
         )}
       </div>
+
+      {/* Borrar: solo para clientes ya existentes, con confirmación. */}
+      {cliente && (
+        <div className="border-t border-neutral-200 pt-3 dark:border-neutral-800">
+          {!confirmar ? (
+            <button
+              type="button"
+              onClick={() => setConfirmar(true)}
+              className="text-xs text-red-600 underline underline-offset-2 dark:text-red-400"
+            >
+              Borrar cliente
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                Se borra solo si no tiene servicios. Si los tiene, borra primero esas
+                cuentas.
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmar(false)}
+                  className="text-xs text-neutral-500 dark:text-neutral-400"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  formAction={accionBorrar}
+                  disabled={borrando}
+                  className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition active:scale-[0.98] disabled:opacity-60"
+                >
+                  {borrando ? "Borrando…" : "Sí, borrar"}
+                </button>
+                {borrado?.error && (
+                  <p role="alert" className="text-xs text-red-600 dark:text-red-400">
+                    {borrado.error}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </form>
   );
 }

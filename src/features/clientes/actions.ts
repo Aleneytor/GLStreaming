@@ -50,3 +50,25 @@ export async function guardarClienteAction(
   revalidatePath("/clientes");
   return { ok: id ? "Cliente actualizado." : "Cliente creado." };
 }
+
+/**
+ * Borra un cliente. La base solo lo permite si ya no tiene servicios; si los
+ * tiene, devuelve un mensaje claro para que primero se borren sus cuentas.
+ */
+export async function eliminarClienteAction(
+  _prev: EstadoCliente,
+  formData: FormData,
+): Promise<EstadoCliente> {
+  const usuario = await obtenerUsuarioActual();
+  if (!esAdmin(usuario)) return { error: "No autorizado." };
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { error: "Falta el cliente." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("eliminar_cliente", { p_cliente_id: id });
+  if (error) return { error: error.message };
+
+  revalidatePath("/clientes");
+  return { ok: "Cliente borrado." };
+}
