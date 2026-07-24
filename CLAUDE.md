@@ -64,20 +64,20 @@ npx next dev -H 0.0.0.0   # accesible desde el móvil en la red local
 
 ```
 src/app/(auth)/     Login
-src/app/(panel)/    Panel: dashboard, vencimientos, inventario/…, clientes, catalogo
+src/app/(panel)/    Panel: dashboard, vencimientos, inventario/…, clientes, catalogo, migracion
 src/app/(panel)/(finanzas)/  Bloque de dinero: caja, cobros, egresos, cierre, tasas
 src/features/       Por funcionalidad: auth/, inventario/, catalogo/, ventas/, clientes/,
-                    tasas/, finanzas/ (acciones + formularios)
+                    tasas/, finanzas/, migracion/ (acciones + formularios)
 src/server/         Adaptadores de fuentes externas (tasas)
 src/components/     Piezas compartidas (nav-panel)
 src/lib/            crypto.ts (cifrado), auth.ts, env.ts (Zod), supabase/ (clientes + types)
-src/domain/         Lógica pura con pruebas: fechas.ts, dinero.ts
+src/domain/         Lógica pura con pruebas: fechas.ts, dinero.ts, tasas.ts, importacion.ts
 src/middleware.ts   Sesión + protección de rutas
 supabase/migrations Migraciones numeradas 0001.. (fuente de verdad del esquema)
 supabase/seed.sql   Catálogo sintético (sin secretos)
 supabase/tests/     Suites SQL: rls, alta_cuenta, editar_cuenta, editar_unidades,
                     ciclo_proveedor, criterios_fase2, venta_unidad, ciclo_vida,
-                    finanzas
+                    finanzas, importacion
 scripts/            crear-usuarios-dev.mjs
 tests/unit/         Pruebas Vitest
 docs/               Especificación de dominio (ver más abajo)
@@ -113,17 +113,21 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 
 ## Estado actual
 
-**Fase 4 (motor financiero): COMPLETA (2026-07-23).** Migraciones `0016..0020`.
+**Fase 4 (motor financiero): COMPLETA (2026-07-23).** Migraciones `0016..0022`.
 El negocio ya se cuadra dentro de la app, en las tres monedas.
 - **Tasas** (`/tasas`): BCV (API propia) y paralela (Kuanto **en vivo**, solo
   lectura con la clave anon). Validación defensiva: rechaza saltos > 50 % frente a la última
   conocida, exige fecha de vigencia, guarda idempotentemente y **nunca inventa un
   valor** si la fuente falla (`DEC-98`).
-- **Cobros** (`/cobros`): `registrar_cobro_cliente()` cobra
-  `round_half_up(precio_usd × BCV, 2)`, **congela BCV y paralela** en el período y
-  en el pago, y rechaza abonos (no existen pagos parciales). El reverso es una
-  contrapartida con las mismas tasas: no borra el original y devuelve el período
-  a la bandeja de por cobrar.
+- **Cobros** (`/cobros`): `registrar_cobro_cliente()` recibe **los bolívares que
+  entraron** (varían por cliente y por mes) y deriva el USD como
+  `round(monto_ves / BCV, 2)`; **congela BCV y paralela** (`DEC-102`). El reverso
+  es una contrapartida con las mismas tasas: no borra el original y devuelve el
+  período a la bandeja de por cobrar. Se puede **deshacer desde Caja**.
+- **Renovar es cobrar** (`DEC-103`): `renovar_y_cobrar()` y `vender_unidad()`
+  registran la renovación/venta y el cobro en Bs en **una sola transacción**. El
+  monto es opcional: sin él, queda pendiente en «Por cobrar». `/cobros` es la red
+  de seguridad de lo que quedó sin cobrar, no un camino paralelo.
 - **Egresos** (`/egresos`): `registrar_renovacion_y_pago()` — UN solo importe crea
   el ciclo nuevo (heredando el día ancla) y su único pago. Costo cero no inventa
   salida de Caja; reintentar no duplica. Gastos operativos en USDT valorizados a
@@ -134,6 +138,10 @@ El negocio ya se cuadra dentro de la app, en las tres monedas.
   para el día y para el mes**, de modo que `suma(días) = mes` se cumple por
   construcción. Borrador → cierre → **reapertura versionada con motivo auditado**
   (`DEC-99`).
+- **Importar cartera** (`/migracion`, solo escritorio): `importar_servicio_existente()`
+  carga filas pegadas del Excel, cada una un `carga_inicial` atómico (`DEC-104`).
+  El analizador puro está en `src/domain/importacion.ts` y lo comparten la vista
+  previa y el guardado. La `carga_inicial` no cuenta como venta del día.
 
 ⚠️ **Una tasa `simulada` no congela dinero** (migración 0020). Sirve para ver la
 pantalla y desarrollar, pero `tasa_utilizable` la descarta: antes de eso, un
@@ -147,8 +155,12 @@ control de antigüedad la daría por rancia y **bloquearía un cobro válido**. 
 antigüedad que decide es `coalesce(revalidada_at, obtenida_at)`, en SQL
 (`tasa_utilizable`) y en la app (`confirmadaAt`).
 
-Estado de pruebas al cerrar la fase: **156 comprobaciones SQL + 59 unitarias**,
-todas en verde.
+⚠️ **El cobro nace en bolívares** (`DEC-102`, migración 0021). El precio NO se
+pacta en USD: el hecho fuente es el monto en Bs que entrega el cliente, que varía
+cada mes. El USD es una lectura derivada (`monto_ves / BCV`). Cualquier código o
+doc que aún hable de «el cobro iguala `precio × BCV`» está desactualizado.
+
+Estado de pruebas: **181 comprobaciones SQL + 79 unitarias**, todas en verde.
 
 **Falta de la Fase 4** (deliberado, no es un bug): el desglose fino de los
 días-unidad ocupados sin período pagado — cortesía, pausa, reserva, bloqueo y
@@ -267,5 +279,5 @@ propio teléfono). Si cambia la red, hay que actualizarlas — ver
 - `docs/plataformas/` — ficha por plataforma + arquetipos.
 
 ---
-*Última actualización: 2026-07-23 (Fase 4 cerrada: motor financiero). Actualiza este
+*Última actualización: 2026-07-24 (cobro en Bs + renovar_y_cobrar + importación masiva). Actualiza este
 archivo al terminar cada sesión: estado, lo que sigue y cualquier decisión nueva.*

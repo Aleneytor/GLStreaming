@@ -188,7 +188,31 @@ período pagado (cortesía / pausa / reserva / bloqueo / saneamiento) todavía n
 calcula; esas columnas de `cierres_mensuales` quedan en cero a propósito. Sí se
 calculan capacidad, ocupados, pagados, ociosos y **costo ocioso**.
 
-Estado de pruebas: **156 SQL + 59 unitarias**, todas en verde.
+Estado de pruebas al cerrar la fase: **156 SQL + 59 unitarias**, todas en verde.
+
+## 4.5. Correcciones de dominio y migración masiva (24/07/2026)
+
+Migraciones `0021..0022`. Ajustes pedidos por el dueño del negocio tras probar la
+app con datos reales, más la herramienta para cargar esos datos.
+
+- **El cobro nace en bolívares** (`DEC-102`). El precio no se pacta en USD: el
+  hecho fuente es el monto en Bs que entrega el cliente, que **varía cada mes**.
+  El USD es una lectura derivada (`round(monto_ves / BCV, 2)`). Desaparece la
+  regla «el cobro iguala `precio × BCV`» que asumía la Fase 4.
+- **Renovar es cobrar** (`DEC-103`). Antes había dos caminos para el mismo
+  ingreso (renovar en `/vencimientos`, cobrar en `/cobros`), lo que permitía
+  cobrar dos veces o dejar renovaciones sin cobro. Ahora `renovar_y_cobrar` y
+  `vender_unidad` lo hacen en una transacción; el monto es opcional. `/cobros`
+  pasa a ser la red de seguridad de lo pendiente. El cobro se deshace desde Caja.
+- **Importación masiva** (`/migracion`, solo escritorio, `DEC-104`). Pega filas
+  del Excel; cada una es un `carga_inicial` atómico. Los extras de Netflix son
+  cada uno su propia cuenta madre (correo propio, capacidad 1); las cuentas
+  completas agrupan sus perfiles por correo. La `carga_inicial` no cuenta como
+  venta del día y respeta la fecha de vencimiento del Excel sin recalcularla. El
+  analizador (`src/domain/importacion.ts`) es puro y lo comparten la vista previa
+  y el guardado.
+
+Estado de pruebas: **181 SQL + 79 unitarias**, todas en verde.
 
 Para retomar: `npx supabase start` y `npm run dev` (ver `09-fase-1-setup.md`).
 
