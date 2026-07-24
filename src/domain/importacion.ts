@@ -488,16 +488,23 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
       );
     }
 
-    // --- Cliente: la columna, o el nombre del perfil si hay señal de venta ---
+    // --- Cliente: la columna, el nombre del perfil o, si no, SU CORREO -------
+    // En Spotify el revendedor suele pasar solo el correo y la clave del
+    // cliente, sin su nombre: entonces el cliente queda identificado por su
+    // propio correo, que es justo lo que lo distingue.
     const haySenalVenta = Boolean(
-      clienteCol || typeof monto === "number" || whatsapp || vendio,
+      clienteCol || typeof monto === "number" || whatsapp || vendio || correoCliente,
     );
-    const cliente = clienteCol ?? (haySenalVenta ? perfil : null);
+    const cliente = clienteCol ?? (haySenalVenta ? (perfil ?? correoCliente) : null);
     if (!clienteCol && cliente) {
-      avisos.push(`Cliente tomado del perfil: «${cliente}».`);
+      avisos.push(
+        cliente === correoCliente
+          ? `Cliente identificado por su correo: «${cliente}».`
+          : `Cliente tomado del perfil: «${cliente}».`,
+      );
     }
     if (haySenalVenta && !cliente) {
-      errores.push("Parece una venta pero no hay ni cliente ni nombre de perfil.");
+      errores.push("Parece una venta pero no hay cliente, ni perfil, ni correo del cliente.");
     }
     if (cliente && !vence) avisos.push("Sin vencimiento: se calculará como inicio + 1 mes.");
     if (cliente && monto === null) avisos.push("Sin monto: quedará en «Por cobrar».");
