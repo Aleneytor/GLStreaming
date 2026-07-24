@@ -172,6 +172,15 @@ export async function importarAction(
     let data: unknown;
     let error: { message: string } | null;
 
+    // El Premium puede salir de GPay propio (con su Gmail pagador anotado) o
+    // de un proveedor externo. Vale igual para familias e individuales.
+    const gpay = /gpay/i.test(d.proveedor ?? "") || Boolean(d.gmailPagador);
+    const origenGpay = gpay
+      ? /nigeria/i.test(d.proveedor ?? "")
+        ? "gpay_nigeria"
+        : "gpay_usa"
+      : null;
+
     if (esFamiliar) {
       // Una fila = un miembro. La madre da el Premium; el miembro entra con su
       // propio login (columnas «Correo Cliente» / «Clave Cliente»).
@@ -197,11 +206,14 @@ export async function importarAction(
         p_costo_usdt: d.inversion,
         p_proveedor_nombre: d.proveedor,
         p_prov_inicio: provInicio,
+        // Una familia que no se vendió como individual igual tiene pagador.
+        p_gmail_pagador_cifrado: d.gmailPagador ? cifrarSecreto(d.gmailPagador) : null,
+        p_gmail_pagador_fingerprint: d.gmailPagador ? huellaSecreto(d.gmailPagador) : null,
+        p_origen_gpay: origenGpay,
       }));
     } else if (esIndividualSpotify) {
       // Si el correo resulta ser una familia ya importada, la base lo detecta
       // sola y lo registra como venta del USO DE LA MADRE.
-      const gpay = /gpay/i.test(d.proveedor ?? "");
       ({ data, error } = await supabase.rpc("importar_spotify_individual", {
         p_sesion_id: sesionId as unknown as string,
         p_producto_id: productoId,
@@ -212,7 +224,7 @@ export async function importarAction(
         p_cobertura_tipo: gpay ? "individual_gpay_propio" : "individual_proveedor",
         p_gmail_pagador_cifrado: d.gmailPagador ? cifrarSecreto(d.gmailPagador) : null,
         p_gmail_pagador_fingerprint: d.gmailPagador ? huellaSecreto(d.gmailPagador) : null,
-        p_origen_gpay: gpay ? (/nigeria/i.test(d.proveedor ?? "") ? "gpay_nigeria" : "gpay_usa") : null,
+        p_origen_gpay: origenGpay,
         p_cliente_nombre: d.cliente,
         p_cliente_whatsapp: d.whatsapp,
         p_inicio: inicio,

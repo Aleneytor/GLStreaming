@@ -113,7 +113,7 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 
 ## Estado actual
 
-**Fase 4 (motor financiero): COMPLETA (2026-07-23).** Migraciones `0016..0028`.
+**Fase 4 (motor financiero): COMPLETA (2026-07-23).** Migraciones `0016..0029`.
 El negocio ya se cuadra dentro de la app, en las tres monedas.
 - **Tasas** (`/tasas`): BCV (API propia) y paralela (Kuanto **en vivo**, solo
   lectura con la clave anon). Validación defensiva: rechaza saltos > 50 % frente a la última
@@ -173,7 +173,7 @@ pacta en USD: el hecho fuente es el monto en Bs que entrega el cliente, que var�
 cada mes. El USD es una lectura derivada (`monto_ves / BCV`). Cualquier código o
 doc que aún hable de «el cobro iguala `precio × BCV`» está desactualizado.
 
-Estado de pruebas: **227 comprobaciones SQL + 103 unitarias**, todas en verde.
+Estado de pruebas: **228 comprobaciones SQL + 105 unitarias**, todas en verde.
 
 **Falta de la Fase 4** (deliberado, no es un bug): el desglose fino de los
 días-unidad ocupados sin período pagado — cortesía, pausa, reserva, bloqueo y

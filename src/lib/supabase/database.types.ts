@@ -2960,6 +2960,8 @@ export type Database = {
           p_cliente_whatsapp?: string
           p_costo_usdt?: number
           p_fecha_renovacion?: string
+          p_gmail_pagador_cifrado?: string
+          p_gmail_pagador_fingerprint?: string
           p_inicio?: string
           p_madre_contrasena_cifrada: string
           p_madre_login_cifrado: string
@@ -2971,6 +2973,7 @@ export type Database = {
           p_modalidad_id?: string
           p_monto_ves?: number
           p_numero_slot?: number
+          p_origen_gpay?: string
           p_producto_id: string
           p_prov_inicio?: string
           p_proveedor_nombre?: string

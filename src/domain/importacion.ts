@@ -142,6 +142,31 @@ export function parsearTabla(texto: string): string[][] {
 }
 
 /**
+ * Separa el Gmail pagador que a veces viene DENTRO de la celda «Proveedor».
+ *
+ * En las familias de Spotify pagadas con GPay propio, la hoja anota en esa
+ * celda el rótulo y el correo que paga, a menudo en dos líneas:
+ *   «yo(gpay usa)  ⏎  ettermendoza6@gmail.com»
+ * Guardarlo como un único nombre de proveedor perdería el dato útil, así que
+ * el correo se extrae aparte y el resto queda como nombre del proveedor.
+ */
+export function separarPagador(texto: string): {
+  proveedor: string;
+  pagador: string | null;
+} {
+  const t = texto.replace(/\s+/g, " ").trim();
+  if (!t) return { proveedor: "", pagador: null };
+
+  const m = t.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
+  if (!m) return { proveedor: t, pagador: null };
+
+  const resto = (t.slice(0, m.index) + t.slice(m.index! + m[0].length))
+    .replace(/\s+/g, " ")
+    .trim();
+  return { proveedor: resto, pagador: m[0] };
+}
+
+/**
  * Oculta un número de tarjeta si aparece en el texto (red de seguridad).
  *
  * Para recordar CON QUÉ tarjeta se pagó una cuenta basta el banco y los últimos
@@ -404,15 +429,20 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
     const whatsapp = leer(c, "whatsapp") || null;
     const vendio = leer(c, "vendio") || null;
     const inversionCruda = leer(c, "inversion");
-    // El proveedor a veces es la tarjeta con la que se pagó: si viene el número
-    // completo, se guarda solo el final (ver `enmascararTarjeta`).
-    const proveedorCrudo = enmascararTarjeta(leer(c, "proveedor"));
+    // La celda de proveedor puede traer el Gmail pagador dentro (familias de
+    // Spotify con GPay propio): se separa antes de nada. Y si en su lugar
+    // viene un número de tarjeta, se guarda solo el final.
+    const provSeparado = separarPagador(leer(c, "proveedor"));
+    const proveedorCrudo = enmascararTarjeta(provSeparado.proveedor);
     const proveedor = proveedorCrudo.valor || null;
     const renovarCrudo = leer(c, "renovar");
     // Spotify: el paréntesis con el que se anota el Gmail pagador se descarta.
     const correoCliente = leer(c, "correoCliente") || null;
     const claveCliente = leer(c, "claveCliente") || null;
-    const gmailPagador = leer(c, "gmailPagador").replace(/[()]/g, "").trim() || null;
+    // El pagador puede venir en su propia columna (hoja de individuales) o
+    // dentro de la celda de proveedor (hoja de familias).
+    const gmailPagador =
+      leer(c, "gmailPagador").replace(/[()]/g, "").trim() || provSeparado.pagador || null;
 
     // --- Arrastre de la cuenta madre (celda combinada del Excel) -------------
     let heredaCuenta = false;

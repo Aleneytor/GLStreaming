@@ -34,13 +34,16 @@ select public.abrir_sesion_carga(:'p_fam', 'prueba spotify') as sesion \gset
 -- ---------------------------------------------------------------------------
 -- 1. Familia: la madre da el Premium; cada miembro entra con SU propio login
 -- ---------------------------------------------------------------------------
+-- Familia pagada con GPay propio: el Gmail pagador va aparte (aunque en la
+-- hoja venga escrito dentro de la celda de proveedor).
 select public.importar_spotify_familiar(
   :'sesion', :'p_fam', 5,
   'cif-madre', 'huella-madre', 'cif-clave-madre',
   'cif-miembro1', 'huella-miembro1', 'cif-clave-m1', 'dominio_gl',
   1, :'m_miembro', 'Andrea Rodriguez', '04241413882',
   '2026-06-07'::date, '2026-09-05'::date, 200, null,
-  5.00, 'ul', '2026-07-07'::date
+  5.00, 'yo(gpay usa)', '2026-07-07'::date,
+  'cif-pagador-fam', 'huella-pagador-fam', 'gpay_usa'
 ) as r1 \gset
 
 select public.importar_spotify_familiar(
@@ -77,7 +80,10 @@ union all select 'Las identidades de los dos miembros son distintas',
        (:'r1'::jsonb ->> 'identidad_id') <> (:'r2'::jsonb ->> 'identidad_id')
 union all select 'El miembro ocupa un cupo (alcance unidad)',
        (select alcance from public.asignaciones_inventario
-        where suscripcion_id = current_setting('pruebas.susc1')::uuid) = 'unidad';
+        where suscripcion_id = current_setting('pruebas.susc1')::uuid) = 'unidad'
+union all select 'La familia guarda su Gmail pagador (no vendida como individual)',
+       (select origen from public.controles_pago_spotify
+        where cobertura_cuenta_id = current_setting('pruebas.cuentaFam')::uuid) = 'gpay_usa';
 
 -- ---------------------------------------------------------------------------
 -- 2. El USO DE LA MADRE: misma cuenta, sin gastar cupo de miembro

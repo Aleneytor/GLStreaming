@@ -6,6 +6,7 @@ import {
   normalizarMonto,
   parsearTabla,
   restarUnMes,
+  separarPagador,
 } from "@/domain/importacion";
 
 describe("normalizarFecha", () => {
@@ -123,6 +124,29 @@ describe("enmascararTarjeta", () => {
       oculto: false,
     });
     expect(enmascararTarjeta("yo bancamiga").oculto).toBe(false);
+  });
+});
+
+describe("separarPagador", () => {
+  it("saca el Gmail pagador de dentro de la celda de proveedor", () => {
+    // Familias de Spotify con GPay propio: la hoja pone el rótulo y el correo
+    // juntos, a veces en dos líneas dentro de la misma celda.
+    expect(separarPagador("yo(gpay usa) ettermendoza6@gmail.com")).toEqual({
+      proveedor: "yo(gpay usa)",
+      pagador: "ettermendoza6@gmail.com",
+    });
+    expect(separarPagador("yo(gpay usa)\nettermendoza6@gmail.com").pagador).toBe(
+      "ettermendoza6@gmail.com",
+    );
+  });
+
+  it("deja intacto un proveedor sin correo", () => {
+    expect(separarPagador("@CapyVentas")).toEqual({
+      proveedor: "@CapyVentas",
+      pagador: null,
+    });
+    expect(separarPagador("+57 324 3017900").pagador).toBeNull();
+    expect(separarPagador("")).toEqual({ proveedor: "", pagador: null });
   });
 });
 
