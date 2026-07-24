@@ -67,12 +67,12 @@ describe("restarUnMes", () => {
 });
 
 describe("analizarFilas", () => {
-  // correo·contraseña·perfil·pin·monto·inicio·vence·cliente·whatsapp·vendió
+  // correo·contraseña·perfil·pin·monto·inicio·vence·cliente·whatsapp·vendió·inversión·proveedor
   const fila = (...c: string[]) => c.join("\t");
 
   it("entiende una fila de perfil extra completa", () => {
     const r = analizarFilas(
-      fila("net1@gmail.com", "clave123", "Ana", "1234", "5.00", "24/6/2026", "24/7/2026", "Ana Pérez", "04141234567", "Gabriel Nadales"),
+      fila("net1@gmail.com", "clave123", "Ana", "1234", "5.00", "24/6/2026", "24/7/2026", "Ana Pérez", "04141234567", "Gabriel Nadales", "3.50", "@CapyVentas"),
       1,
     );
     expect(r.conError).toBe(0);
@@ -86,8 +86,32 @@ describe("analizarFilas", () => {
       inicio: "2026-06-24",
       vence: "2026-07-24",
       monto: 5,
+      inversion: 3.5,
+      proveedor: "@CapyVentas",
     });
     expect(r.vendedores).toEqual(["Gabriel Nadales"]);
+  });
+
+  it("lee la inversión (costo) y el proveedor solo donde vienen", () => {
+    // En una cuenta completa el costo va en la primera fila; las demás vacías.
+    const texto = [
+      fila("m@gls.org", "p", "P1", "", "2.50", "", "23/8/2026", "Ana", "", "", "3.50", "@CapyVentas"),
+      fila("", "", "P2", "", "5.00", "", "9/8/2026", "Beto", "", "", "", ""),
+    ].join("\n");
+    const r = analizarFilas(texto, 5);
+    expect(r.filas[0].datos.inversion).toBe(3.5);
+    expect(r.filas[0].datos.proveedor).toBe("@CapyVentas");
+    expect(r.filas[1].datos.inversion).toBeNull();
+  });
+
+  it("un costo ilegible avisa pero no bloquea la fila", () => {
+    const r = analizarFilas(
+      fila("m@gls.org", "p", "P1", "", "5", "", "23/8/2026", "Ana", "", "", "gratis", ""),
+      5,
+    );
+    expect(r.conError).toBe(0);
+    expect(r.filas[0].datos.inversion).toBeNull();
+    expect(r.filas[0].avisos.join(" ")).toContain("Costo no entendido");
   });
 
   it("hereda la cuenta madre de la fila anterior (celdas combinadas)", () => {

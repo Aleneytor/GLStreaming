@@ -15,13 +15,14 @@ export type OpcionProducto = {
   modalidades: { id: string; nombre: string }[];
 };
 
-// Ejemplo de cuenta completa: el correo va SOLO en la primera fila (como en el
-// Excel, con celdas combinadas). Columnas: correo·contraseña·perfil·pin·monto·
-// inicio·vence·cliente·whatsapp·vendió
+// Ejemplo de cuenta completa: el correo (y la inversión/proveedor, que son por
+// cuenta) van SOLO en la primera fila, como en el Excel con celdas combinadas.
+// Columnas: correo·contraseña·perfil·pin·monto·inicio·vence·cliente·whatsapp·
+// vendió·inversión·proveedor
 const EJEMPLO = [
-  "madre@correo.com\tgls3030\tMaurifred\t7449\t2.50\t24/7/2026\t23/8/2026\t\t+58 412-4067449\tGabriel Nadales",
-  "\t\tNana\t3334\t5.00\t10/7/2026\t9/8/2026\tNana\t\t",
-  "\t\tNorelys\t5555\t3.00\t27/6/2026\t27/7/2026\t\t+58 424-1991901\tEdgar Espinoza",
+  "madre@correo.com\tgls3030\tMaurifred\t7449\t2.50\t24/7/2026\t23/8/2026\t\t+58 412-4067449\tGabriel Nadales\t3.50\t@CapyVentas",
+  "\t\tNana\t3334\t5.00\t10/7/2026\t9/8/2026\tNana\t\t\t\t",
+  "\t\tNorelys\t5555\t3.00\t27/6/2026\t27/7/2026\t\t+58 424-1991901\tEdgar Espinoza\t\t",
 ].join("\n");
 
 export function FormImportacion({
@@ -154,18 +155,24 @@ export function FormImportacion({
         />
         <div className="mt-1 space-y-1 text-xs text-neutral-500 dark:text-neutral-400">
           <p>
-            Diez columnas, en este orden:{" "}
+            Doce columnas, en este orden:{" "}
             <strong>
               correo · contraseña · perfil · pin · monto · inicio · vence · cliente · whatsapp ·
-              vendió
+              vendió · inversión · proveedor
             </strong>
             .
           </p>
           <p>
             <strong>Cuenta completa</strong> (Netflix, Disney…): elige el producto «cuenta»
-            y pega los perfiles; el <strong>correo y la contraseña van solo en la primera
-            fila</strong>, como en tu Excel. <strong>Perfiles extra:</strong> elige «perfil
-            extra» y cada fila lleva su propio correo.
+            y pega los perfiles; el <strong>correo, la contraseña, la inversión y el
+            proveedor van solo en la primera fila</strong> (son de la cuenta, no del
+            perfil), como en tu Excel. <strong>Perfiles extra:</strong> elige «perfil
+            extra» y cada fila lleva lo suyo.
+          </p>
+          <p>
+            La <strong>inversión</strong> es lo que le pagas al proveedor por la cuenta; con
+            ella la app calcula tu margen. Déjala vacía (o proveedor «yo») si la cuenta es
+            tuya.
           </p>
           <p>
             Si el <strong>cliente</strong> está vacío pero hay monto o teléfono, se usa el
@@ -204,7 +211,7 @@ export function FormImportacion({
             <table className="w-full text-left text-xs">
               <thead className="sticky top-0 bg-neutral-100 dark:bg-neutral-900">
                 <tr>
-                  {["#", "Cuenta", "Perfil", "Cliente", "Vence", "Monto", "Vendió", "Estado"].map(
+                  {["#", "Cuenta", "Perfil", "Cliente", "Vence", "Monto", "Vendió", "Costo", "Estado"].map(
                     (h) => (
                       <th key={h} className="whitespace-nowrap px-2 py-1.5 font-medium">
                         {h}
@@ -271,6 +278,18 @@ export function FormImportacion({
                           </>
                         ) : (
                           <span className="text-neutral-400">directa</span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-2 py-1.5 tabular-nums">
+                        {f.datos.inversion != null ? (
+                          <>
+                            ${f.datos.inversion}
+                            {f.datos.proveedor ? (
+                              <span className="text-neutral-400"> · {f.datos.proveedor}</span>
+                            ) : null}
+                          </>
+                        ) : (
+                          <span className="text-neutral-400">—</span>
                         )}
                       </td>
                       <td className="px-2 py-1.5">

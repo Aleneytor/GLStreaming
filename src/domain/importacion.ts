@@ -7,8 +7,9 @@
  * exactamente lo que no puede pasar cuando se migran cientos de filas.
  *
  * Columnas esperadas, en este orden (el del Excel del negocio, sin las columnas
- * calculadas: días, alerta, inversión, proveedor, renovar, aviso):
- *   correo · contraseña · perfil · pin · monto · inicio · vence · cliente · whatsapp · vendió
+ * calculadas: días, alerta, renovar, aviso):
+ *   correo · contraseña · perfil · pin · monto · inicio · vence · cliente ·
+ *   whatsapp · vendió · inversión · proveedor
  *
  * DOS FORMAS DE CARTERA, distinguidas por el PRODUCTO que se elija arriba:
  *   - PERFILES EXTRA: cada fila es su propia cuenta madre (correo propio,
@@ -46,6 +47,10 @@ export type FilaImportacion = {
   vence: string | null;
   /** Importe tal cual venía, sin moneda: el importador decide USD o Bs. */
   monto: number | null;
+  /** Costo del proveedor por la CUENTA (divisas). Es por cuenta, no por perfil. */
+  inversion: number | null;
+  /** Proveedor al que se le compra la cuenta (columna «Proveedor»). */
+  proveedor: string | null;
 };
 
 export type FilaAnalizada = {
@@ -172,6 +177,8 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
     const clienteCol = c[7] || null;
     const whatsapp = c[8] || null;
     const vendio = c[9] || null;
+    const inversionCruda = c[10] ?? "";
+    const proveedor = c[11] || null;
 
     // --- Arrastre de la cuenta madre (celda combinada del Excel) -------------
     let heredaCuenta = false;
@@ -198,6 +205,10 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
 
     const monto = normalizarMonto(montoCrudo);
     if (monto === "invalido") errores.push(`Monto no entendido: «${montoCrudo}».`);
+
+    // El costo es secundario: si no se entiende, se avisa pero no se bloquea.
+    const inversion = normalizarMonto(inversionCruda);
+    if (inversion === "invalido") avisos.push(`Costo no entendido («${inversionCruda}»): se importará sin costo.`);
 
     // --- Cliente: la columna, o el nombre del perfil si hay señal de venta ---
     const haySenalVenta = Boolean(
@@ -243,6 +254,8 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
         inicio,
         vence,
         monto: monto === "invalido" ? null : monto,
+        inversion: inversion === "invalido" ? null : inversion,
+        proveedor,
       },
       errores,
       avisos,

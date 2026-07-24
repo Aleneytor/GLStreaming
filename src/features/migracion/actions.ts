@@ -164,6 +164,10 @@ export async function importarAction(
       p_fecha_renovacion: vence,
       p_monto_ves: montoVes,
       p_vendedor_id: vendedorId,
+      // El costo va en USD tal cual: la base lo valoriza a PARALELA (no BCV),
+      // porque los egresos nacen en USDT. Se registra una sola vez por cuenta.
+      p_costo_usdt: d.inversion,
+      p_proveedor_nombre: d.proveedor,
     });
 
     const etiquetaVendedor = d.vendio ? ` · vendió ${d.vendio}` : "";

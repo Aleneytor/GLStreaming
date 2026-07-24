@@ -33,16 +33,20 @@ select public.abrir_sesion_carga(:'prod', 'prueba') as sesion \gset
 -- 1. Dos filas del MISMO correo se agrupan en una sola cuenta madre
 -- ---------------------------------------------------------------------------
 -- (huella del correo simulada: en la app la calcula huellaSecreto)
+-- La primera fila CREA la cuenta y trae el costo del proveedor (3.50 @CapyVentas).
 select public.importar_servicio_existente(
   :'sesion', :'prod', 5, 'cif-correo-A', 'huella-A', 'cif-pass',
   'Cuenta A', 1, 'Ana', 'cif-pin', :'m_perfil',
-  'Ana Perez', '04141234567', '2026-07-01'::date, '2026-08-01'::date, 250, null
+  'Ana Perez', '04141234567', '2026-07-01'::date, '2026-08-01'::date, 250, null,
+  3.50, '@CapyVentas'
 ) as r1 \gset
 
+-- La segunda fila reutiliza la cuenta: su costo (si lo trajera) NO se vuelve a sumar.
 select public.importar_servicio_existente(
   :'sesion', :'prod', 5, 'cif-correo-A', 'huella-A', 'cif-pass',
   'Cuenta A', 2, 'Beto', null, :'m_perfil',
-  'Beto Gomez', null, '2026-07-01'::date, '2026-08-01'::date, 300, null
+  'Beto Gomez', null, '2026-07-01'::date, '2026-08-01'::date, 300, null,
+  3.50, '@CapyVentas'
 ) as r2 \gset
 
 select set_config('pruebas.cuenta', (:'r1'::jsonb ->> 'cuenta_id'), true);
@@ -102,6 +106,31 @@ select 'La suscripcion guarda el vendedor de origen' as prueba,
 union all select 'El periodo guarda el vendedor',
        (select vendedor_id from public.periodos_servicio
         where id = current_setting('pruebas.periodo4')::uuid) = :'vend';
+
+-- ---------------------------------------------------------------------------
+-- 2d. El costo del proveedor se registra UNA vez por cuenta, valorizado a paralela
+-- ---------------------------------------------------------------------------
+-- La cuenta A se creó en la fila r1 con costo 3.50 USDT y proveedor @CapyVentas
+-- (ver el bloque de más abajo, donde r1 ahora lleva costo). Aquí se comprueba.
+select set_config('pruebas.cuentaA', current_setting('pruebas.cuenta'), true);
+
+select 'La cuenta madre tiene UN solo ciclo de proveedor' as prueba,
+       (select count(*) from public.ciclos_proveedor
+        where cuenta_id = current_setting('pruebas.cuentaA')::uuid and estado = 'vigente') = 1 as pass
+union all select 'El ciclo guarda el costo en USDT (3.50)',
+       (select costo_usdt from public.ciclos_proveedor
+        where cuenta_id = current_setting('pruebas.cuentaA')::uuid and estado = 'vigente') = 3.50
+union all select 'El costo se valoriza a paralela: 3.50 x 50 = 175 Bs',
+       (select costo_ves_snapshot from public.ciclos_proveedor
+        where cuenta_id = current_setting('pruebas.cuentaA')::uuid and estado = 'vigente') = 175
+union all select 'La cuenta quedó con el proveedor @CapyVentas',
+       (select p.nombre_o_alias from public.proveedores p
+        join public.cuentas c on c.proveedor_operativo_id = p.id
+        where c.id = current_setting('pruebas.cuentaA')::uuid) = '@CapyVentas'
+union all select 'No se registró ningún pago (Caja) por la migración',
+       (select count(*) from public.pagos_proveedor pp
+        join public.ciclos_proveedor cp on cp.id = pp.ciclo_proveedor_id
+        where cp.cuenta_id = current_setting('pruebas.cuentaA')::uuid) = 0;
 
 -- ---------------------------------------------------------------------------
 -- 3. Un perfil sin cliente se carga libre (inventario, sin suscripción)
