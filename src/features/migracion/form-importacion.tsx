@@ -160,7 +160,7 @@ export function FormImportacion({
             Alerta, Aviso). No necesitas borrar ni reordenar nada.
           </p>
           <p>
-            Reconoce: <strong>correo, contraseña, perfil, pin, ingresos/monto, inicio,
+            Reconoce: <strong>correo (o usuario), contraseña, perfil, pin, ingresos/monto, inicio,
             vence, cliente, celular, vendió, inversión, proveedor, renovar</strong>.
           </p>
           <p>
@@ -185,6 +185,11 @@ export function FormImportacion({
           <p>
             Si el <strong>cliente</strong> está vacío pero hay monto o teléfono, se usa el
             nombre del perfil. Sin nada de eso, el perfil se carga <strong>libre</strong>.
+          </p>
+          <p>
+            Hay plataformas (FlujoTV, Telelatino) que usan <strong>usuario</strong> en vez
+            de correo: va en la misma columna. Las filas en blanco de tu hoja (las
+            «Vacío») se ignoran solas, no ocupan cupo.
           </p>
         </div>
       </div>

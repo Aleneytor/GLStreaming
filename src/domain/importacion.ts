@@ -329,9 +329,32 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
   // Las columnas se reconocen por su título si se pegó la fila de encabezados;
   // así el orden y las columnas de más (días, alerta, renovar…) no importan.
   const { mapa } = resolverColumnas(filasCrudas[0] ?? []);
-  // Se quitan TODAS las filas de títulos: al pegar varios bloques, cada uno
-  // trae la suya, y una fila de títulos en medio no es un dato.
-  const datos = filasCrudas.filter((c) => !esFilaCabecera(c));
+
+  // Lee una columna por su campo, sin depender de la posición absoluta.
+  const leer = (c: string[], campo: Campo): string => {
+    const idx = mapa[campo];
+    return idx === undefined ? "" : (c[idx] ?? "").trim();
+  };
+
+  const datos = filasCrudas.filter((c) => {
+    // Fuera TODAS las filas de títulos: al pegar varios bloques, cada uno trae
+    // la suya, y una fila de títulos en medio no es un dato.
+    if (esFilaCabecera(c)) return false;
+
+    // Fuera las filas de RELLENO del Excel (las marcadas «Vacío»): no traen
+    // cuenta propia ni dato alguno de servicio, solo fórmulas de la hoja
+    // (días, alerta, aviso). Si se colaran, heredarían la cuenta de arriba y
+    // ocuparían un cupo que no existe — que es justo lo que rompía FlujoTV,
+    // con sus 3 cupos y una línea en blanco de separación.
+    const sinDatos =
+      !leer(c, "correo") &&
+      !leer(c, "perfil") &&
+      !leer(c, "cliente") &&
+      !leer(c, "monto") &&
+      !leer(c, "whatsapp") &&
+      !leer(c, "vendio");
+    return !sinDatos;
+  });
 
   const slotsPorCuenta = new Map<string, number>();
   const vendedores = new Map<string, string>(); // clave en minúsculas → nombre visible
@@ -341,12 +364,6 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
   // vienen sin ellos (celdas combinadas de una cuenta completa).
   let ultimoCorreo = "";
   let ultimaContrasena = "";
-
-  // Lee una columna por su campo, sin depender de la posición absoluta.
-  const leer = (c: string[], campo: Campo): string => {
-    const idx = mapa[campo];
-    return idx === undefined ? "" : (c[idx] ?? "").trim();
-  };
 
   datos.forEach((c, i) => {
     const errores: string[] = [];
@@ -380,8 +397,11 @@ export function analizarFilas(texto: string, capacidad: number): ResultadoAnalis
       ultimaContrasena = contrasena;
     }
 
-    if (!correo) errores.push("Falta el correo (y no hay una cuenta madre arriba de dónde heredarlo).");
-    else if (!heredaCuenta && !correo.includes("@")) avisos.push("El correo no parece un correo.");
+    // Puede ser un correo o un USUARIO: plataformas como FlujoTV o Telelatino
+    // se identifican con usuario y contraseña, no con un correo.
+    if (!correo) {
+      errores.push("Falta el correo o usuario (y no hay una cuenta madre arriba de dónde heredarlo).");
+    }
     if (!contrasena) errores.push("Falta la contraseña.");
 
     const inicio = normalizarFecha(inicioCrudo);
