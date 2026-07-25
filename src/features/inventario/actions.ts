@@ -342,3 +342,102 @@ export async function revelarCredencialesAction(
 
   return { ok: true, correo, contrasena, perfiles };
 }
+
+// ============================================================================
+// Edición inline desde el inventario (panel que se despliega en la fila).
+// Una sola acción orquesta las funciones ya probadas: datos de la cuenta,
+// rotación de credenciales (solo si cambiaron), perfiles (nombre + PIN),
+// nombres de cliente y costo del ciclo vigente. NO redirige: revalida y vuelve.
+// ============================================================================
+export type EstadoInline = { error?: string; ok?: string } | null;
+
+export async function guardarCuentaInlineAction(
+  _prev: EstadoInline,
+  formData: FormData,
+): Promise<EstadoInline> {
+  const usuario = await obtenerUsuarioActual();
+  if (!esAdmin(usuario)) return { error: "No autorizado." };
+
+  const cuentaId = String(formData.get("cuenta_id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  if (!cuentaId) return { error: "Falta la cuenta." };
+
+  const supabase = await createClient();
+
+  // 1. Datos de la cuenta (alias/proveedor/notas/estado).
+  const { error: e1 } = await supabase.rpc("actualizar_cuenta", {
+    p_cuenta_id: cuentaId,
+    p_alias: String(formData.get("alias") ?? "").trim() || null,
+    p_proveedor_nombre: String(formData.get("proveedor") ?? "").trim() || null,
+    p_notas: String(formData.get("notas") ?? "").trim() || null,
+    p_estado: String(formData.get("estado") ?? "activa"),
+  });
+  if (e1) return { error: e1.message };
+
+  // 2. Credenciales: solo se rotan si el usuario tocó correo o contraseña.
+  if (String(formData.get("creds_cambiadas") ?? "") === "1") {
+    const correo = String(formData.get("correo") ?? "").trim();
+    const contrasena = String(formData.get("contrasena") ?? "");
+    const { error: e2 } = await supabase.rpc("rotar_credenciales_cuenta", {
+      p_cuenta_id: cuentaId,
+      p_login_cifrado: correo ? cifrarSecreto(correo) : null,
+      p_login_fingerprint: correo ? huellaSecreto(correo) : null,
+      p_contrasena_cifrada: contrasena ? cifrarSecreto(contrasena) : null,
+    });
+    if (e2) return { error: e2.message };
+    await supabase.from("eventos_auditoria").insert({
+      actor_id: usuario!.id,
+      accion: "rotar_credenciales",
+      entidad: "cuentas",
+      entidad_id: cuentaId,
+      resultado: "ok",
+      metadata: { desde: "inventario_inline" },
+    });
+  }
+
+  // 3. Perfiles: nombre_<unidadId> y pin_<unidadId> (PIN vacío = no cambiar).
+  const ids: string[] = [];
+  const nombres: string[] = [];
+  const pins: (string | null)[] = [];
+  for (const [clave, valor] of formData.entries()) {
+    if (!clave.startsWith("nombre_")) continue;
+    const id = clave.slice("nombre_".length);
+    const pinPlano = String(formData.get(`pin_${id}`) ?? "").trim();
+    ids.push(id);
+    nombres.push(String(valor));
+    pins.push(pinPlano ? cifrarSecreto(pinPlano) : null);
+  }
+  if (ids.length > 0) {
+    const { error: e3 } = await supabase.rpc("actualizar_unidades", {
+      p_cuenta_id: cuentaId,
+      p_unidad_ids: ids,
+      p_nombres: nombres,
+      p_pins_cifrados: pins,
+    });
+    if (e3) return { error: e3.message };
+  }
+
+  // 4. Nombres de cliente: cliente_<clienteId> (RLS admin permite el update).
+  for (const [clave, valor] of formData.entries()) {
+    if (!clave.startsWith("cliente_")) continue;
+    const id = clave.slice("cliente_".length);
+    const nombre = String(valor).trim();
+    if (nombre) await supabase.from("clientes").update({ nombre }).eq("id", id);
+  }
+
+  // 5. Costo del ciclo vigente (corrección directa del importe en USDT).
+  const costoTxt = String(formData.get("costo") ?? "").trim();
+  if (costoTxt) {
+    const costo = Number(costoTxt.replace(",", "."));
+    if (Number.isFinite(costo) && costo >= 0) {
+      await supabase
+        .from("ciclos_proveedor")
+        .update({ costo_usdt: costo })
+        .eq("cuenta_id", cuentaId)
+        .eq("estado", "vigente");
+    }
+  }
+
+  revalidatePath(slug ? `/inventario/${slug}` : "/inventario");
+  return { ok: "Guardado." };
+}

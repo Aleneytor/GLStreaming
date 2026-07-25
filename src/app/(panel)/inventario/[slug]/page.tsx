@@ -74,7 +74,7 @@ export default async function PlataformaPage({
        unidades_inventario ( id, numero_slot, nombre_visible, secretos_unidad ( pin_cifrado ) ),
        asignaciones_inventario (
          id, alcance, unidad_id, fin,
-         suscripciones ( id, estado, clientes ( nombre ),
+         suscripciones ( id, estado, clientes ( id, nombre ),
            periodos_servicio ( fecha_renovacion, precio_comercial_usd ),
            vinculos_identidad_spotify ( fin,
              identidades_spotify ( login_cifrado, contrasena_cifrada ) ) ) )`,
@@ -100,6 +100,7 @@ export default async function PlataformaPage({
     );
     return {
       cliente: uno(susc.clientes)?.nombre ?? null,
+      clienteId: uno(susc.clientes) ? (susc.clientes as unknown as { id?: string }).id ?? null : null,
       estado: susc.estado as string,
       vence: ult?.fecha_renovacion ?? null,
       badge: dias === null ? null : badgeVencimiento(dias),
@@ -133,6 +134,9 @@ export default async function PlataformaPage({
       filas.push({
         clave: `${c.id}-completa`,
         cupo: "Cuenta completa",
+        unidadId: null,
+        nombreUnidad: null,
+        clienteId: v?.clienteId ?? null,
         cliente: v?.cliente ?? null,
         clienteLogin: v?.clienteLogin ?? null,
         clienteClave: v?.clienteClave ?? null,
@@ -151,6 +155,9 @@ export default async function PlataformaPage({
         filas.push({
           clave: `${c.id}-u${u.id}`,
           cupo: u.nombre_visible ?? `Cupo ${u.numero_slot}`,
+          unidadId: u.id as string,
+          nombreUnidad: u.nombre_visible ?? null,
+          clienteId: v?.clienteId ?? null,
           cliente: v?.cliente ?? null,
           clienteLogin: v?.clienteLogin ?? null,
           clienteClave: v?.clienteClave ?? null,
@@ -166,6 +173,9 @@ export default async function PlataformaPage({
         filas.push({
           clave: `${c.id}-madre`,
           cupo: "Uso de la madre",
+          unidadId: null,
+          nombreUnidad: null,
+          clienteId: v?.clienteId ?? null,
           cliente: v?.cliente ?? null,
           clienteLogin: v?.clienteLogin ?? null,
           clienteClave: v?.clienteClave ?? null,
@@ -181,6 +191,9 @@ export default async function PlataformaPage({
       filas.push({
         clave: `${c.id}-solo`,
         cupo: "—",
+        unidadId: null,
+        nombreUnidad: null,
+        clienteId: null,
         cliente: null,
         clienteLogin: null,
         clienteClave: null,
@@ -197,6 +210,8 @@ export default async function PlataformaPage({
       cuentaId: c.id as string,
       correo: desc(cred?.login_cifrado),
       contrasena: desc(cred?.contrasena_cifrada),
+      alias: c.alias ?? null,
+      notas: c.notas ?? null,
       cuentaEstado: c.estado as string,
       proveedor: uno(c.proveedores)?.nombre_o_alias ?? null,
       costo: (() => {
@@ -278,7 +293,7 @@ export default async function PlataformaPage({
             <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
               {g.nombre} ({g.cuentas.length} {g.cuentas.length === 1 ? "cuenta" : "cuentas"})
             </h2>
-            <TablaInventario cuentas={g.cuentas} />
+            <TablaInventario cuentas={g.cuentas} slug={slug} />
           </section>
         ))
       )}
