@@ -247,7 +247,9 @@ export default async function PlataformaPage({
     .filter((g) => g.cuentas.length > 0);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    // Ancho completo: es una tabla densa de datos, no texto para leer en
+    // columna. Así aprovecha toda la pantalla y no se corta el contenido.
+    <div className="w-full space-y-6">
       <div>
         <Link
           href="/inventario"
