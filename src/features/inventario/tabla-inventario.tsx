@@ -24,6 +24,8 @@ export type CupoFila = {
   clienteClave: string | null;
   /** PIN del perfil (Netflix y similares), descifrado. */
   pin: string | null;
+  /** Precio comercial en USD que pagó ese cliente (el ingreso). */
+  ingreso: number | null;
   vence: string | null;
   badge: BadgeVencimiento | null;
   suscEstado: string | null;
@@ -36,6 +38,8 @@ export type BloqueCuenta = {
   contrasena: string;
   cuentaEstado: string;
   proveedor: string | null;
+  /** Costo del ciclo vigente en USDT (lo que cuesta la cuenta madre). */
+  costo: number | null;
   filas: CupoFila[];
 };
 
@@ -60,6 +64,7 @@ export function TablaInventario({ cuentas }: { cuentas: BloqueCuenta[] }) {
             <th className="px-3 py-2 font-medium">Cupo</th>
             <th className="px-3 py-2 font-medium">Cliente</th>
             <th className="px-3 py-2 font-medium">Acceso del cliente</th>
+            <th className="px-3 py-2 text-right font-medium">Ingreso</th>
             <th className="px-3 py-2 font-medium">Vence</th>
             <th className="px-3 py-2 font-medium"></th>
           </tr>
@@ -89,11 +94,10 @@ export function TablaInventario({ cuentas }: { cuentas: BloqueCuenta[] }) {
                           {cta.cuentaEstado}
                         </span>
                       )}
-                      {cta.proveedor && (
-                        <span className="mt-0.5 block text-[10px] text-neutral-400">
-                          {cta.proveedor}
-                        </span>
-                      )}
+                      <span className="mt-0.5 block text-[10px] text-neutral-400">
+                        {cta.proveedor ?? "sin proveedor"}
+                        {cta.costo != null && ` · costo $${cta.costo.toFixed(2)}`}
+                      </span>
                     </td>
                     <td
                       rowSpan={cta.filas.length}
@@ -130,6 +134,13 @@ export function TablaInventario({ cuentas }: { cuentas: BloqueCuenta[] }) {
                     <span className="text-xs text-neutral-500 dark:text-neutral-400">
                       PIN <Copiable texto={f.pin} />
                     </span>
+                  ) : (
+                    <span className="text-neutral-300 dark:text-neutral-700">—</span>
+                  )}
+                </td>
+                <td className="whitespace-nowrap px-3 py-1.5 text-right tabular-nums">
+                  {f.ingreso != null ? (
+                    `$${f.ingreso.toFixed(2)}`
                   ) : (
                     <span className="text-neutral-300 dark:text-neutral-700">—</span>
                   )}

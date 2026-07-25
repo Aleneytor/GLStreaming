@@ -69,12 +69,13 @@ export default async function PlataformaPage({
       `id, alias, capacidad, capacidad_vendible_habilitada, estado, created_at, notas,
        productos_plataforma!inner ( id, nombre, codigo, tipo_inventario, plataforma_id ),
        proveedores ( nombre_o_alias ),
+       ciclos_proveedor ( costo_usdt, estado ),
        credenciales_cuenta ( login_cifrado, contrasena_cifrada, eliminada_at ),
        unidades_inventario ( id, numero_slot, nombre_visible, secretos_unidad ( pin_cifrado ) ),
        asignaciones_inventario (
          id, alcance, unidad_id, fin,
          suscripciones ( id, estado, clientes ( nombre ),
-           periodos_servicio ( fecha_renovacion ),
+           periodos_servicio ( fecha_renovacion, precio_comercial_usd ),
            vinculos_identidad_spotify ( fin,
              identidades_spotify ( login_cifrado, contrasena_cifrada ) ) ) )`,
     )
@@ -102,6 +103,7 @@ export default async function PlataformaPage({
       estado: susc.estado as string,
       vence: ult?.fecha_renovacion ?? null,
       badge: dias === null ? null : badgeVencimiento(dias),
+      ingreso: ult?.precio_comercial_usd == null ? null : Number(ult.precio_comercial_usd),
       clienteLogin: ident ? desc(ident.login_cifrado) : null,
       clienteClave: ident ? desc(ident.contrasena_cifrada) : null,
     };
@@ -135,6 +137,7 @@ export default async function PlataformaPage({
         clienteLogin: v?.clienteLogin ?? null,
         clienteClave: v?.clienteClave ?? null,
         pin: null,
+        ingreso: v?.ingreso ?? null,
         vence: v?.vence ?? null,
         badge: v?.badge ?? null,
         suscEstado: v?.estado ?? null,
@@ -152,6 +155,7 @@ export default async function PlataformaPage({
           clienteLogin: v?.clienteLogin ?? null,
           clienteClave: v?.clienteClave ?? null,
           pin: desc(uno(u.secretos_unidad)?.pin_cifrado) || null,
+          ingreso: v?.ingreso ?? null,
           vence: v?.vence ?? null,
           badge: v?.badge ?? null,
           suscEstado: v?.estado ?? null,
@@ -166,6 +170,7 @@ export default async function PlataformaPage({
           clienteLogin: v?.clienteLogin ?? null,
           clienteClave: v?.clienteClave ?? null,
           pin: null,
+          ingreso: v?.ingreso ?? null,
           vence: v?.vence ?? null,
           badge: v?.badge ?? null,
           suscEstado: v?.estado ?? null,
@@ -180,6 +185,7 @@ export default async function PlataformaPage({
         clienteLogin: null,
         clienteClave: null,
         pin: null,
+        ingreso: null,
         vence: null,
         badge: null,
         suscEstado: null,
@@ -193,6 +199,10 @@ export default async function PlataformaPage({
       contrasena: desc(cred?.contrasena_cifrada),
       cuentaEstado: c.estado as string,
       proveedor: uno(c.proveedores)?.nombre_o_alias ?? null,
+      costo: (() => {
+        const ciclo = (c.ciclos_proveedor ?? []).find((x) => x.estado === "vigente");
+        return ciclo ? Number(ciclo.costo_usdt) : null;
+      })(),
       filas,
     });
     grupos.set(prod.id, grupo);
