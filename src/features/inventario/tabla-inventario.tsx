@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { BadgeVencimiento } from "@/domain/fechas";
 import { PanelEditarCuenta } from "./panel-editar-cuenta";
+import { moverCuentaAction } from "./actions";
 
 /**
  * Tabla densa del inventario (solo admin), pensada para ver MUCHOS clientes de
@@ -46,6 +47,30 @@ export type BloqueCuenta = {
 };
 
 const COLUMNAS = 8;
+
+/** Botones para reordenar el bloque: ▲ ▼ y llevar al inicio/final. */
+function ControlesOrden({ cuentaId, slug }: { cuentaId: string; slug: string }) {
+  const btn =
+    "rounded px-1 text-neutral-400 transition hover:bg-neutral-200 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-white";
+  return (
+    <form action={moverCuentaAction} className="flex items-center gap-0.5">
+      <input type="hidden" name="cuenta_id" value={cuentaId} />
+      <input type="hidden" name="slug" value={slug} />
+      <button type="submit" name="accion" value="inicio" className={btn} title="Al inicio">
+        ⤒
+      </button>
+      <button type="submit" name="accion" value="subir" className={btn} title="Subir">
+        ▲
+      </button>
+      <button type="submit" name="accion" value="bajar" className={btn} title="Bajar">
+        ▼
+      </button>
+      <button type="submit" name="accion" value="final" className={btn} title="Al final">
+        ⤓
+      </button>
+    </form>
+  );
+}
 
 function Copiable({ texto }: { texto: string | null }) {
   if (!texto) return <span className="text-neutral-300 dark:text-neutral-700">—</span>;
@@ -203,13 +228,16 @@ function ContinuoCuenta({
           </td>
           {i === 0 ? (
             <td rowSpan={cta.filas.length} className="whitespace-nowrap px-3 py-1.5 align-top text-right">
-              <button
-                type="button"
-                onClick={onEditar}
-                className="text-xs text-neutral-500 underline underline-offset-2 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
-              >
-                {abierto ? "Cerrar" : "Editar"}
-              </button>
+              <div className="flex items-center justify-end gap-1">
+                <ControlesOrden cuentaId={cta.cuentaId} slug={slug} />
+                <button
+                  type="button"
+                  onClick={onEditar}
+                  className="ml-1 text-xs text-neutral-500 underline underline-offset-2 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+                >
+                  {abierto ? "Cerrar" : "Editar"}
+                </button>
+              </div>
             </td>
           ) : null}
         </tr>

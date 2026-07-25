@@ -441,3 +441,18 @@ export async function guardarCuentaInlineAction(
   revalidatePath(slug ? `/inventario/${slug}` : "/inventario");
   return { ok: "Guardado." };
 }
+
+/** Sube/baja o manda a un extremo una cuenta dentro de su producto. */
+export async function moverCuentaAction(formData: FormData): Promise<void> {
+  const usuario = await obtenerUsuarioActual();
+  if (!esAdmin(usuario)) return;
+
+  const cuentaId = String(formData.get("cuenta_id") ?? "");
+  const accion = String(formData.get("accion") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  if (!cuentaId || !["subir", "bajar", "inicio", "final"].includes(accion)) return;
+
+  const supabase = await createClient();
+  await supabase.rpc("mover_cuenta", { p_cuenta_id: cuentaId, p_accion: accion });
+  revalidatePath(slug ? `/inventario/${slug}` : "/inventario");
+}

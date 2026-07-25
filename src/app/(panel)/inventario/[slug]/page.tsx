@@ -83,7 +83,7 @@ export default async function PlataformaPage({
 
   if (estado) consulta = consulta.eq("estado", estado);
 
-  const { data: cuentas } = await consulta.order("created_at", { ascending: false });
+  const { data: cuentas } = await consulta.order("orden", { ascending: false });
 
   // --- Aplanado: una fila por cupo vendible (o por cuenta si es indivisible) --
   type CuentaFila = NonNullable<typeof cuentas>[number];

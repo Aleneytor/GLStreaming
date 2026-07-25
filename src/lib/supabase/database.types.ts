@@ -788,6 +788,7 @@ export type Database = {
           estado: string
           id: string
           notas: string | null
+          orden: number | null
           producto_plataforma_id: string
           proveedor_operativo_id: string | null
           reutilizable: boolean
@@ -803,6 +804,7 @@ export type Database = {
           estado?: string
           id?: string
           notas?: string | null
+          orden?: number | null
           producto_plataforma_id: string
           proveedor_operativo_id?: string | null
           reutilizable?: boolean
@@ -818,6 +820,7 @@ export type Database = {
           estado?: string
           id?: string
           notas?: string | null
+          orden?: number | null
           producto_plataforma_id?: string
           proveedor_operativo_id?: string | null
           reutilizable?: boolean
@@ -3011,6 +3014,10 @@ export type Database = {
       }
       marcar_periodo_cortesia: {
         Args: { p_periodo_id: string }
+        Returns: undefined
+      }
+      mover_cuenta: {
+        Args: { p_accion: string; p_cuenta_id: string }
         Returns: undefined
       }
       reabrir_mes: {
