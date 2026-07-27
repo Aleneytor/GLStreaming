@@ -214,27 +214,31 @@ export default async function PlataformaPage({
       }
     } else if (asignacionCompleta) {
       const v = datosVenta(asignacionCompleta);
-      filas.push({
-        slotNumber: 1,
-        clave: `${c.id}-completa`,
-        cupo: "Cuenta Completa",
-        unidadId: null,
-        nombreUnidad: null,
-        suscripcionId: v?.suscripcionId ?? null,
-        clienteId: v?.clienteId ?? null,
-        cliente: v?.cliente ?? null,
-        celular: v?.celular ?? null,
-        vendio: v?.vendio ?? null,
-        clienteLogin: v?.clienteLogin ?? null,
-        clienteClave: v?.clienteClave ?? null,
-        pin: null,
-        ingreso: v?.ingreso ?? null,
-        inicio: v?.inicio ?? null,
-        vence: v?.vence ?? null,
-        dias: v?.dias ?? null,
-        badge: v?.badge ?? null,
-        suscEstado: v?.estado ?? null,
-      });
+      const cap = Math.max(c.capacidad ?? 1, 5);
+      for (let slot = 1; slot <= cap; slot++) {
+        const esPrimerSlot = slot === 1;
+        filas.push({
+          slotNumber: slot,
+          clave: `${c.id}-completa-${slot}`,
+          cupo: esPrimerSlot ? "Cuenta Completa" : `Perfil ${slot}`,
+          unidadId: null,
+          nombreUnidad: null,
+          suscripcionId: v?.suscripcionId ?? null,
+          clienteId: v?.clienteId ?? null,
+          cliente: v?.cliente ?? null,
+          celular: v?.celular ?? null,
+          vendio: v?.vendio ?? null,
+          clienteLogin: v?.clienteLogin ?? null,
+          clienteClave: v?.clienteClave ?? null,
+          pin: null,
+          ingreso: esPrimerSlot ? (v?.ingreso ?? null) : null,
+          inicio: v?.inicio ?? null,
+          vence: v?.vence ?? null,
+          dias: v?.dias ?? null,
+          badge: v?.badge ?? null,
+          suscEstado: v?.estado ?? null,
+        });
+      }
     } else {
       filas.push({
         slotNumber: 1,
