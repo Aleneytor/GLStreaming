@@ -277,7 +277,23 @@ búsqueda cubre nombre, teléfono, plataforma y vendedor, y existen filtros para
 próximos cinco días, vencidos y clientes sin WhatsApp. El alta manual queda
 secundaria porque el flujo normal crea al cliente al vender.
 
-Validación acumulada: **144 pruebas unitarias**, **15 suites SQL** y typecheck en verde; el último
+El importador de `/migracion` se amplió de forma compatible: las hojas anteriores
+siguen entrando sin cambios y se mantienen los casos especiales de celdas
+combinadas, Canva, Spotify, cuenta completa, costo y renovación de proveedor. Si
+la hoja trae las columnas opcionales, ahora también carga alias/notas/estado de
+cuenta, notas de cliente y renovación, clasificación/alias/base de tasa del
+vendedor y teléfono/tipo/notas del proveedor. Una hoja antigua que solo indica
+`Vendió` reutiliza la clasificación que ya existe en Catálogo; no la pisa.
+
+Se corrigió además una inconsistencia financiera del importador: los importes en
+USD ya no se convierten todos con BCV. La vista previa y el guardado usan BCV en
+venta directa o intermediario y paralela únicamente para el revendedor marcado,
+igual que las ventas y renovaciones normales. Si falta la tasa que corresponde,
+la importación se bloquea antes de crear los servicios. El selector de modalidad
+también queda sincronizado al cambiar de producto, evitando reutilizar la
+modalidad de la plataforma anterior.
+
+Validación acumulada: **148 pruebas unitarias**, **15 suites SQL** y typecheck en verde; el último
 build de producción también pasó. PostgreSQL real contiene controles con Gmail para ambas
 variantes de Spotify. Queda pendiente una revisión visual manual completa en
 teléfonos reales de todas las plataformas y sus modales.

@@ -125,6 +125,7 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **Confirmación visible de renovación**: tras el éxito, `ModalGestionVenta` muestra un aviso verde con el período creado y reemplaza las acciones por `Listo`; el botón de confirmar desaparece para impedir una renovación duplicada.
 - **Cuentas completas compatibles y fusionadas en todas las plataformas**: la detección prioriza `alcance='cuenta'`, pero conserva compatibilidad estricta con 24 ventas importadas antiguas de Netflix, Disney+, HBO, Prime Video y Crunchyroll cuya primera unidad tiene exactamente `Cuenta Completa`/`Completa`. En escritorio mantiene sus filas numeradas de 23px (cinco filas = 115px) y fusiona los datos con `rowSpan`; en móvil muestra una sola tarjeta. Spotify individual queda excluido porque es `recurso_indivisible`.
 - **Pagos de proveedor por lote (migración `0036`)**: el inventario permite seleccionar todas las cuentas visibles de un mismo proveedor, desmarcar excepciones y editar el costo de cada ciclo. Comparten una sola `fecha_pago` y un `lote_pago_id`, pero cada ciclo nuevo comienza en la `proxima_renovacion` individual ya guardada. La operación es atómica y rechaza mezclar proveedores. El pago individual también usa `registrar_renovacion_y_pago`, por lo que ahora sí crea el egreso en Caja.
+- **Importador ampliado sin romper el Excel anterior**: `/migracion` conserva todas las columnas y reglas históricas (encabezados libres, celdas combinadas, Canva, Spotify, cuentas completas, costos y renovaciones) y ahora también puede leer `Alias Cuenta`, `Notas Cuenta`, `Estado Cuenta`, `Notas Cliente`, `Nota Renovación`, `Alias/Tipo/Tasa Vendedor` y `Tipo/Teléfono/Notas Proveedor`. Son columnas opcionales. La vista previa y el guardado comparten la decisión de tasa: directa/intermediario usa BCV y un revendedor marcado usa paralela. Los vendedores existentes conservan su configuración si la hoja vieja solo trae `Vendió`; una configuración explícita sí la actualiza. El selector de modalidad se reinicia al cambiar de producto para no enviar un UUID de la variante anterior.
 - **Catálogo convertido en configuración operativa responsive**: `/catalogo` usa un resumen del negocio y cuatro módulos por tarjetas (`Productos`, `Plataformas`, `Vendedores`, `Proveedores`). Los formularios permanecen cerrados hasta editar. El vendedor ya expone y persiste `tipo` (`revendedor`/`intermediario`) y `cobra_en_paralela`, respetando que el intermediario siempre sea BCV.
 - **Clientes convertido en cartera operativa mobile-first**: `/clientes` muestra servicios activos, vencimiento prioritario, estados próximos/vencidos, WhatsApp y acceso directo al inventario filtrado por cliente. Busca también por plataforma y vendedor; crear un cliente manual queda como acción secundaria porque el flujo normal lo crea desde la venta.
 - **Simplificación de Menú Principal**: Se removió la sección duplicada `Vencimientos` del menú de navegación (toda la gestión central de vencimientos, renovaciones y cobros se realiza unificadamente desde `Operaciones` / `/dashboard`), dejando un flujo más limpio.
@@ -270,6 +271,7 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 ---
 *Pendiente destacado: terminar la revisión visual responsive de plataformas y modales.*
 
-*Última actualización: 2026-07-27 (Catálogo y Clientes rediseñados como módulos
-operativos responsive; pagos de proveedor individuales y por lote corregidos;
-144 unitarias, 15 suites SQL y typecheck en verde).*
+*Última actualización: 2026-07-27 (importador compatible ampliado con metadatos
+operativos y base BCV/paralela correcta; Catálogo y Clientes responsive; pagos
+de proveedor individuales y por lote corregidos; 148 unitarias, 15 suites SQL
+y typecheck en verde).*
