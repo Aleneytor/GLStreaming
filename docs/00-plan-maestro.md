@@ -228,6 +228,9 @@ pantallas menores de `768px`. Netflix y Spotify tienen un selector URL-first par
 alternar sus productos (`Cuenta estándar` / `Perfil extra` e `Individual` /
 `Familiar`) sin modificar datos. En Spotify la tarjeta muestra también el Gmail
 pagador y su origen, consultados por `controles_pago_spotify.cobertura_cuenta_id`.
+Cada venta muestra además una franja táctil de vencimiento con estado relativo y
+fecha legible; tocarla abre la gestión para renovar o cobrar sin depender de la
+tabla de escritorio.
 
 Validación de esta rebanada: **129 pruebas unitarias**, typecheck y build de
 producción en verde. PostgreSQL real contiene controles con Gmail para ambas

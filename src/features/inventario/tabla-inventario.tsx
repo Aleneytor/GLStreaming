@@ -96,6 +96,43 @@ function formatearFecha(fecha: string | null): string {
   return `${Number(partes[2])}/${Number(partes[1])}/${partes[0]}`;
 }
 
+function alertaVencimientoMovil(dias: number | null) {
+  if (dias === null) {
+    return {
+      texto: "Sin fecha de vencimiento",
+      clase:
+        "border-neutral-300 bg-neutral-100 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
+    };
+  }
+  if (dias > 5) {
+    return {
+      texto: `Vence en ${dias} días`,
+      clase:
+        "border-emerald-200 bg-emerald-100 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200",
+    };
+  }
+  if (dias > 0) {
+    return {
+      texto: `Vence en ${dias} ${dias === 1 ? "día" : "días"}`,
+      clase:
+        "border-amber-300 bg-amber-100 text-amber-950 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200",
+    };
+  }
+  if (dias === 0) {
+    return {
+      texto: "Vence hoy · renovar",
+      clase:
+        "border-red-500 bg-red-600 text-white dark:border-red-500 dark:bg-red-700",
+    };
+  }
+  const vencidoHace = Math.abs(dias);
+  return {
+    texto: `Venció hace ${vencidoHace} ${vencidoHace === 1 ? "día" : "días"}`,
+    clase:
+      "border-red-400 bg-red-100 text-red-900 dark:border-red-800 dark:bg-red-950/60 dark:text-red-200",
+  };
+}
+
 export function TablaInventario({
   cuentas,
   slug,
@@ -741,6 +778,7 @@ function TarjetaCuentaMovil({
         {cta.filas.map((fila) => {
           const estaVendido = Boolean(fila.suscripcionId);
           const whatsappLimpio = fila.celular?.replace(/[^0-9+]/g, "");
+          const alertaVencimiento = alertaVencimientoMovil(fila.dias);
 
           return (
             <div
@@ -799,13 +837,24 @@ function TarjetaCuentaMovil({
                         ${fila.ingreso.toFixed(2)}
                       </div>
                     )}
-                    {fila.vence && (
-                      <div className="text-neutral-500">
-                        Vence: {fila.vence}
-                      </div>
-                    )}
                   </div>
                 </div>
+              )}
+
+              {estaVendido && (
+                <button
+                  type="button"
+                  onClick={() => onGestionarVenta(fila)}
+                  className={`flex min-h-10 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-xs font-bold transition active:scale-[0.99] ${alertaVencimiento.clase}`}
+                  aria-label={`${alertaVencimiento.texto}. Gestionar renovación`}
+                >
+                  <span>⏰ {alertaVencimiento.texto}</span>
+                  {fila.vence && (
+                    <span className="shrink-0 font-mono text-[11px] opacity-80">
+                      {formatearFecha(fila.vence)}
+                    </span>
+                  )}
+                </button>
               )}
 
               {whatsappLimpio && (

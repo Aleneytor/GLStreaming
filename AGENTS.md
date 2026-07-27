@@ -118,6 +118,7 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **Vista Responsive en Móviles (Mobile-First)**: En teléfonos y pantallas pequeñas (`< 768px`), el inventario se muestra mediante **tarjetas apiladas por cuenta (`TarjetaCuentaMovil`)** con botones táctiles grandes (`⚡ Vender` / `⚙️ Gestionar`) y enlaces directos a WhatsApp, evitando desbordamientos horizontales de 16 columnas. En escritorio (`>= 768px`) se mantiene la densidad de tabla Excel.
 - **Selector de variantes en Netflix y Spotify**: `/inventario/[slug]` expone un selector URL-first para alternar `Cuenta estándar` / `Perfil extra` y `Individual` / `Familiar`, conservando búsqueda y estado. Son productos distintos en PostgreSQL; el selector solo filtra la vista y no transforma cuentas.
 - **Gmail pagador de Spotify en móvil**: `TarjetaCuentaMovil` muestra el Gmail y su origen. La página consulta `controles_pago_spotify` directamente por `cobertura_cuenta_id`; si una cuenta no tiene control registrado, muestra «No registrado».
+- **Vencimiento visible y accionable en móvil**: cada venta de `TarjetaCuentaMovil` muestra una franja con `Vence en N días`, `Vence hoy · renovar` o `Venció hace N días`, además de la fecha formateada. La franja abre `ModalGestionVenta` al tocarla.
 - **Detección Limpia de Cuentas Completas**: Se simplificó `page.tsx` para basarse únicamente en `alcance === 'cuenta'` en `asignaciones_inventario`, eliminando la inferencia frágil por texto en `nombre_visible`.
 - **Simplificación de Menú Principal**: Se removió la sección duplicada `Vencimientos` del menú de navegación (toda la gestión central de vencimientos, renovaciones y cobros se realiza unificadamente desde `Operaciones` / `/dashboard`), dejando un flujo más limpio.
 - **Corrección de Firma `registrar_cobro_cliente` (Migración `0033`)**: Se ajustó la llamada interna dentro de `vender_unidad` para coincidir con la firma exacta de `registrar_cobro_cliente` en PostgreSQL (`p_periodo_id`, `p_monto_ves`, `p_referencia`, `p_monto_usd`).
@@ -266,6 +267,6 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 ---
 *Pendiente destacado: terminar la revisión visual responsive de plataformas y modales.*
 
-*Última actualización: 2026-07-27 (selector de variantes Netflix/Spotify y Gmail
-pagador de Spotify incorporados a la vista móvil; 129 unitarias, typecheck y build
-en verde).*
+*Última actualización: 2026-07-27 (selector de variantes, Gmail pagador y alerta
+accionable de vencimiento incorporados a la vista móvil; 129 unitarias, typecheck
+y build en verde).*
