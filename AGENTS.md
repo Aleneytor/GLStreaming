@@ -114,6 +114,7 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 ## Estado actual
 
 **Gestión Directa, Registro Flexible y Revendedores en Inventario (COMPLETO 2026-07-27).**
+- **Simplificación de Menú Principal**: Se removió la sección duplicada `Vencimientos` del menú de navegación (toda la gestión central de vencimientos, renovaciones y cobros se realiza unificadamente desde `Operaciones` / `/dashboard`), dejando un flujo más limpio.
 - **Corrección de Firma `registrar_cobro_cliente` (Migración `0033`)**: Se ajustó la llamada interna dentro de `vender_unidad` para coincidir con la firma exacta de `registrar_cobro_cliente` en PostgreSQL (`p_periodo_id`, `p_monto_ves`, `p_referencia`, `p_monto_usd`).
 - **Eliminación de Sobrecargas Duplicadas de Funciones**: Se depuraron las versiones/sobrecargas anteriores de `vender_unidad` en Postgres mediante un bloque `DO`, dejando una única versión limpia e inambigua para llamadas RPC.
 - **Auto-preparación de Perfiles en Venta**: Si un perfil estaba deshabilitado o en estado `por_limpiar` tras cancelar una venta previa, la función `vender_unidad` lo habilita y marca como `lista` automáticamente al venderlo, eliminando bloqueos de limpieza.
@@ -126,4 +127,4 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **129 pruebas unitarias** pasando en verde y chequeo de tipos TypeScript sin errores.
 
 ---
-*Última actualización: 2026-07-27 (Corrección de llamadas internas en Postgres y migraciones sincronizadas).*
+*Última actualización: 2026-07-27 (Remoción del menú Vencimientos y unificación en Operaciones).*
