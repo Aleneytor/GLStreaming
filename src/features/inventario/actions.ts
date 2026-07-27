@@ -491,6 +491,7 @@ export async function registrarPagoProveedorRapidoAction(
 
   const cuentaId = String(formData.get("cuenta_id") ?? "");
   const costoUsdtTxt = String(formData.get("costo_usdt") ?? "").trim();
+  const fechaInicio = String(formData.get("fecha_inicio") ?? "").trim();
   const slug = String(formData.get("slug") ?? "");
 
   if (!cuentaId || !costoUsdtTxt) return { error: "Indica el monto pagado al proveedor." };
@@ -505,7 +506,7 @@ export async function registrarPagoProveedorRapidoAction(
   const { error } = await supabase.rpc("registrar_ciclo_proveedor", {
     p_cuenta_id: cuentaId,
     p_costo_usdt: costoUsdt,
-    p_inicio: new Date().toISOString().slice(0, 10),
+    p_inicio: fechaInicio || new Date().toISOString().slice(0, 10),
     p_dia_ancla: null,
     p_referencia: "pago_rapido_inventario",
   });

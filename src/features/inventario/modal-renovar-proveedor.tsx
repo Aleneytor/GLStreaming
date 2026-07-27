@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { registrarPagoProveedorRapidoAction } from "./actions";
 
 export function ModalRenovarProveedorRapido({
@@ -17,6 +17,17 @@ export function ModalRenovarProveedorRapido({
   onCerrar: () => void;
 }) {
   const [estado, action, pendiente] = useActionState(registrarPagoProveedorRapidoAction, null);
+
+  const hoyFormato = new Date().toISOString().slice(0, 10);
+
+  useEffect(() => {
+    if (estado?.ok) {
+      const timer = setTimeout(() => {
+        onCerrar();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [estado, onCerrar]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
@@ -45,6 +56,22 @@ export function ModalRenovarProveedorRapido({
 
           <div>
             <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+              Fecha de Inicio del Ciclo / Día de Pago *
+            </label>
+            <input
+              type="date"
+              name="fecha_inicio"
+              required
+              defaultValue={hoyFormato}
+              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-mono text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+            />
+            <p className="mt-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+              Selecciona el día exacto en el que le pagaste al proveedor.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
               Monto Pagado al Proveedor ($ USDT) *
             </label>
             <input
@@ -56,13 +83,19 @@ export function ModalRenovarProveedorRapido({
               className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-mono text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
             />
             <p className="mt-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              Al confirmar, se extienden 30 días la vigencia de la cuenta con el proveedor y se registra el egreso en Finanzas.
+              Al confirmar, se extienden 30 días a partir de la fecha seleccionada y se registra el egreso en Finanzas.
             </p>
           </div>
 
           {estado?.error && (
             <p className="rounded-md bg-red-50 p-2 text-xs font-medium text-red-700 dark:bg-red-950/40 dark:text-red-300">
               ⚠️ {estado.error}
+            </p>
+          )}
+
+          {estado?.ok && (
+            <p className="rounded-md bg-emerald-50 p-2 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+              ✅ {estado.ok}
             </p>
           )}
 
