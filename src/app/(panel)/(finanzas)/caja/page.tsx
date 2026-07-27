@@ -67,14 +67,16 @@ export default async function CajaPage({
   const num = (v: unknown) => Number(v ?? 0);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Caja</h1>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Día de negocio en Caracas. El dinero que entró y salió hoy es una cosa;
-          lo vendido y lo devengado son otras dos.
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <header className="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-5 shadow-sm sm:p-6 dark:border-emerald-950 dark:from-emerald-950/30 dark:via-neutral-950 dark:to-teal-950/20">
+        <div className="flex items-start gap-4">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-emerald-100 text-xl text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">▣</span>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Resumen diario</h1>
+            <p className="mt-1 text-sm leading-6 text-neutral-600 dark:text-neutral-300">Lo que realmente entró y salió de tu negocio durante el día.</p>
+          </div>
+        </div>
+      </header>
 
       {/* Navegación por día */}
       <div className="flex items-center justify-between gap-2">
@@ -99,23 +101,28 @@ export default async function CajaPage({
       </div>
 
       {/* 1. Caja del día */}
-      <section className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Entró</p>
+      <section>
+        <div className="mb-3">
+          <h2 className="font-semibold">Dinero movido</h2>
+          <p className="text-xs text-neutral-500">Cuenta solo pagos registrados, no promesas ni servicios pendientes.</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/30">
+          <p className="text-sm text-emerald-700 dark:text-emerald-300">Recibiste</p>
           <p className="text-2xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
             {bs(totalEntradas)}
           </p>
           <p className="text-xs text-neutral-500">Bs</p>
         </div>
-        <div className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Salió</p>
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30">
+          <p className="text-sm text-red-700 dark:text-red-300">Pagaste</p>
           <p className="text-2xl font-semibold tabular-nums text-red-600 dark:text-red-400">
             {bs(totalSalidas)}
           </p>
           <p className="text-xs text-neutral-500">Bs</p>
         </div>
-        <div className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Flujo neto</p>
+        <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">Diferencia del día</p>
           <p
             className={`text-2xl font-semibold tabular-nums ${
               flujo < 0 ? "text-red-600 dark:text-red-400" : ""
@@ -125,12 +132,13 @@ export default async function CajaPage({
           </p>
           <p className="text-xs text-neutral-500">Bs</p>
         </div>
+        </div>
       </section>
 
       {/* 2. Ventas del día (hecho comercial, no caja) */}
       <section className="space-y-2">
         <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-          Ventas del día
+          Actividad comercial
         </h2>
         <div className="flex flex-wrap gap-5 rounded-xl border border-neutral-200 p-4 text-sm dark:border-neutral-800">
           <div>
@@ -154,9 +162,8 @@ export default async function CajaPage({
             </p>
           </div>
         </div>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          Vender no es cobrar: una venta de hoy puede cobrarse mañana y su
-          ingreso se devenga durante los días de servicio.
+        <p className="rounded-xl bg-sky-50 px-3 py-2 text-xs text-sky-800 dark:bg-sky-950/30 dark:text-sky-300">
+          Esta sección cuenta servicios vendidos o renovados hoy. Puede no coincidir con “Recibiste” si un pago quedó pendiente o si hoy cobraste algo de otro día.
         </p>
       </section>
 
@@ -164,9 +171,10 @@ export default async function CajaPage({
       {r && (
         <section className="space-y-2">
           <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Resultado del día (devengado)
+            Ganancia generada por los servicios hoy
           </h2>
-          <dl className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 text-sm dark:divide-neutral-800 dark:border-neutral-800">
+          <p className="text-xs text-neutral-500">Distribuye ingresos y costos según los días de servicio que corresponden a hoy; no significa efectivo recibido hoy.</p>
+          <dl className="divide-y divide-neutral-200 rounded-2xl border border-neutral-200 bg-white text-sm dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-950">
             {[
               ["Ingreso cobrado devengado", `${bs(num(r.ingreso_cobrado_devengado_ves))} Bs`],
               ["Costo del proveedor devengado", `${bs(num(r.costo_proveedor_devengado_ves))} Bs`],
@@ -191,7 +199,7 @@ export default async function CajaPage({
       {/* 4. Detalle de movimientos */}
       <section className="space-y-2">
         <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-          Movimientos ({movimientos?.length ?? 0})
+          Detalle del dinero ({movimientos?.length ?? 0})
         </h2>
         {(movimientos?.length ?? 0) === 0 ? (
           <p className="rounded-xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">

@@ -72,18 +72,17 @@ export default async function CierrePage({
 
   const FILAS: [string, string][] = fuente
     ? [
-        ["Ingreso contractual (ventas del mes)", `${num(fuente.ingreso_contractual_usd).toFixed(2)} USD`],
-        ["Ingreso comercial devengado", `${num(fuente.ingreso_comercial_devengado_usd).toFixed(2)} USD`],
-        ["Bs esperados devengados", `${bs(num(fuente.ves_esperados_devengados_clientes))} Bs`],
-        ["Ingreso cobrado devengado", `${bs(num(fuente.ingreso_cobrado_devengado_ves))} Bs`],
-        ["Costo del proveedor devengado", `${num(fuente.costo_proveedor_devengado_usdt).toFixed(2)} USDT`],
-        ["Costo del proveedor devengado (Bs)", `${bs(num(fuente.costo_proveedor_devengado_ves))} Bs`],
-        ["Margen bruto", `${bs(num(fuente.margen_bruto_ves))} Bs`],
-        ["Gastos operativos", `${num(fuente.gastos_operativos_usdt).toFixed(2)} USDT`],
-        ["Ajustes por devoluciones", `${bs(num(fuente.ajustes_clientes_ves))} Bs`],
-        ["Resultado operativo", `${bs(num(fuente.resultado_operativo_ves))} Bs`],
+        ["Servicios vendidos en el mes", `${num(fuente.ingreso_contractual_usd).toFixed(2)} USD`],
+        ["Ingreso correspondiente a este mes", `${num(fuente.ingreso_comercial_devengado_usd).toFixed(2)} USD`],
+        ["Ingreso cobrado que corresponde a este mes", `${bs(num(fuente.ingreso_cobrado_devengado_ves))} Bs`],
+        ["Costo de proveedores correspondiente al mes", `${num(fuente.costo_proveedor_devengado_usdt).toFixed(2)} USDT`],
+        ["Costo de proveedores convertido a Bs", `${bs(num(fuente.costo_proveedor_devengado_ves))} Bs`],
+        ["Ganancia antes de otros gastos", `${bs(num(fuente.margen_bruto_ves))} Bs`],
+        ["Otros gastos del negocio", `${num(fuente.gastos_operativos_usdt).toFixed(2)} USDT`],
+        ["Devoluciones y correcciones", `${bs(num(fuente.ajustes_clientes_ves))} Bs`],
+        ["Ganancia final estimada", `${bs(num(fuente.resultado_operativo_ves))} Bs`],
         [
-          "Resultado económico (a paralela)",
+          "Ganancia final expresada en USD a paralela",
           `${num(fuente.resultado_operativo_economico_usd_paralela).toFixed(2)} USD`,
         ],
       ]
@@ -125,14 +124,21 @@ export default async function CierrePage({
   );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Cierre mensual</h1>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Cada período y cada ciclo se reparten por los días reales que caen
-          dentro del mes. Nada se revaloriza con la tasa de hoy.
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <header className="rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-5 shadow-sm sm:p-6 dark:border-violet-950 dark:from-violet-950/30 dark:via-neutral-950 dark:to-fuchsia-950/20">
+        <div className="flex items-start gap-4">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-violet-100 text-xl text-violet-700 dark:bg-violet-950 dark:text-violet-300">◫</span>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Resumen mensual</h1>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-neutral-600 dark:text-neutral-300">Cuánto vendiste, cuánto costaron los servicios y cuál fue la ganancia estimada del mes.</p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-2 text-xs sm:grid-cols-3">
+          <div className="rounded-xl bg-white/80 p-3 ring-1 ring-violet-100 dark:bg-neutral-950/60 dark:ring-violet-950"><strong className="block">1. Las cifras en vivo</strong><span className="text-neutral-500">Cambian al registrar pagos o gastos.</span></div>
+          <div className="rounded-xl bg-white/80 p-3 ring-1 ring-violet-100 dark:bg-neutral-950/60 dark:ring-violet-950"><strong className="block">2. Guardar borrador</strong><span className="text-neutral-500">Conserva una revisión provisional.</span></div>
+          <div className="rounded-xl bg-white/80 p-3 ring-1 ring-violet-100 dark:bg-neutral-950/60 dark:ring-violet-950"><strong className="block">3. Confirmar el mes</strong><span className="text-neutral-500">Congela la versión oficial al terminar.</span></div>
+        </div>
+      </header>
 
       <div className="flex items-center justify-between gap-2">
         <Link
@@ -150,7 +156,29 @@ export default async function CierrePage({
         </Link>
       </div>
 
-      <div className="space-y-3 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
+      {fuente && (
+        <section className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 sm:col-span-1 dark:border-violet-900 dark:bg-violet-950/30">
+            <p className="text-xs text-violet-700 dark:text-violet-300">Ganancia final estimada</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">{bs(num(fuente.resultado_operativo_ves))} <span className="text-sm font-normal">Bs</span></p>
+            <p className="mt-1 text-xs text-neutral-500">Después de proveedores, gastos y devoluciones.</p>
+          </div>
+          <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+            <p className="text-xs text-neutral-500">Cobrado a clientes</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">{bs(num(fuente.cobros_ves))} <span className="text-sm font-normal">Bs</span></p>
+          </div>
+          <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+            <p className="text-xs text-neutral-500">Pagado a proveedores</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">{num(fuente.pagos_proveedor_usdt).toFixed(2)} <span className="text-sm font-normal">USDT</span></p>
+          </div>
+        </section>
+      )}
+
+      <div className="space-y-3 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
+        <div>
+          <h2 className="font-semibold">Estado del resumen</h2>
+          <p className="mt-1 text-xs text-neutral-500">Confirmar el mes no mueve dinero ni cambia ventas: solo guarda una versión oficial que ya no se modifica silenciosamente.</p>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           <span
             className={`rounded-full px-2.5 py-0.5 text-xs ${
@@ -161,7 +189,7 @@ export default async function CierrePage({
                   : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
             }`}
           >
-            {guardado ? `${guardado.estado} · v${guardado.version}` : "sin calcular"}
+            {guardado ? `${guardado.estado === "cerrado" ? "confirmado" : "borrador"} · versión ${guardado.version}` : "cifras en vivo, sin borrador"}
           </span>
           {esMesEnCurso && (
             <span className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -188,9 +216,12 @@ export default async function CierrePage({
               {guardado.cerrado_at?.slice(0, 10)}.
             </p>
           )}
-          <Bloque titulo="Resultado" filas={FILAS} />
-          <Bloque titulo="Caja del mes" filas={CAJA} />
-          <Bloque titulo="Ocupación" filas={OCUPACION} />
+          <Bloque titulo="Cómo se calculó la ganancia" filas={FILAS} />
+          <Bloque titulo="Dinero que entró y salió" filas={CAJA} />
+          <details className="rounded-2xl border border-neutral-200 dark:border-neutral-800">
+            <summary className="cursor-pointer px-4 py-3 text-sm font-medium">Ver uso y capacidad del inventario</summary>
+            <div className="border-t border-neutral-200 p-4 dark:border-neutral-800"><Bloque titulo="Ocupación" filas={OCUPACION} /></div>
+          </details>
           <p className="rounded-lg bg-neutral-100 px-3 py-2 text-xs text-neutral-600 dark:bg-neutral-900 dark:text-neutral-400">
             El desglose de los días ocupados sin período pagado (cortesía, pausa,
             reserva, bloqueo, saneamiento) todavía no se calcula: por eso aparecen

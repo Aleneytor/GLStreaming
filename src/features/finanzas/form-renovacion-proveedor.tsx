@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { renovarProveedorAction, type EstadoEgreso } from "./egresos";
 
 const CAMPO =
-  "w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900";
+  "min-h-11 w-full rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:ring-emerald-950";
 
 /**
  * «Registrar renovación y pago»: el administrador edita UN solo importe de
@@ -81,7 +81,7 @@ export function FormRenovacionProveedor({
       <button
         type="submit"
         disabled={pendiente}
-        className="rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white transition active:scale-[0.98] disabled:opacity-60 dark:bg-white dark:text-neutral-900"
+        className="min-h-11 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white transition active:scale-[0.98] disabled:opacity-60 dark:bg-white dark:text-neutral-900"
       >
         {pendiente ? "Registrando…" : "Registrar renovación y pago"}
       </button>

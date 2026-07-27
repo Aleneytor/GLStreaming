@@ -46,15 +46,21 @@ export default async function CobrosPage() {
   const totalVes = filas.reduce((a, f) => a + (f.sugerencia ?? 0), 0);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Por cobrar</h1>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Ventas y renovaciones a las que todavía no les registraste el dinero.
-          Lo normal es cobrar al vender o al renovar; esto es la red de seguridad
-          para lo que se quedó atrás.
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-5">
+      <header className="overflow-hidden rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-5 shadow-sm sm:p-6 dark:border-amber-950 dark:from-amber-950/30 dark:via-neutral-950 dark:to-orange-950/20">
+        <div className="flex items-start gap-4">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-amber-100 text-xl text-amber-700 dark:bg-amber-950 dark:text-amber-300">↓</span>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Pagos pendientes</h1>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-neutral-600 dark:text-neutral-300">
+              Aquí solo aparecen servicios que ya entregaste o renovaste, pero cuyo dinero todavía no registraste en la app.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 rounded-2xl bg-white/80 p-3 text-xs leading-5 text-neutral-600 ring-1 ring-amber-100 dark:bg-neutral-950/60 dark:text-neutral-300 dark:ring-amber-950">
+          <strong className="text-neutral-900 dark:text-white">En palabras simples:</strong> si alguien ya pagó, registra aquí cuánto recibiste. Si todavía no pagó, déjalo pendiente. Al registrar el cobro desaparecerá de esta lista y aparecerá en el resumen diario.
+        </div>
+      </header>
 
       {!bcvUsable && (
         <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
@@ -69,24 +75,26 @@ export default async function CobrosPage() {
       )}
 
       {filas.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-          No queda nada por cobrar. 🎉
-        </p>
+        <div className="rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/50 p-8 text-center dark:border-emerald-900 dark:bg-emerald-950/20">
+          <span className="text-3xl" aria-hidden>✓</span>
+          <p className="mt-2 font-medium text-emerald-800 dark:text-emerald-300">Todos los pagos están registrados</p>
+          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">No hay ventas ni renovaciones esperando un cobro.</p>
+        </div>
       ) : (
         <>
-          <div className="flex flex-wrap gap-4 rounded-xl border border-neutral-200 p-4 text-sm dark:border-neutral-800">
-            <div>
-              <p className="text-neutral-500 dark:text-neutral-400">Pendientes</p>
-              <p className="text-lg font-semibold tabular-nums">{filas.length}</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">Servicios esperando pago</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">{filas.length}</p>
             </div>
-            <div>
-              <p className="text-neutral-500 dark:text-neutral-400">Precio USD</p>
-              <p className="text-lg font-semibold tabular-nums">{totalUsd.toFixed(2)}</p>
+            <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">Valor comercial</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">${totalUsd.toFixed(2)}</p>
             </div>
             {bcvUsable && (
-              <div>
-                <p className="text-neutral-500 dark:text-neutral-400">Sugerido en Bs</p>
-                <p className="text-lg font-semibold tabular-nums">{bs(totalVes)}</p>
+              <div className="col-span-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:col-span-1 dark:border-amber-900 dark:bg-amber-950/30">
+                <p className="text-xs text-amber-700 dark:text-amber-300">Referencia aproximada</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums">{bs(totalVes)} <span className="text-sm font-normal">Bs</span></p>
               </div>
             )}
           </div>
@@ -95,7 +103,7 @@ export default async function CobrosPage() {
             {filas.map((f) => (
               <div
                 key={f.periodo_id}
-                className="space-y-3 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
+                className="space-y-3 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">

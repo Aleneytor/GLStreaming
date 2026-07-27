@@ -48,14 +48,13 @@ export function AccionesCierre({
       <form action={reabrir} className="space-y-2">
         <input type="hidden" name="mes" value={mes} />
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          Este mes está cerrado. Reabrirlo no borra nada: crea una versión nueva y
-          deja constancia del motivo.
+          Este mes ya fue confirmado. Si faltó registrar algo, crea una versión corregida; la anterior se conserva para auditoría.
         </p>
         <div className="flex flex-wrap gap-2">
           <input
             name="motivo"
             required
-            placeholder="Motivo de la reapertura"
+            placeholder="¿Qué dato necesitas corregir?"
             className="min-w-0 flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
           />
           <button
@@ -63,7 +62,7 @@ export function AccionesCierre({
             disabled={reabriendo}
             className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium transition active:scale-[0.98] disabled:opacity-60 dark:border-neutral-700"
           >
-            {reabriendo ? "Reabriendo…" : "Reabrir mes"}
+            {reabriendo ? "Creando versión…" : "Crear versión corregida"}
           </button>
         </div>
         <Mensaje estado={eAbrir} />
@@ -81,7 +80,7 @@ export function AccionesCierre({
             disabled={calculando}
             className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium transition active:scale-[0.98] disabled:opacity-60 dark:border-neutral-700"
           >
-            {calculando ? "Calculando…" : estado ? "Recalcular borrador" : "Calcular borrador"}
+            {calculando ? "Guardando…" : estado ? "Actualizar borrador" : "Guardar borrador actual"}
           </button>
         </form>
         {estado && (
@@ -92,7 +91,7 @@ export function AccionesCierre({
               disabled={cerrando}
               className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition active:scale-[0.98] disabled:opacity-60 dark:bg-white dark:text-neutral-900"
             >
-              {cerrando ? "Cerrando…" : "Cerrar mes"}
+              {cerrando ? "Confirmando…" : "Confirmar mes como definitivo"}
             </button>
           </form>
         )}

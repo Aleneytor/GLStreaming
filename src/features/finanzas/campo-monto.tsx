@@ -59,7 +59,7 @@ export function CampoMonto({
   return (
     <div className={className}>
       <div className="flex items-stretch gap-2">
-        <div className="flex overflow-hidden rounded-lg border border-neutral-300 dark:border-neutral-700">
+        <div className="flex min-h-11 overflow-hidden rounded-xl border border-neutral-300 dark:border-neutral-700">
           <button type="button" onClick={() => setMoneda("ves")} className={btn("ves")}>
             Bs
           </button>
@@ -76,7 +76,7 @@ export function CampoMonto({
           onChange={(e) => setMonto(e.target.value)}
           placeholder={placeholder ?? (moneda === "ves" ? "Bs recibidos" : "$ recibidos")}
           aria-label={moneda === "ves" ? "Bolívares recibidos" : "Dólares recibidos"}
-          className="min-w-0 flex-1 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base outline-none transition focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-neutral-300"
+          className="min-h-11 min-w-0 flex-1 rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-base outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-emerald-600 dark:focus:ring-emerald-950"
         />
       </div>
       <input type="hidden" name="moneda" value={moneda} />

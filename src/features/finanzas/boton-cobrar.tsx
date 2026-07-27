@@ -43,7 +43,7 @@ export function BotonCobrar({
     <form action={action} className="space-y-2">
       <input type="hidden" name="periodo_id" value={periodoId} />
       <input type="hidden" name="volver_a" value={volverA} />
-      <div className="flex flex-wrap items-start gap-2">
+      <div className="grid items-start gap-2 sm:grid-cols-[minmax(16rem,1fr)_minmax(12rem,1fr)_auto]">
         <CampoMonto
           monto={monto}
           setMonto={setMonto}
@@ -51,17 +51,17 @@ export function BotonCobrar({
           setMoneda={setMoneda}
           bcv={bcv}
           required
-          className="w-full sm:w-auto sm:min-w-[16rem]"
+          className="w-full"
         />
         <input
           name="referencia"
           placeholder="Referencia (opcional)"
-          className="min-w-0 flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+          className="min-h-11 min-w-0 rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
         />
         <button
           type="submit"
           disabled={pendiente}
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition active:scale-[0.98] disabled:opacity-60"
+          className="min-h-11 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition active:scale-[0.98] disabled:opacity-60"
         >
           {pendiente ? "Registrando…" : "Registrar cobro"}
         </button>

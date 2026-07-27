@@ -23,7 +23,7 @@ export async function calcularCierreAction(
   if (error) return { error: error.message };
 
   revalidatePath("/cierre");
-  return { ok: "Borrador actualizado." };
+  return { ok: "Resumen provisional guardado." };
 }
 
 export async function cerrarMesAction(
@@ -41,7 +41,7 @@ export async function cerrarMesAction(
   if (error) return { error: error.message };
 
   revalidatePath("/cierre");
-  return { ok: "Mes cerrado." };
+  return { ok: "Mes confirmado como definitivo." };
 }
 
 export async function reabrirMesAction(
@@ -65,5 +65,5 @@ export async function reabrirMesAction(
   if (error) return { error: error.message };
 
   revalidatePath("/cierre");
-  return { ok: "Mes reabierto en una versión nueva." };
+  return { ok: "Versión corregida creada; la anterior se conservó." };
 }
