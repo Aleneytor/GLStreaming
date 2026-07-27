@@ -3,7 +3,13 @@
 import { useState, useTransition } from "react";
 import type { BadgeVencimiento } from "@/domain/fechas";
 import { PanelLateralCuenta } from "./panel-lateral-cuenta";
-import { moverCuentaAction, reordenarListaCuentasAction } from "./actions";
+import {
+  moverCuentaAction,
+  reordenarListaCuentasAction,
+  cancelarVentaConLimpiezaAction,
+} from "./actions";
+import { ModalVentaRapida } from "./modal-venta-rapida";
+import { ModalRenovarProveedorRapido } from "./modal-renovar-proveedor";
 
 export type CupoFila = {
   slotNumber: number;
@@ -24,6 +30,7 @@ export type CupoFila = {
   dias: number | null;
   badge: BadgeVencimiento | null;
   suscEstado: string | null;
+  suscripcionId?: string | null;
 };
 
 export type BloqueCuenta = {
@@ -57,7 +64,6 @@ function ControlesOrden({
     "rounded px-0.5 py-0.2 text-[10px] text-neutral-400 hover:bg-neutral-200 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-white";
   return (
     <div className="inline-flex items-center gap-1">
-      {/* Tirador para arrastrar y soltar (Drag and Drop) */}
       <span
         {...dragHandleProps}
         className="cursor-grab text-xs font-bold text-neutral-400 hover:text-neutral-900 active:cursor-grabbing dark:hover:text-white"
@@ -94,9 +100,21 @@ export function TablaInventario({ cuentas, slug }: { cuentas: BloqueCuenta[]; sl
   const [targetIndex, setTargetIndex] = useState<number | null>(null);
   const [, startTransition] = useTransition();
 
+  // Estados para modals interactivos en celdas
+  const [ventaTarget, setVentaTarget] = useState<{
+    cuentaId: string;
+    unidadId: string | null;
+    nombrePerfil: string;
+  } | null>(null);
+
+  const [renovarProvTarget, setRenovarProvTarget] = useState<{
+    cuentaId: string;
+    correoCuenta: string;
+    costoActual: number | null;
+  } | null>(null);
+
   const tienePagador = cuentasState.some((c) => Boolean(c.pagador)) || slug.includes("spotify");
 
-  // Reordenar arrastrando y soltando
   const handleDrop = (origenIdx: number, destinoIdx: number) => {
     if (origenIdx === destinoIdx) return;
     const nuevas = [...cuentasState];
@@ -107,7 +125,6 @@ export function TablaInventario({ cuentas, slug }: { cuentas: BloqueCuenta[]; sl
     setArrastrandoIndex(null);
     setTargetIndex(null);
 
-    // Persistir el nuevo orden en segundo plano
     startTransition(async () => {
       await reordenarListaCuentasAction(
         nuevas.map((c) => c.cuentaId),
@@ -197,6 +214,16 @@ export function TablaInventario({ cuentas, slug }: { cuentas: BloqueCuenta[]; sl
                 tienePagador={tienePagador}
                 isTarget={targetIndex === index}
                 onEditar={() => setCuentaEditando(cta)}
+                onIniciarVenta={(unidadId, nombrePerfil) =>
+                  setVentaTarget({ cuentaId: cta.cuentaId, unidadId, nombrePerfil })
+                }
+                onRenovarProveedor={() =>
+                  setRenovarProvTarget({
+                    cuentaId: cta.cuentaId,
+                    correoCuenta: cta.correo,
+                    costoActual: cta.costo,
+                  })
+                }
                 onDragStart={() => setArrastrandoIndex(index)}
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -211,11 +238,34 @@ export function TablaInventario({ cuentas, slug }: { cuentas: BloqueCuenta[]; sl
         </table>
       </div>
 
+      {/* Modal amplio de edición de cuenta */}
       {cuentaEditando && (
         <PanelLateralCuenta
           cuenta={cuentaEditando}
           slug={slug}
           onCerrar={() => setCuentaEditando(null)}
+        />
+      )}
+
+      {/* Modal de venta directa en celda Vacío */}
+      {ventaTarget && (
+        <ModalVentaRapida
+          cuentaId={ventaTarget.cuentaId}
+          unidadId={ventaTarget.unidadId}
+          nombrePerfil={ventaTarget.nombrePerfil}
+          slug={slug}
+          onCerrar={() => setVentaTarget(null)}
+        />
+      )}
+
+      {/* Modal de renovación directa con proveedor */}
+      {renovarProvTarget && (
+        <ModalRenovarProveedorRapido
+          cuentaId={renovarProvTarget.cuentaId}
+          correoCuenta={renovarProvTarget.correoCuenta}
+          costoActual={renovarProvTarget.costoActual}
+          slug={slug}
+          onCerrar={() => setRenovarProvTarget(null)}
         />
       )}
     </div>
@@ -230,6 +280,8 @@ function BloqueCuentaExcel({
   tienePagador,
   isTarget,
   onEditar,
+  onIniciarVenta,
+  onRenovarProveedor,
   onDragStart,
   onDragOver,
   onDrop,
@@ -241,6 +293,8 @@ function BloqueCuentaExcel({
   tienePagador: boolean;
   isTarget: boolean;
   onEditar: () => void;
+  onIniciarVenta: (unidadId: string | null, nombrePerfil: string) => void;
+  onRenovarProveedor: () => void;
   onDragStart: () => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: () => void;
@@ -254,9 +308,12 @@ function BloqueCuentaExcel({
 
         let claseAlerta = "bg-[#16a34a] text-white";
         let textoAlerta = "";
-        if (!f.cliente) {
-          claseAlerta = "bg-[#1d4ed8] text-white";
-          textoAlerta = "Vacío";
+        const esLibre = !f.cliente;
+
+        if (esLibre) {
+          claseAlerta =
+            "bg-[#1d4ed8] hover:bg-[#1e40af] text-white cursor-pointer transition active:scale-[0.98]";
+          textoAlerta = "Vacío (+ Vender)";
         } else if (f.dias === null) {
           claseAlerta = "bg-neutral-200 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-300";
           textoAlerta = "Sin fecha";
@@ -277,17 +334,19 @@ function BloqueCuentaExcel({
           }
         }
 
-        let claseAvisoProv = "bg-[#16a34a] text-white";
+        let claseAvisoProv = "bg-[#16a34a] text-white hover:bg-[#15803d] cursor-pointer";
         let textoAvisoProv = "";
         if (!cta.renovarProveedor) {
-          claseAvisoProv = "bg-neutral-100 text-neutral-400 dark:bg-neutral-900";
-          textoAvisoProv = "—";
+          claseAvisoProv =
+            "bg-neutral-100 text-neutral-400 hover:bg-neutral-200 cursor-pointer dark:bg-neutral-900";
+          textoAvisoProv = "+ Pagar";
         } else if ((cta.diasProveedor ?? 0) >= 0) {
-          claseAvisoProv = "bg-[#16a34a] text-white font-semibold";
-          textoAvisoProv = `Falta ${cta.diasProveedor} días`;
+          claseAvisoProv =
+            "bg-[#16a34a] text-white font-semibold hover:bg-[#15803d] cursor-pointer";
+          textoAvisoProv = `Falta ${cta.diasProveedor} días 🔄`;
         } else {
-          claseAvisoProv = "bg-[#dc2626] text-white font-bold";
-          textoAvisoProv = `Vendido hace ${Math.abs(cta.diasProveedor ?? 0)} días`;
+          claseAvisoProv = "bg-[#dc2626] text-white font-bold hover:bg-[#b91c1c] cursor-pointer";
+          textoAvisoProv = `Vencido hace ${Math.abs(cta.diasProveedor ?? 0)} días 🔄`;
         }
 
         return (
@@ -369,14 +428,36 @@ function BloqueCuentaExcel({
               {formatearFecha(f.vence)}
             </td>
 
-            {/* 10. Alerta */}
-            <td className={`border border-neutral-300 px-2 py-0.5 text-center ${claseAlerta}`}>
+            {/* 10. Alerta (Celda interactiva para Venta Directa si está Vacío) */}
+            <td
+              onClick={() => {
+                if (esLibre) onIniciarVenta(f.unidadId, f.cupo);
+              }}
+              className={`border border-neutral-300 px-2 py-0.5 text-center ${claseAlerta}`}
+              title={esLibre ? "Haz clic para vender este perfil" : ""}
+            >
               {textoAlerta}
             </td>
 
             {/* 11. Cliente */}
             <td className="border border-neutral-300 px-2 py-0.5 font-medium text-neutral-900 dark:border-neutral-700 dark:text-white">
-              {f.cliente ?? ""}
+              <div className="flex items-center justify-between gap-1">
+                <span>{f.cliente ?? ""}</span>
+                {f.suscripcionId && (
+                  <form action={cancelarVentaConLimpiezaAction} className="inline">
+                    <input type="hidden" name="suscripcion_id" value={f.suscripcionId} />
+                    <input type="hidden" name="cliente_id" value={f.clienteId ?? ""} />
+                    <input type="hidden" name="slug" value={slug} />
+                    <button
+                      type="submit"
+                      title="Cancelar venta y liberar cupo (limpia cliente si no tiene otros servicios)"
+                      className="text-[10px] text-neutral-400 opacity-60 hover:opacity-100 hover:text-red-600"
+                    >
+                      🗑️
+                    </button>
+                  </form>
+                )}
+              </div>
             </td>
 
             {/* 12. N° Celular */}
@@ -419,11 +500,13 @@ function BloqueCuentaExcel({
               </td>
             )}
 
-            {/* 17. Aviso Proveedor (Fusionado con color de fondo) */}
+            {/* 17. Aviso Proveedor (Fusionado interactivo para Renovar Proveedor) */}
             {esPrimera && (
               <td
                 rowSpan={totalFilas}
+                onClick={onRenovarProveedor}
                 className={`border border-neutral-300 px-2 py-0.5 text-center ${claseAvisoProv}`}
+                title="Haz clic para extender 30 días con el proveedor"
               >
                 {textoAvisoProv}
               </td>
@@ -439,7 +522,7 @@ function BloqueCuentaExcel({
               </td>
             )}
 
-            {/* 19. Acciones & Drag Handle (Fusionado) */}
+            {/* 19. Acciones (Fusionado) */}
             {esPrimera && (
               <td
                 rowSpan={totalFilas}

@@ -102,6 +102,7 @@ export default async function PlataformaPage({
     const vend = uno(susc.vendedores);
 
     return {
+      suscripcionId: susc.id as string,
       cliente: cli?.nombre ?? null,
       celular: cli?.whatsapp_original ?? null,
       vendio: vend?.nombre ?? null,
@@ -141,10 +142,8 @@ export default async function PlataformaPage({
     );
 
     if (unidades.length > 0) {
-      // Si la cuenta tiene unidades (ej. 5 perfiles en Netflix)
       for (const u of unidades) {
         const vUnidad = datosVenta(porUnidad.get(u.id));
-        // Si hay una venta completa de la cuenta, los perfiles sin venta propia heredan la venta completa
         const v = vUnidad ?? (completa ? datosVenta(completa) : null);
         const esPrimerSlot = u.numero_slot === 1;
 
@@ -157,6 +156,7 @@ export default async function PlataformaPage({
               : u.nombre_visible ?? `Perfil ${u.numero_slot}`,
           unidadId: u.id as string,
           nombreUnidad: u.nombre_visible ?? null,
+          suscripcionId: v?.suscripcionId ?? null,
           clienteId: v?.clienteId ?? null,
           cliente: v?.cliente ?? null,
           celular: v?.celular ?? null,
@@ -164,7 +164,6 @@ export default async function PlataformaPage({
           clienteLogin: v?.clienteLogin ?? null,
           clienteClave: v?.clienteClave ?? null,
           pin: desc(uno(u.secretos_unidad)?.pin_cifrado) || null,
-          // El ingreso solo se muestra en el slot 1 si es venta completa para no duplicar el importe
           ingreso: completa && !esPrimerSlot ? null : (v?.ingreso ?? null),
           inicio: v?.inicio ?? null,
           vence: v?.vence ?? null,
@@ -182,6 +181,7 @@ export default async function PlataformaPage({
           cupo: "Uso de la madre",
           unidadId: null,
           nombreUnidad: null,
+          suscripcionId: v?.suscripcionId ?? null,
           clienteId: v?.clienteId ?? null,
           cliente: v?.cliente ?? null,
           celular: v?.celular ?? null,
@@ -198,7 +198,6 @@ export default async function PlataformaPage({
         });
       }
     } else if (completa) {
-      // Recurso indivisible o sin slots explícitos
       const v = datosVenta(completa);
       filas.push({
         slotNumber: 1,
@@ -206,6 +205,7 @@ export default async function PlataformaPage({
         cupo: "Cuenta Completa",
         unidadId: null,
         nombreUnidad: null,
+        suscripcionId: v?.suscripcionId ?? null,
         clienteId: v?.clienteId ?? null,
         cliente: v?.cliente ?? null,
         celular: v?.celular ?? null,
@@ -227,6 +227,7 @@ export default async function PlataformaPage({
         cupo: "—",
         unidadId: null,
         nombreUnidad: null,
+        suscripcionId: null,
         clienteId: null,
         cliente: null,
         celular: null,
