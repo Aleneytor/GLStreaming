@@ -381,8 +381,13 @@ export async function venderUnidadRapidaAction(
 
   const supabase = await createClient();
 
+  const modalidadId = unidadId
+    ? "11111111-1111-4111-a111-111111111101"
+    : "11111111-1111-4111-a111-111111111102";
+
   const { error } = await supabase.rpc("vender_unidad", {
     p_cuenta_id: cuentaId,
+    p_modalidad_id: modalidadId,
     p_unidad_id: unidadId,
     p_cliente_nombre: clienteNombre,
     p_cliente_whatsapp: clienteWhatsapp || null,
