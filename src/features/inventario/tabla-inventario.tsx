@@ -30,6 +30,7 @@ export type BloqueCuenta = {
   cuentaId: string;
   correo: string;
   contrasena: string;
+  pagador?: string | null;
   alias: string | null;
   notas: string | null;
   cuentaEstado: string;
@@ -73,14 +74,22 @@ function formatearFecha(fecha: string | null): string {
 export function TablaInventario({ cuentas, slug }: { cuentas: BloqueCuenta[]; slug: string }) {
   const [cuentaEditando, setCuentaEditando] = useState<BloqueCuenta | null>(null);
 
+  // Determinar si debemos mostrar la columna "Pagador" (GPay / Spotify)
+  const tienePagador = cuentas.some((c) => Boolean(c.pagador)) || slug.includes("spotify");
+
   return (
     <div className="space-y-4">
-      {/* Contenedor con scroll horizontal para soportar alta densidad de columnas */}
+      {/* Contenedor con scroll horizontal y estilo denso estilo Excel */}
       <div className="overflow-x-auto border border-neutral-400 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
         <table className="w-full border-collapse text-left font-mono text-[11px] leading-tight">
           <thead>
             {/* Cabecera idéntica a Excel con bloques azul y morado */}
             <tr className="text-[11px]">
+              {tienePagador && (
+                <th className="border border-neutral-400 bg-[#1e3a8a] px-2 py-1 font-bold text-white">
+                  Pagador
+                </th>
+              )}
               <th className="border border-neutral-400 bg-[#1e3a8a] px-1.5 py-1 text-center font-bold text-white">
                 N°
               </th>
@@ -147,6 +156,7 @@ export function TablaInventario({ cuentas, slug }: { cuentas: BloqueCuenta[]; sl
                 cta={cta}
                 slug={slug}
                 numCuenta={index + 1}
+                tienePagador={tienePagador}
                 onEditar={() => setCuentaEditando(cta)}
               />
             ))}
@@ -169,11 +179,13 @@ function BloqueCuentaExcel({
   cta,
   slug,
   numCuenta,
+  tienePagador,
   onEditar,
 }: {
   cta: BloqueCuenta;
   slug: string;
   numCuenta: number;
+  tienePagador: boolean;
   onEditar: () => void;
 }) {
   const totalFilas = cta.filas.length;
@@ -227,9 +239,22 @@ function BloqueCuentaExcel({
           <tr
             key={f.clave}
             className={`hover:bg-amber-50/50 dark:hover:bg-neutral-800/60 ${
-              esPrimera ? "border-t-2 border-neutral-600" : "border-t border-neutral-300 dark:border-neutral-700"
+              // Separación notoria y limpia entre cuentas madre
+              esPrimera
+                ? "border-t-[4px] border-neutral-700 dark:border-neutral-500"
+                : "border-t border-neutral-300 dark:border-neutral-700"
             }`}
           >
+            {/* Pagador (Si aplica a la plataforma o existe en la cuenta) */}
+            {tienePagador && esPrimera && (
+              <td
+                rowSpan={totalFilas}
+                className="border border-neutral-300 bg-neutral-50 px-2 py-0.5 align-middle text-neutral-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400"
+              >
+                {cta.pagador ? `(${cta.pagador})` : "—"}
+              </td>
+            )}
+
             {/* 1. N° */}
             <td className="border border-neutral-300 bg-neutral-100 px-1.5 py-0.5 text-center font-bold text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
               {f.slotNumber}

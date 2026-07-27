@@ -66,6 +66,9 @@ export default async function PlataformaPage({
        proveedores ( nombre_o_alias ),
        ciclos_proveedor ( costo_usdt, estado, proxima_renovacion ),
        credenciales_cuenta ( login_cifrado, contrasena_cifrada, eliminada_at ),
+       coberturas_spotify (
+         controles_pago_spotify ( gmail_cifrado, origen )
+       ),
        unidades_inventario ( id, numero_slot, nombre_visible, secretos_unidad ( pin_cifrado ) ),
        asignaciones_inventario (
          id, alcance, unidad_id, fin,
@@ -127,6 +130,11 @@ export default async function PlataformaPage({
     const porUnidad = new Map(
       abiertas.filter((a) => a.unidad_id).map((a) => [a.unidad_id as string, a]),
     );
+
+    // Detección del Gmail Pagador GPay (para Spotify o cuentas con pagador)
+    const cob = uno(c.coberturas_spotify);
+    const ctrl = uno(cob?.controles_pago_spotify);
+    const pagador = ctrl?.gmail_cifrado ? desc(ctrl.gmail_cifrado) : null;
 
     const filas: CupoFila[] = [];
 
@@ -234,6 +242,7 @@ export default async function PlataformaPage({
       cuentaId: c.id as string,
       correo: desc(cred?.login_cifrado),
       contrasena: desc(cred?.contrasena_cifrada),
+      pagador,
       alias: c.alias ?? null,
       notas: c.notas ?? null,
       cuentaEstado: c.estado as string,
@@ -252,7 +261,12 @@ export default async function PlataformaPage({
     .map((g) => {
       const cuentasFiltradas = g.cuentas
         .map((cta) => {
-          if (!busqueda || cta.correo.toLowerCase().includes(busqueda)) return cta;
+          if (
+            !busqueda ||
+            cta.correo.toLowerCase().includes(busqueda) ||
+            (cta.pagador && cta.pagador.toLowerCase().includes(busqueda))
+          )
+            return cta;
           const filas = cta.filas.filter(
             (f) =>
               f.cliente?.toLowerCase().includes(busqueda) ||
