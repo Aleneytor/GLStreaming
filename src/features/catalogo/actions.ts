@@ -88,6 +88,8 @@ const esquemaVendedor = z.object({
   nombre: z.string().trim().min(1, "El nombre es obligatorio."),
   alias: z.string().trim().max(60).optional().or(z.literal("")),
   usuario_id: z.string().uuid().optional().or(z.literal("")),
+  tipo: z.enum(["revendedor", "intermediario"]),
+  cobra_en_paralela: z.coerce.boolean(),
   activo: z.coerce.boolean(),
 });
 
@@ -110,17 +112,21 @@ export async function guardarVendedorAction(
     nombre: formData.get("nombre"),
     alias: formData.get("alias") ?? "",
     usuario_id: formData.get("usuario_id") ?? "",
+    tipo: formData.get("tipo") ?? "intermediario",
+    cobra_en_paralela: formData.get("cobra_en_paralela") === "on",
     activo: formData.get("activo") === "on",
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
   }
-  const { id, nombre, alias, usuario_id, activo } = parsed.data;
+  const { id, nombre, alias, usuario_id, tipo, cobra_en_paralela, activo } = parsed.data;
 
   const fila = {
     nombre,
     alias: alias || null,
     usuario_id: usuario_id || null,
+    tipo,
+    cobra_en_paralela: tipo === "revendedor" && cobra_en_paralela,
     activo,
   };
 

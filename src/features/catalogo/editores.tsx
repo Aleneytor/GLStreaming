@@ -34,23 +34,47 @@ export function EditorPlataforma({
     actualizarPlataformaAction,
     null,
   );
+  const [abierto, setAbierto] = useState(false);
+
+  if (!abierto) {
+    return (
+      <div className="flex min-h-24 items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="min-w-0">
+          <p className="truncate font-semibold">{plataforma.nombre}</p>
+          <span className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+            plataforma.activa
+              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+              : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
+          }`}>
+            {plataforma.activa ? "Disponible" : "Pausada"}
+          </span>
+        </div>
+        <button type="button" onClick={() => setAbierto(true)} className="rounded-lg border px-3 py-2 text-xs">
+          Editar
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <form action={action} className="flex flex-wrap items-center gap-3">
+    <form action={action} className="space-y-3 rounded-xl border border-violet-300 bg-white p-4 dark:border-violet-800 dark:bg-neutral-900">
       <input type="hidden" name="id" value={plataforma.id} />
       <input
         name="nombre"
         defaultValue={plataforma.nombre}
         aria-label="Nombre de la plataforma"
-        className={`${campo} min-w-0 flex-1`}
+        className={campo}
       />
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="activa" defaultChecked={plataforma.activa} />
-        Activa
-      </label>
-      <button type="submit" disabled={pendiente} className={boton}>
-        {pendiente ? "…" : "Guardar"}
-      </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="activa" defaultChecked={plataforma.activa} className="size-4 accent-violet-600" />
+          Plataforma disponible
+        </label>
+        <div className="ml-auto flex gap-2">
+          <button type="button" onClick={() => setAbierto(false)} className="rounded-lg border px-3 py-2 text-xs">Cerrar</button>
+          <button type="submit" disabled={pendiente} className={boton}>{pendiente ? "…" : "Guardar"}</button>
+        </div>
+      </div>
       <Mensaje estado={estado} />
     </form>
   );
@@ -58,7 +82,9 @@ export function EditorPlataforma({
 
 export function EditorProducto({
   producto,
+  plataforma,
 }: {
+  plataforma: string;
   producto: {
     id: string;
     nombre: string;
@@ -74,11 +100,42 @@ export function EditorProducto({
     actualizarProductoAction,
     null,
   );
+  const [abierto, setAbierto] = useState(false);
+
+  const estadoVisual = !producto.activo
+    ? { texto: "Inactivo", clase: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300" }
+    : producto.estado_comercial === "abierto"
+      ? { texto: "Ventas abiertas", clase: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" }
+      : producto.estado_comercial === "solo_cartera"
+        ? { texto: "Solo cartera", clase: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" }
+        : { texto: "Cerrado", clase: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300" };
+
+  if (!abierto) {
+    return (
+      <article className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">{plataforma}</p>
+            <h3 className="mt-0.5 truncate font-semibold">{producto.nombre}</h3>
+            <p className="mt-1 font-mono text-[11px] text-neutral-500">{producto.codigo}</p>
+          </div>
+          <button type="button" onClick={() => setAbierto(true)} className="rounded-lg border px-3 py-2 text-xs">Editar</button>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className={`rounded-full px-2 py-1 text-[11px] font-medium ${estadoVisual.clase}`}>{estadoVisual.texto}</span>
+          <span className="rounded-full bg-violet-50 px-2 py-1 text-[11px] text-violet-700 dark:bg-violet-950 dark:text-violet-300">
+            {producto.capacidad_vendible_predeterminada ?? producto.capacidad_fija ?? "—"}/{producto.capacidad_fija ?? "—"} cupos
+          </span>
+          {!producto.permite_renovaciones && <span className="text-[11px] text-neutral-500">Sin renovaciones</span>}
+        </div>
+      </article>
+    );
+  }
 
   return (
     <form
       action={action}
-      className="space-y-3 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
+      className="space-y-3 rounded-xl border border-violet-300 bg-white p-4 dark:border-violet-800 dark:bg-neutral-900"
     >
       <input type="hidden" name="id" value={producto.id} />
 
@@ -131,6 +188,7 @@ export function EditorProducto({
         <button type="submit" disabled={pendiente} className={boton}>
           {pendiente ? "…" : "Guardar"}
         </button>
+        <button type="button" onClick={() => setAbierto(false)} className="rounded-lg border px-3 py-2 text-sm">Cerrar</button>
       </div>
       <Mensaje estado={estado} />
     </form>
@@ -142,6 +200,8 @@ export type VendedorFila = {
   nombre: string;
   alias: string | null;
   usuario_id: string | null;
+  tipo: "revendedor" | "intermediario";
+  cobra_en_paralela: boolean;
   activo: boolean;
 };
 
@@ -158,6 +218,9 @@ export function EditorVendedor({
     null,
   );
   const [abierto, setAbierto] = useState(!vendedor);
+  const [tipo, setTipo] = useState<"revendedor" | "intermediario">(
+    vendedor?.tipo ?? "intermediario",
+  );
 
   if (vendedor && !abierto) {
     const vinculado = usuarios.find((u) => u.id === vendedor.usuario_id);
@@ -175,6 +238,18 @@ export function EditorVendedor({
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
             {vinculado ? `Entra como ${vinculado.nombre}` : "Sin acceso a la app"}
           </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+              vendedor.tipo === "revendedor"
+                ? "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-300"
+                : "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+            }`}>
+              {vendedor.tipo === "revendedor" ? "Revendedor" : "Intermediario"}
+            </span>
+            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+              {vendedor.cobra_en_paralela ? "Tasa paralela" : "BCV"}
+            </span>
+          </div>
         </div>
         <button
           type="button"
@@ -213,6 +288,35 @@ export function EditorVendedor({
           />
         </label>
       </div>
+
+      <label className="block text-sm">
+        Relación comercial
+        <select
+          name="tipo"
+          value={tipo}
+          onChange={(event) => setTipo(event.target.value as "revendedor" | "intermediario")}
+          className={`${campo} mt-1`}
+        >
+          <option value="intermediario">Intermediario ocasional</option>
+          <option value="revendedor">Revendedor afiliado</option>
+        </select>
+        <span className="mt-1 block text-xs text-neutral-500">
+          Solo un revendedor afiliado puede cobrar usando la tasa paralela.
+        </span>
+      </label>
+
+      <label className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+        tipo === "revendedor" ? "border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30" : "border-neutral-200 opacity-60 dark:border-neutral-800"
+      }`}>
+        <input
+          type="checkbox"
+          name="cobra_en_paralela"
+          defaultChecked={vendedor?.cobra_en_paralela ?? false}
+          disabled={tipo !== "revendedor"}
+          className="size-4 accent-amber-600"
+        />
+        Cobra a tasa paralela; desmarcado cobra a BCV
+      </label>
 
       <label className="block text-sm">
         Usuario de la app <span className="text-neutral-400">(opcional)</span>
