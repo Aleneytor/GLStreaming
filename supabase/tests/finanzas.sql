@@ -64,7 +64,9 @@ select id as u1 from public.unidades_inventario where cuenta_id = :'cta' and num
 -- Período de 31 días exactos (julio) para que el prorrateo sea comprobable.
 -- Se vende SIN cobrar todavía, para probar el cobro por separado.
 select public.vender_unidad(
-  :'cli', :'cta', :'m_perfil', :'u1', null, '2019-07-01'::date, 1, null, '2019-07-01'::date
+  p_cliente_id => :'cli', p_cuenta_id => :'cta', p_modalidad_id => :'m_perfil',
+  p_unidad_id => :'u1', p_precio_usd => null, p_inicio => '2019-07-01'::date,
+  p_cantidad_periodos => 1, p_fecha_venta => '2019-07-01'::date
 ) as susc \gset
 select id as periodo from public.periodos_servicio where suscripcion_id = :'susc' \gset
 

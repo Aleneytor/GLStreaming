@@ -20,7 +20,10 @@ insert into public.clientes (nombre) values ('Ana') returning id as ana \gset
 select public.crear_cuenta_con_unidades(:'prod', 5, 'N1', null, 'A', 'ha', 'p', null, null, 'Yo') as cta \gset
 select id as u1 from public.unidades_inventario where cuenta_id = :'cta' and numero_slot = 1 \gset
 
-select public.vender_unidad(:'ana', :'cta', :'m_perfil', :'u1', 3.5, '2026-07-22'::date, 1, null, null) as susc \gset
+select public.vender_unidad(
+  p_cliente_id => :'ana', p_cuenta_id => :'cta', p_modalidad_id => :'m_perfil',
+  p_unidad_id => :'u1', p_precio_usd => 3.5, p_inicio => '2026-07-22'::date, p_cantidad_periodos => 1
+) as susc \gset
 
 -- Se expone a los bloques DO, que no ven las variables de psql.
 select set_config('pruebas.susc', :'susc', true);
@@ -70,14 +73,14 @@ declare ok boolean := false;
 begin
   begin
     perform public.vender_unidad(
-      (select id from public.clientes where nombre = 'Ana'),
-      (select id from public.cuentas where alias = 'N1'),
-      (select id from public.modalidades m join public.productos_plataforma p
+      p_cliente_id => (select id from public.clientes where nombre = 'Ana'),
+      p_cuenta_id => (select id from public.cuentas where alias = 'N1'),
+      p_modalidad_id => (select id from public.modalidades m join public.productos_plataforma p
         on p.plataforma_id = m.plataforma_id
        where p.codigo = 'netflix' and m.tipo_modalidad = 'perfil'),
-      (select id from public.unidades_inventario
+      p_unidad_id => (select id from public.unidades_inventario
        where cuenta_id = (select id from public.cuentas where alias = 'N1') and numero_slot = 1),
-      3.5, current_date, 1, null, null);
+      p_precio_usd => 3.5, p_inicio => current_date, p_cantidad_periodos => 1);
   exception when others then ok := true;
   end;
   raise notice 'Un perfil pausado sigue ocupado (no se revende): %',
@@ -119,14 +122,14 @@ declare ok boolean := false;
 begin
   begin
     perform public.vender_unidad(
-      (select id from public.clientes where nombre = 'Ana'),
-      (select id from public.cuentas where alias = 'N1'),
-      (select id from public.modalidades m join public.productos_plataforma p
+      p_cliente_id => (select id from public.clientes where nombre = 'Ana'),
+      p_cuenta_id => (select id from public.cuentas where alias = 'N1'),
+      p_modalidad_id => (select id from public.modalidades m join public.productos_plataforma p
         on p.plataforma_id = m.plataforma_id
        where p.codigo = 'netflix' and m.tipo_modalidad = 'perfil'),
-      (select id from public.unidades_inventario
+      p_unidad_id => (select id from public.unidades_inventario
        where cuenta_id = (select id from public.cuentas where alias = 'N1') and numero_slot = 1),
-      3.5, current_date, 1, null, null);
+      p_precio_usd => 3.5, p_inicio => current_date, p_cantidad_periodos => 1);
   exception when others then ok := true;
   end;
   raise notice 'Sin confirmar limpieza el perfil NO se revende: %',
@@ -143,7 +146,10 @@ union all select 'La operacion queda confirmada',
 
 -- Y ahora sí se puede vender a otro cliente
 insert into public.clientes (nombre) values ('Beto') returning id as beto \gset
-select public.vender_unidad(:'beto', :'cta', :'m_perfil', :'u1', 4, current_date, 1, null, null) as susc2 \gset
+select public.vender_unidad(
+  p_cliente_id => :'beto', p_cuenta_id => :'cta', p_modalidad_id => :'m_perfil',
+  p_unidad_id => :'u1', p_precio_usd => 4, p_inicio => current_date, p_cantidad_periodos => 1
+) as susc2 \gset
 select 'El perfil saneado se vuelve a vender' as prueba,
        (select count(*) from public.asignaciones_inventario
         where unidad_id = :'u1' and fin is null) = 1 as pass;

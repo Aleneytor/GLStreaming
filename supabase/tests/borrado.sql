@@ -26,7 +26,9 @@ select public.crear_cuenta_con_unidades(:'prod', 5, 'Del-1', null, 'A', 'hdel', 
 select id as u1 from public.unidades_inventario where cuenta_id = :'cta' and numero_slot = 1 \gset
 
 select public.vender_unidad(
-  :'cli', :'cta', :'m_perfil', :'u1', null, '2026-07-01'::date, 1, null, '2026-07-01'::date, null, null, null, 300
+  p_cliente_id => :'cli', p_cuenta_id => :'cta', p_modalidad_id => :'m_perfil',
+  p_unidad_id => :'u1', p_inicio => '2026-07-01'::date, p_cantidad_periodos => 1,
+  p_fecha_venta => '2026-07-01'::date, p_monto_ves => 300
 ) as susc \gset
 select id as periodo from public.periodos_servicio where suscripcion_id = :'susc' \gset
 select public.registrar_renovacion_y_pago(:'cta', 2.00, '2026-07-01'::date, null, null, true) as ciclo \gset

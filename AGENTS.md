@@ -153,15 +153,29 @@ También: la **migración 0033 no estaba registrada** en
 `supabase_migrations.schema_migrations` (se había aplicado a mano). Se insertó la
 fila `('0033', …)` para que el historial cuadre con la función viva.
 
-### ⚠️ Pendiente crítico para el próximo agente
+### Suites SQL restauradas tras la nueva firma de `vender_unidad`
 
-- **Suites SQL de dinero en ROJO.** La 0033 cambió la firma de `vender_unidad`
-  (ahora **19 argumentos**, otro orden: `p_cuenta_id, p_unidad_id, p_modalidad_id,
-  …`; ver la migración). La app la llama **por nombre**, así que funciona, pero las
-  suites `venta_unidad`, `finanzas` y `ciclo_vida` la llaman por la **firma vieja**
-  y fallan enteras — **perdimos la validación del camino venta→cobro→caja**. Hay
-  que reescribir esas tres suites a la firma nueva antes de confiar en cambios de
-  dinero. (`rls`, `importacion`, `spotify`, `portal_revendedor` siguen verdes.)
+La 0033 cambió la firma de `vender_unidad` (ahora **19 argumentos**, otro orden:
+`p_cuenta_id, p_unidad_id, p_modalidad_id, …`). Las suites `venta_unidad`,
+`finanzas`, `ciclo_vida` y `borrado` la llamaban por **posición** (firma vieja) y
+fallaban enteras. Se pasaron **todas** esas llamadas a **argumentos por nombre**
+(`p_cliente_id => …`), inmunes a futuros reordenamientos de firma.
+
+- **Regla nueva confirmada por el código** (`pendiente_limpieza` NO se revende):
+  sigue en pie. La 0033 auto-prepara/habilita la *unidad* al venderla, pero la
+  **asignación queda abierta** (`fin` null) hasta `confirmar_limpieza`, así que la
+  liberación en dos pasos se mantiene: no se puede revender hasta confirmar.
+- **Ojo con los datos reales** (`CLAUDE.md`): `venta_unidad` usaba el nombre
+  «Luis Rodriguez», que existe de verdad en la base del usuario (con 2
+  suscripciones), y el conteo absoluto fallaba. Se renombró a «Luis QA-Prueba»
+  para no chocar con datos reales — comparar contra nombres/deltas propios.
+- Estado: **235 comprobaciones SQL en verde, 0 errores.** Las llamadas a
+  `registrar_cobro_cliente` y `renovar_y_cobrar` no se tocaron: sus firmas solo
+  crecieron por el final, así que las llamadas posicionales existentes siguen
+  válidas.
+
+### ⚠️ Pendiente para el próximo agente
+
 - **Decisiones de diseño a confirmar con el usuario** (no tocadas):
   - `cancelarVentaConLimpiezaAction` **auto-borra el cliente** si se queda sin
     servicios activos. Es destructivo (se pierde su contacto para revender). Está
@@ -176,5 +190,5 @@ fila `('0033', …)` para que el historial cuadre con la función viva.
 
 ---
 *Última actualización: 2026-07-27 (revisión: corregidos 4 bugs silenciosos de
-inventario, registrada 0033; suites de dinero pendientes de actualizar a la nueva
-firma de `vender_unidad`).*
+inventario, registrada 0033, y restauradas las suites SQL a la nueva firma de
+`vender_unidad` — 235 comprobaciones en verde).*

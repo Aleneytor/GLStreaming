@@ -40,7 +40,9 @@ union all select 'Multimes: 22/07 + 3 meses = 22/10',
 -- 2. Venta de un perfil
 -- ---------------------------------------------------------------------------
 select public.vender_unidad(
-  :'ana', :'cta', :'m_perfil', :'u1', 3.50, '2026-07-22'::date, 1, null, null
+  p_cliente_id => :'ana', p_cuenta_id => :'cta', p_modalidad_id => :'m_perfil',
+  p_unidad_id => :'u1', p_precio_usd => 3.50, p_inicio => '2026-07-22'::date,
+  p_cantidad_periodos => 1
 ) as susc \gset
 
 select 'Crea la suscripcion activa' as prueba,
@@ -63,14 +65,14 @@ declare ok boolean := false;
 begin
   begin
     perform public.vender_unidad(
-      (select id from public.clientes where nombre = 'Beto'),
-      (select id from public.cuentas where alias = 'Net-1'),
-      (select id from public.modalidades m join public.productos_plataforma p
+      p_cliente_id => (select id from public.clientes where nombre = 'Beto'),
+      p_cuenta_id => (select id from public.cuentas where alias = 'Net-1'),
+      p_modalidad_id => (select id from public.modalidades m join public.productos_plataforma p
          on p.plataforma_id = m.plataforma_id
        where p.codigo = 'netflix' and m.tipo_modalidad = 'perfil'),
-      (select id from public.unidades_inventario
+      p_unidad_id => (select id from public.unidades_inventario
        where cuenta_id = (select id from public.cuentas where alias = 'Net-1') and numero_slot = 1),
-      3.50, current_date, 1, null, null);
+      p_precio_usd => 3.50, p_inicio => current_date, p_cantidad_periodos => 1);
   exception when others then ok := true;
   end;
   raise notice 'Rechaza vender dos veces el mismo perfil: %', case when ok then 'PASS' else 'FAIL' end;
@@ -84,12 +86,13 @@ declare ok boolean := false;
 begin
   begin
     perform public.vender_unidad(
-      (select id from public.clientes where nombre = 'Beto'),
-      (select id from public.cuentas where alias = 'Net-1'),
-      (select id from public.modalidades m join public.productos_plataforma p
+      p_cliente_id => (select id from public.clientes where nombre = 'Beto'),
+      p_cuenta_id => (select id from public.cuentas where alias = 'Net-1'),
+      p_modalidad_id => (select id from public.modalidades m join public.productos_plataforma p
          on p.plataforma_id = m.plataforma_id
        where p.codigo = 'netflix' and m.tipo_modalidad = 'cuenta_completa'),
-      null, 15, current_date, 1, null, null);
+      p_unidad_id => null, p_precio_usd => 15, p_inicio => current_date,
+      p_cantidad_periodos => 1);
   exception when others then ok := true;
   end;
   raise notice 'Con un perfil ocupado NO deja vender la cuenta completa: %',
@@ -97,7 +100,10 @@ begin
 end $$;
 
 -- Otro perfil libre de la misma cuenta sí se puede vender.
-select public.vender_unidad(:'beto', :'cta', :'m_perfil', :'u2', 3.50, current_date, 1, null, null) as susc2 \gset
+select public.vender_unidad(
+  p_cliente_id => :'beto', p_cuenta_id => :'cta', p_modalidad_id => :'m_perfil',
+  p_unidad_id => :'u2', p_precio_usd => 3.50, p_inicio => current_date, p_cantidad_periodos => 1
+) as susc2 \gset
 select 'Otro perfil libre si se vende' as prueba,
        (select count(*) from public.asignaciones_inventario
         where cuenta_id = :'cta' and fin is null) = 2 as pass;
@@ -108,7 +114,10 @@ select 'Otro perfil libre si se vende' as prueba,
 select public.crear_cuenta_con_unidades(:'prod', 5, 'Net-2', null, 'B', 'hb', 'p', null, null, 'Yo') as cta2 \gset
 select id as v1 from public.unidades_inventario where cuenta_id = :'cta2' and numero_slot = 1 \gset
 
-select public.vender_unidad(:'ana', :'cta2', :'m_completa', null, 15, current_date, 1, null, null) as susc3 \gset
+select public.vender_unidad(
+  p_cliente_id => :'ana', p_cuenta_id => :'cta2', p_modalidad_id => :'m_completa',
+  p_unidad_id => null, p_precio_usd => 15, p_inicio => current_date, p_cantidad_periodos => 1
+) as susc3 \gset
 select 'Venta completa consume la capacidad vendible' as prueba,
        (select capacidad_vendible_consumida_snapshot from public.asignaciones_inventario
         where suscripcion_id = :'susc3') = 5 as pass;
@@ -118,14 +127,14 @@ declare ok boolean := false;
 begin
   begin
     perform public.vender_unidad(
-      (select id from public.clientes where nombre = 'Beto'),
-      (select id from public.cuentas where alias = 'Net-2'),
-      (select id from public.modalidades m join public.productos_plataforma p
+      p_cliente_id => (select id from public.clientes where nombre = 'Beto'),
+      p_cuenta_id => (select id from public.cuentas where alias = 'Net-2'),
+      p_modalidad_id => (select id from public.modalidades m join public.productos_plataforma p
          on p.plataforma_id = m.plataforma_id
        where p.codigo = 'netflix' and m.tipo_modalidad = 'perfil'),
-      (select id from public.unidades_inventario
+      p_unidad_id => (select id from public.unidades_inventario
        where cuenta_id = (select id from public.cuentas where alias = 'Net-2') and numero_slot = 1),
-      3.50, current_date, 1, null, null);
+      p_precio_usd => 3.50, p_inicio => current_date, p_cantidad_periodos => 1);
   exception when others then ok := true;
   end;
   raise notice 'Vendida completa, NO deja vender sus perfiles: %',
@@ -140,12 +149,12 @@ declare ok boolean := false;
 begin
   begin
     perform public.vender_unidad(
-      (select id from public.clientes where nombre = 'Ana'),
-      (select id from public.cuentas where alias = 'Net-1'),
-      (select id from public.modalidades where tipo_modalidad = 'miembro_familiar' limit 1),
-      (select id from public.unidades_inventario
+      p_cliente_id => (select id from public.clientes where nombre = 'Ana'),
+      p_cuenta_id => (select id from public.cuentas where alias = 'Net-1'),
+      p_modalidad_id => (select id from public.modalidades where tipo_modalidad = 'miembro_familiar' limit 1),
+      p_unidad_id => (select id from public.unidades_inventario
        where cuenta_id = (select id from public.cuentas where alias = 'Net-1') and numero_slot = 3),
-      3.50, current_date, 1, null, null);
+      p_precio_usd => 3.50, p_inicio => current_date, p_cantidad_periodos => 1);
   exception when others then ok := true;
   end;
   raise notice 'Rechaza una modalidad ajena al producto: %', case when ok then 'PASS' else 'FAIL' end;
@@ -158,16 +167,16 @@ select id as u3 from public.unidades_inventario where cuenta_id = :'cta' and num
 
 select public.vender_unidad(
   p_cuenta_id => :'cta', p_modalidad_id => :'m_perfil', p_unidad_id => :'u3',
-  p_cliente_nombre => 'Luis Rodriguez', p_cliente_whatsapp => '+58 414-0377887',
+  p_cliente_nombre => 'Luis QA-Prueba', p_cliente_whatsapp => '+58 414-0377887',
   p_precio_usd => 5.50, p_inicio => '2026-07-15'::date
 ) as susc_luis \gset
 
 select 'Crea el cliente nuevo sobre la marcha' as prueba,
-       (select count(*) from public.clientes where nombre = 'Luis Rodriguez') = 1 as pass
+       (select count(*) from public.clientes where nombre = 'Luis QA-Prueba') = 1 as pass
 union all select 'Guarda su WhatsApp',
-       (select whatsapp_original from public.clientes where nombre = 'Luis Rodriguez') = '+58 414-0377887'
+       (select whatsapp_original from public.clientes where nombre = 'Luis QA-Prueba') = '+58 414-0377887'
 union all select 'El perfil toma el nombre del cliente',
-       (select nombre_visible from public.unidades_inventario where id = :'u3') = 'Luis Rodriguez'
+       (select nombre_visible from public.unidades_inventario where id = :'u3') = 'Luis QA-Prueba'
 union all select 'Renueva el 15/08',
        (select fecha_renovacion from public.periodos_servicio where suscripcion_id = :'susc_luis') = '2026-08-15';
 
@@ -175,17 +184,17 @@ union all select 'Renueva el 15/08',
 select id as u4 from public.unidades_inventario where cuenta_id = :'cta' and numero_slot = 4 \gset
 select public.vender_unidad(
   p_cuenta_id => :'cta', p_modalidad_id => :'m_perfil', p_unidad_id => :'u4',
-  p_cliente_nombre => 'luis rodriguez',   -- distinto uso de mayúsculas
+  p_cliente_nombre => 'luis qa-prueba',   -- distinto uso de mayúsculas
   p_nombre_perfil => 'Luis (HBO)', p_precio_usd => 5.00
 ) as susc_luis2 \gset
 
 select 'Mismo cliente NO se duplica' as prueba,
-       (select count(*) from public.clientes where lower(nombre) = 'luis rodriguez') = 1 as pass
+       (select count(*) from public.clientes where lower(nombre) = 'luis qa-prueba') = 1 as pass
 union all select 'Respeta un nombre de perfil distinto',
        (select nombre_visible from public.unidades_inventario where id = :'u4') = 'Luis (HBO)'
 union all select 'El cliente queda con dos servicios',
        (select count(*) from public.suscripciones s join public.clientes c on c.id = s.cliente_id
-        where lower(c.nombre) = 'luis rodriguez') = 2;
+        where lower(c.nombre) = 'luis qa-prueba') = 2;
 
 -- ======================= COMO REVENDEDOR =======================
 reset role;
@@ -197,10 +206,11 @@ declare ok boolean := false;
 begin
   begin
     perform public.vender_unidad(
-      (select id from public.clientes limit 1),
-      (select id from public.cuentas limit 1),
-      (select id from public.modalidades limit 1),
-      null, 1, current_date, 1, null, null);
+      p_cliente_id => (select id from public.clientes limit 1),
+      p_cuenta_id => (select id from public.cuentas limit 1),
+      p_modalidad_id => (select id from public.modalidades limit 1),
+      p_unidad_id => null, p_precio_usd => 1, p_inicio => current_date,
+      p_cantidad_periodos => 1);
   exception when others then ok := true;
   end;
   raise notice 'Un revendedor NO puede registrar ventas: %', case when ok then 'PASS' else 'FAIL' end;
