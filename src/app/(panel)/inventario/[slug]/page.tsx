@@ -39,13 +39,13 @@ export default async function PlataformaPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ q?: string; estado?: string }>;
+  searchParams: Promise<{ q?: string; estado?: string; producto?: string }>;
 }) {
   const usuario = await obtenerUsuarioActual();
   if (!esAdmin(usuario)) redirect("/dashboard");
 
   const { slug } = await params;
-  const { q, estado } = await searchParams;
+  const { q, estado, producto: productoSeleccionado } = await searchParams;
   const supabase = await createClient();
 
   const { data: plataforma } = await supabase
@@ -66,9 +66,6 @@ export default async function PlataformaPage({
        proveedores ( nombre_o_alias ),
        ciclos_proveedor ( costo_usdt, estado, proxima_renovacion ),
        credenciales_cuenta ( login_cifrado, contrasena_cifrada, eliminada_at ),
-       coberturas_spotify (
-         controles_pago_spotify ( gmail_cifrado, origen )
-       ),
        unidades_inventario ( id, numero_slot, nombre_visible, secretos_unidad ( pin_cifrado ) ),
        asignaciones_inventario (
          id, alcance, unidad_id, fin,
@@ -83,7 +80,29 @@ export default async function PlataformaPage({
 
   if (estado) consulta = consulta.eq("estado", estado);
 
-  const { data: cuentas } = await consulta.order("orden", { ascending: false });
+  const { data: cuentas, error: errorCuentas } = await consulta.order("orden", { ascending: false });
+  if (errorCuentas) throw new Error(`No se pudo cargar el inventario: ${errorCuentas.message}`);
+
+  // El control de pago referencia `coberturas_spotify.cuenta_id` directamente.
+  // Consultarlo aparte evita depender de un embed inverso ambiguo de PostgREST
+  // y garantiza que el Gmail pagador llegue tanto a escritorio como a móvil.
+  const pagadoresPorCuenta = new Map<
+    string,
+    { gmail_cifrado: string; origen: string | null }
+  >();
+  if (slug === "spotify" && (cuentas?.length ?? 0) > 0) {
+    const { data: controles, error: errorControles } = await supabase
+      .from("controles_pago_spotify")
+      .select("cobertura_cuenta_id, gmail_cifrado, origen")
+      .in("cobertura_cuenta_id", (cuentas ?? []).map((c) => c.id));
+
+    if (errorControles) {
+      throw new Error(`No se pudo cargar el Gmail pagador: ${errorControles.message}`);
+    }
+    for (const control of controles ?? []) {
+      pagadoresPorCuenta.set(control.cobertura_cuenta_id, control);
+    }
+  }
 
   type CuentaFila = NonNullable<typeof cuentas>[number];
 
@@ -118,7 +137,10 @@ export default async function PlataformaPage({
     };
   };
 
-  const grupos = new Map<string, { nombre: string; cuentas: BloqueCuenta[] }>();
+  const grupos = new Map<
+    string,
+    { codigo: string; nombre: string; cuentas: BloqueCuenta[] }
+  >();
 
   for (const c of cuentas ?? []) {
     const prod = uno(c.productos_plataforma);
@@ -137,8 +159,7 @@ export default async function PlataformaPage({
       abiertas.filter((a) => a.unidad_id).map((a) => [a.unidad_id as string, a]),
     );
 
-    const cob = uno(c.coberturas_spotify);
-    const ctrl = uno(cob?.controles_pago_spotify);
+    const ctrl = pagadoresPorCuenta.get(c.id);
     const pagador = ctrl?.gmail_cifrado ? desc(ctrl.gmail_cifrado) : null;
 
     const filas: CupoFila[] = [];
@@ -264,12 +285,18 @@ export default async function PlataformaPage({
     const renovarProv = cicloVigente?.proxima_renovacion ?? null;
     const diasProv = renovarProv ? diasParaRenovar(renovarProv, hoy) : null;
 
-    const grupo = groupsGetOrCreate(grupos, prod.id, prod.nombre as string);
+    const grupo = groupsGetOrCreate(
+      grupos,
+      prod.id,
+      prod.codigo as string,
+      prod.nombre as string,
+    );
     grupo.cuentas.push({
       cuentaId: c.id as string,
       correo: desc(cred?.login_cifrado),
       contrasena: desc(cred?.contrasena_cifrada),
       pagador,
+      pagadorOrigen: ctrl?.origen ?? null,
       alias: c.alias ?? null,
       notas: c.notas ?? null,
       cuentaEstado: c.estado as string,
@@ -286,9 +313,32 @@ export default async function PlataformaPage({
     grupos.set(prod.id, grupo);
   }
 
+  const etiquetaProducto = (codigo: string, nombre: string) => {
+    if (codigo === "netflix") return "Cuenta estándar";
+    if (codigo === "netflix-extra") return "Perfil extra";
+    if (codigo === "spotify-individual") return "Individual";
+    if (codigo === "spotify-familiar") return "Familiar";
+    return nombre.replace(/^.*?\s[—-]\s/, "");
+  };
+
+  const ordenProducto: Record<string, number> = {
+    netflix: 1,
+    "netflix-extra": 2,
+    "spotify-individual": 1,
+    "spotify-familiar": 2,
+  };
+  const opcionesProducto = [...grupos.values()]
+    .sort((a, b) => (ordenProducto[a.codigo] ?? 99) - (ordenProducto[b.codigo] ?? 99))
+    .map((g) => ({
+      valor: g.codigo,
+      etiqueta: etiquetaProducto(g.codigo, g.nombre),
+      cuentas: g.cuentas.length,
+    }));
+
   const busqueda = (q ?? "").trim().toLowerCase();
   let totalFilas = 0;
   const gruposFiltrados = [...grupos.values()]
+    .filter((g) => !productoSeleccionado || g.codigo === productoSeleccionado)
     .map((g) => {
       const cuentasFiltradas = g.cuentas
         .map((cta) => {
@@ -312,6 +362,10 @@ export default async function PlataformaPage({
       return { ...g, cuentas: cuentasFiltradas };
     })
     .filter((g) => g.cuentas.length > 0);
+  const totalCuentasVisibles = gruposFiltrados.reduce(
+    (total, grupo) => total + grupo.cuentas.length,
+    0,
+  );
 
   const { data: listaVendedores } = await supabase
     .from("vendedores")
@@ -342,7 +396,7 @@ export default async function PlataformaPage({
           <div>
             <h1 className="text-lg font-semibold tracking-tight">{plataforma.nombre}</h1>
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              {cuentas?.length ?? 0} {cuentas?.length === 1 ? "cuenta" : "cuentas"} ·{" "}
+              {totalCuentasVisibles} {totalCuentasVisibles === 1 ? "cuenta" : "cuentas"} ·{" "}
               {totalFilas} {totalFilas === 1 ? "cupo" : "cupos"}
             </p>
           </div>
@@ -356,6 +410,7 @@ export default async function PlataformaPage({
       </div>
 
       <FiltrosInventario
+        productos={opcionesProducto}
         estados={[
           { valor: "activa", etiqueta: "Activas" },
           { valor: "mantenimiento", etiqueta: "En mantenimiento" },
@@ -366,13 +421,13 @@ export default async function PlataformaPage({
 
       {gruposFiltrados.length === 0 ? (
         <p className="rounded-xl border border-dashed border-neutral-300 p-6 text-center text-xs text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-          {q || estado
+          {q || estado || productoSeleccionado
             ? "Nada coincide con el filtro."
             : `Todavía no hay cuentas de ${plataforma.nombre}.`}
         </p>
       ) : (
         gruposFiltrados.map((g) => (
-          <section key={g.nombre} className="space-y-2">
+          <section key={g.codigo} className="space-y-2">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
               {g.nombre} ({g.cuentas.length} {g.cuentas.length === 1 ? "cuenta" : "cuentas"})
             </h2>
@@ -385,9 +440,10 @@ export default async function PlataformaPage({
 }
 
 function groupsGetOrCreate(
-  map: Map<string, { nombre: string; cuentas: BloqueCuenta[] }>,
+  map: Map<string, { codigo: string; nombre: string; cuentas: BloqueCuenta[] }>,
   id: string,
+  codigo: string,
   nombre: string,
 ) {
-  return map.get(id) ?? { nombre, cuentas: [] };
+  return map.get(id) ?? { codigo, nombre, cuentas: [] };
 }

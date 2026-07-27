@@ -216,6 +216,24 @@ Estado de pruebas: **181 SQL + 79 unitarias**, todas en verde.
 
 Para retomar: `npx supabase start` y `npm run dev` (ver `09-fase-1-setup.md`).
 
+## 4.6. Operación directa y adaptación móvil (27/07/2026)
+
+Las migraciones `0023..0035` y las iteraciones posteriores llevaron la operación
+diaria al inventario: venta y gestión directa desde cada cupo, importadores para
+las plataformas reales, cobro con tasa BCV/paralela según el tipo de vendedor y
+distinción entre revendedor e intermediario.
+
+El inventario conserva la tabla densa en escritorio y usa tarjetas por cuenta en
+pantallas menores de `768px`. Netflix y Spotify tienen un selector URL-first para
+alternar sus productos (`Cuenta estándar` / `Perfil extra` e `Individual` /
+`Familiar`) sin modificar datos. En Spotify la tarjeta muestra también el Gmail
+pagador y su origen, consultados por `controles_pago_spotify.cobertura_cuenta_id`.
+
+Validación de esta rebanada: **129 pruebas unitarias**, typecheck y build de
+producción en verde. PostgreSQL real contiene controles con Gmail para ambas
+variantes de Spotify. Queda pendiente una revisión visual manual completa en
+teléfonos reales de todas las plataformas y sus modales.
+
 ## 5. Qué hacer si hay que reiniciar desde cero
 
 - Borrar únicamente `src/`, `supabase/` (excepto este `docs/`) y `tests/` — nunca `docs/`.

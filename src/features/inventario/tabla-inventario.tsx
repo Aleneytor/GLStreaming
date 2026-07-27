@@ -39,6 +39,7 @@ export type BloqueCuenta = {
   correo: string;
   contrasena: string;
   pagador?: string | null;
+  pagadorOrigen?: string | null;
   alias: string | null;
   notas: string | null;
   cuentaEstado: string;
@@ -165,6 +166,7 @@ export function TablaInventario({
             key={cta.cuentaId}
             cta={cta}
             numCuenta={index + 1}
+            mostrarPagador={slug === "spotify"}
             onEditar={() => setCuentaEditando(cta)}
             onIniciarVenta={(unidadId, nombrePerfil) =>
               setVentaTarget({ cuentaId: cta.cuentaId, unidadId, nombrePerfil })
@@ -440,7 +442,12 @@ function BloqueCuentaExcel({
                 rowSpan={totalFilas}
                 className="border border-neutral-300 bg-neutral-50 px-2 py-0.5 align-middle text-neutral-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400"
               >
-                {cta.pagador ? `(${cta.pagador})` : "—"}
+                <span className="block">{cta.pagador ? `(${cta.pagador})` : "—"}</span>
+                {cta.pagadorOrigen && (
+                  <span className="mt-0.5 block text-[9px] uppercase text-neutral-400">
+                    {cta.pagadorOrigen.replaceAll("_", " ")}
+                  </span>
+                )}
               </td>
             )}
 
@@ -652,6 +659,7 @@ function BloqueCuentaExcel({
 function TarjetaCuentaMovil({
   cta,
   numCuenta,
+  mostrarPagador,
   onEditar,
   onIniciarVenta,
   onGestionarVenta,
@@ -659,6 +667,7 @@ function TarjetaCuentaMovil({
 }: {
   cta: BloqueCuenta;
   numCuenta: number;
+  mostrarPagador: boolean;
   onEditar: () => void;
   onIniciarVenta: (unidadId: string | null, nombrePerfil: string) => void;
   onGestionarVenta: (fila: CupoFila) => void;
@@ -706,6 +715,20 @@ function TarjetaCuentaMovil({
           {mostrarCredenciales ? "Ocultar clave" : "Ver clave"}
         </button>
       </div>
+
+      {mostrarPagador && (
+        <div className="mt-2 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-2 text-xs dark:border-violet-900 dark:bg-violet-950/30">
+          <span className="text-violet-600 dark:text-violet-300">💳 Gmail pagador: </span>
+          <strong className="break-all font-mono text-violet-950 dark:text-violet-100">
+            {cta.pagador ?? "No registrado"}
+          </strong>
+          {cta.pagadorOrigen && (
+            <span className="ml-1 text-[10px] uppercase text-violet-500 dark:text-violet-400">
+              · {cta.pagadorOrigen.replaceAll("_", " ")}
+            </span>
+          )}
+        </div>
+      )}
 
       {mostrarCredenciales && (
         <div className="mt-2 rounded bg-neutral-100 p-2 font-mono text-xs text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
