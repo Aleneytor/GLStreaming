@@ -334,12 +334,36 @@ propia, estado disponible/completo, cuentas, ventas, cupos libres y porcentaje
 de ocupación. Las plataformas vacías mantienen su identidad, pero ocupan menos
 altura para conservar una navegación móvil ágil.
 
-Validación acumulada: **148 pruebas unitarias**, **15 suites SQL** y typecheck en verde; el último
-build de producción también pasó. PostgreSQL real contiene controles con Gmail para ambas
-variantes de Spotify. Queda pendiente una revisión visual manual completa en
-teléfonos reales de todas las plataformas y sus modales.
+Validación acumulada: **150 pruebas unitarias**, **16 suites SQL** y typecheck en
+verde; el último build de producción también pasó. La base local se reinició con
+migraciones hasta `0037`, quedó con **0 cuentas operativas** y recreó los dos
+usuarios de desarrollo. Por tanto, toda comprobación con la cartera real —incluidos
+los Gmail pagadores— debe repetirse después de reimportar el respaldo.
 
-## 5. Qué hacer si hay que reiniciar desde cero
+## 5. Próxima sesión — lista acordada con el usuario
+
+1. **Resolver que la app no abre.** El aviso llegó después del `db:reset`; la
+   revisión de puerto 3000, proceso de Next y logs fue interrumpida cuando el
+   usuario tuvo que irse. Supabase sí quedó sano. Diagnosticar antes de modificar.
+2. **Probar el importador nuevo con el respaldo real.** Verificar que cada
+   plataforma recupere cuentas, ventas, fechas, vendedores, proveedor y costos;
+   que la primera cuenta pegada aparezca primera; que una cuenta completa ocupe
+   una sola posición; y que PAN/vencimiento puedan revelarse temporalmente desde
+   la máscara sin persistir CVV.
+3. **Añadir “Mover servicio por falla”.** Ya está decidido por `DEC-03` y
+   `DEC-60`: el traslado conserva suscripción, cliente, período, vencimiento,
+   precio, cobro y vendedor. Solo cierra la asignación/entrega del origen y abre
+   otra en un destino compatible; la cuenta defectuosa queda en mantenimiento.
+   Para cuenta completa, el destino debe estar totalmente libre; para perfil o
+   cupo, basta una unidad compatible libre. Debe ser transaccional y auditado.
+4. **Trabajar el panel de revendedor con los cambios recientes.** Adaptar la
+   experiencia responsive, variantes Netflix/Spotify, renovaciones, traslado y
+   paquete de acceso. No ampliar permisos: el revendedor solo ve sus ventas y
+   nunca recibe inventario, proveedor, costo o tarjetas propias.
+5. **Agregar los siguientes pasos junto con el usuario.** No asumir todavía
+   funcionalidades posteriores a estas cuatro prioridades.
+
+## 6. Qué hacer si hay que reiniciar desde cero
 
 - Borrar únicamente `src/`, `supabase/` (excepto este `docs/`) y `tests/` — nunca `docs/`.
 - Releer este archivo y `06-decisiones-pendientes.md`.

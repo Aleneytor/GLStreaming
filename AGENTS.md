@@ -269,6 +269,27 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 
 ### ⚠️ Pendiente para el próximo agente
 
+- **Inicio obligatorio: diagnosticar «no abre».** Después del `db:reset` el
+  usuario indicó que la app no abría. El diagnóstico de puerto 3000/servidor
+  Next fue interrumpido porque debía irse; no asumir una causa. Supabase sí quedó
+  reconstruido con migraciones hasta `0037`, 0 cuentas y los 2 usuarios dev.
+- **Probar el importador con el respaldo real.** Confirmar de punta a punta:
+  plataformas y modalidades, cuentas completas, orden exacto según la primera
+  aparición, metadatos, tarjetas propias cifradas y botón de revelado en
+  escritorio/móvil. El código tiene pruebas, pero falta esta prueba operativa.
+- **Implementar traslado por falla de cuenta (DEC-03/DEC-60).** Añadir una opción
+  administrativa para mover un cliente/servicio desde una cuenta defectuosa a
+  otro cupo compatible. Debe cerrar el tramo de asignación anterior y abrir el
+  nuevo sin crear otra venta ni cambiar cliente, vendedor, precio, cobro,
+  período o fecha de renovación. Cuenta completa exige destino totalmente libre;
+  perfil/cupo exige slot compatible libre. El origen queda en mantenimiento y
+  el acceso/entrega debe regenerarse y auditarse.
+- **Actualizar el panel de revendedor.** Revisarlo contra todos los cambios
+  recientes: variantes Netflix/Spotify, vendedor afiliado, base BCV/paralela,
+  renovaciones, nuevas vistas responsive, traslados y paquete de acceso. Mantener
+  RLS: solo sus ventas; nunca stock, proveedor, costos ni tarjetas propias.
+- **Continuar definiendo pasos con el usuario.** Esta lista es la base de la
+  próxima sesión, no el cierre definitivo del roadmap.
 - **Responsive móvil todavía en revisión.** La tabla ya fue sustituida por
   tarjetas en `< 768px`, Spotify/Netflix ya tienen selector de variante y Spotify
   ya enseña el Gmail pagador. Falta una pasada visual manual en teléfonos reales
@@ -291,7 +312,8 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
   en `resolverVendedorId`.
 
 ---
-*Pendiente destacado: terminar la revisión visual responsive de plataformas y modales.*
+*Pendiente destacado: recuperar el arranque local, probar la reimportación real,
+implementar traslados por falla y actualizar el panel de revendedor.*
 
 *Última actualización: 2026-07-27 (tarjetas propias cifradas y revelado auditado;
 orden de importación conservado; base local reiniciada; Inventario visual;
