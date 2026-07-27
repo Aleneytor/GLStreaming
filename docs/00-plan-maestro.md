@@ -246,6 +246,8 @@ Las renovaciones anticipadas se encadenan al vencimiento vigente, no a la fecha
 del pago: un servicio que vence el 29/07 y se paga el 27/07 genera el período
 29/07 → 29/08. Si ya venció, el período empieza en la fecha real del pago y se
 marca como renovación tardía.
+Al confirmarse, el modal muestra el período creado y oculta el botón de envío
+para que el operador reciba feedback inequívoco y no renueve dos veces.
 
 Validación acumulada: **137 pruebas unitarias** y typecheck en verde; el último
 build de producción también pasó. PostgreSQL real contiene controles con Gmail para ambas

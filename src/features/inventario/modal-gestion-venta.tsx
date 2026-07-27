@@ -434,21 +434,38 @@ export function ModalGestionVenta({
               </p>
             )}
 
+            {estadoRenovar?.ok && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="rounded-lg border-2 border-emerald-400 bg-emerald-50 p-4 text-center text-emerald-900 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200"
+              >
+                <p className="text-sm font-bold">✅ Servicio renovado correctamente</p>
+                <p className="mt-1 text-xs">{estadoRenovar.ok}</p>
+                <p className="mt-2 font-mono text-xs font-semibold">
+                  Nuevo período: {formatearFecha(planRenovacion.inicio)} →{" "}
+                  {formatearFecha(proximoVencimiento)}
+                </p>
+              </div>
+            )}
+
             <div className="flex items-center justify-end gap-2 border-t border-neutral-200 pt-3 dark:border-neutral-800">
               <button
                 type="button"
-                onClick={() => setModo("ver")}
+                onClick={() => (estadoRenovar?.ok ? onCerrar() : setModo("ver"))}
                 className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium text-neutral-700 dark:border-neutral-700 dark:text-neutral-300"
               >
-                Volver
+                {estadoRenovar?.ok ? "Listo" : "Volver"}
               </button>
-              <button
-                type="submit"
-                disabled={pendienteRenovar}
-                className="rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
-              >
-                {pendienteRenovar ? "Renovando..." : "Confirmar Renovación"}
-              </button>
+              {!estadoRenovar?.ok && (
+                <button
+                  type="submit"
+                  disabled={pendienteRenovar}
+                  className="rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {pendienteRenovar ? "Renovando..." : "Confirmar Renovación"}
+                </button>
+              )}
             </div>
           </form>
         )}
