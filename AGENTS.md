@@ -212,6 +212,17 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
   (hoy la renovación ya hereda la base del revendedor, así que no es urgente).
 - Validación: suite `supabase/tests/base_tasa.sql` (7 comprobaciones en verde).
 
+**Revendedor vs Intermediario (migración 0035):** `vendedores.tipo` distingue
+  · **revendedor**: afiliado, tendrá usuario y verá sus clientes por el portal;
+    puede cobrar a paralela.
+  · **intermediario**: compra para conocidos, informal (cualquiera, se escribe el
+    nombre y ya), sin usuario, **siempre BCV**.
+  Regla de dominio por CHECK: un intermediario NO puede tener `cobra_en_paralela`.
+  El default de un vendedor nuevo creado al vuelo es `intermediario`. En la UI
+  (`ModalVentaRapida`) el dropdown separa ambos en optgroups, y al elegir/crear
+  uno se muestra un radio tipo + el checkbox de paralela (solo si revendedor);
+  `resolverVendedorId` persiste `tipo` y fuerza BCV para intermediarios.
+
 ### Decisiones de diseño CONFIRMADAS por el usuario (no cambiar sin avisar)
 
 - **Venta = pago inmediato; solo las renovaciones quedan pendientes.** Por eso la

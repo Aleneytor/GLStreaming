@@ -7,6 +7,7 @@ export type VendedorOp = {
   id: string;
   nombre: string;
   alias: string | null;
+  tipo: "revendedor" | "intermediario";
   cobraEnParalela: boolean;
 };
 
@@ -27,14 +28,28 @@ export function ModalVentaRapida({
 }) {
   const [estado, action, pendiente] = useActionState(venderUnidadRapidaAction, null);
   const [seleccionVendedor, setSeleccionVendedor] = useState<string>("");
-  // La base de tasa (BCV/paralela) se guarda en el revendedor: al elegirlo, el
-  // checkbox refleja su marca actual; al confirmar la venta, la persiste.
+  // El tipo (revendedor/intermediario) y la base de tasa se guardan en el
+  // vendedor: al elegirlo reflejan lo guardado; al confirmar, se persisten.
+  const [tipoVendedor, setTipoVendedor] = useState<"revendedor" | "intermediario">(
+    "intermediario",
+  );
   const [cobraParalela, setCobraParalela] = useState(false);
+
+  const revendedores = vendedores.filter((v) => v.tipo === "revendedor");
+  const intermediarios = vendedores.filter((v) => v.tipo !== "revendedor");
 
   function onCambiarVendedor(valor: string) {
     setSeleccionVendedor(valor);
     const v = vendedores.find((x) => x.id === valor);
-    setCobraParalela(v?.cobraEnParalela ?? false);
+    // Existente: hereda su tipo/base. Nuevo: intermediario por defecto (casual).
+    setTipoVendedor(v?.tipo ?? "intermediario");
+    setCobraParalela(v?.tipo === "revendedor" ? v.cobraEnParalela : false);
+  }
+
+  // Un intermediario nunca cobra a paralela (siempre BCV).
+  function onCambiarTipo(t: "revendedor" | "intermediario") {
+    setTipoVendedor(t);
+    if (t === "intermediario") setCobraParalela(false);
   }
 
   const hoyIso = new Date().toISOString().split("T")[0];
@@ -134,42 +149,87 @@ export function ModalVentaRapida({
               onChange={(e) => onCambiarVendedor(e.target.value)}
               className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
             >
-              <option value="">Venta Directa (Sin revendedor)</option>
-              {vendedores.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.nombre} {v.alias ? `(${v.alias})` : ""}
-                </option>
-              ))}
-              <option value="__nuevo__">+ Registrar nuevo revendedor / intermediario...</option>
+              <option value="">Venta Directa (yo, sin intermediario)</option>
+              {revendedores.length > 0 && (
+                <optgroup label="Revendedores (con portal)">
+                  {revendedores.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.nombre} {v.alias ? `(${v.alias})` : ""}
+                      {v.cobraEnParalela ? " · paralela" : ""}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {intermediarios.length > 0 && (
+                <optgroup label="Intermediarios (BCV)">
+                  {intermediarios.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.nombre} {v.alias ? `(${v.alias})` : ""}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              <option value="__nuevo__">+ Registrar nuevo...</option>
             </select>
 
             {seleccionVendedor === "__nuevo__" && (
               <input
                 name="vendedor_nombre_custom"
                 required
-                placeholder="Escribe el nombre del revendedor (ej. Gabriel Nadales)"
+                placeholder="Nombre (ej. Gabriel Nadales)"
                 className="mt-2 w-full rounded-lg border border-emerald-500 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:bg-neutral-800 dark:text-white"
               />
             )}
-            <p className="mt-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              Selecciona o escribe el revendedor/intermediario que realizó la venta.
-            </p>
 
             {seleccionVendedor !== "" && (
-              <label className="mt-2 flex items-start gap-2 rounded-lg bg-amber-50 px-2.5 py-2 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-                <input
-                  type="checkbox"
-                  name="vendedor_cobra_paralela"
-                  checked={cobraParalela}
-                  onChange={(e) => setCobraParalela(e.target.checked)}
-                  className="mt-0.5"
-                />
-                <span>
-                  Este revendedor cobra a <strong>tasa paralela</strong>. Si lo
-                  marcas, sus ventas y renovaciones se cobran a paralela (si no, a
-                  BCV). Queda guardado en el revendedor.
-                </span>
-              </label>
+              <div className="mt-2 space-y-2 rounded-lg bg-neutral-50 px-2.5 py-2 dark:bg-neutral-800/60">
+                <div className="flex flex-col gap-1 text-[11px] text-neutral-700 dark:text-neutral-300">
+                  <label className="flex items-start gap-2">
+                    <input
+                      type="radio"
+                      name="vendedor_tipo"
+                      value="intermediario"
+                      checked={tipoVendedor === "intermediario"}
+                      onChange={() => onCambiarTipo("intermediario")}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      <strong>Intermediario</strong> — compra para conocidos, sin
+                      usuario. Siempre a <strong>BCV</strong>.
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2">
+                    <input
+                      type="radio"
+                      name="vendedor_tipo"
+                      value="revendedor"
+                      checked={tipoVendedor === "revendedor"}
+                      onChange={() => onCambiarTipo("revendedor")}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      <strong>Revendedor</strong> — afiliado, tendrá usuario y verá
+                      sus clientes en el portal.
+                    </span>
+                  </label>
+                </div>
+
+                {tipoVendedor === "revendedor" && (
+                  <label className="flex items-start gap-2 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                    <input
+                      type="checkbox"
+                      name="vendedor_cobra_paralela"
+                      checked={cobraParalela}
+                      onChange={(e) => setCobraParalela(e.target.checked)}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      Cobra a <strong>tasa paralela</strong> (si no, a BCV). Se
+                      aplica a sus ventas y renovaciones.
+                    </span>
+                  </label>
+                )}
+              </div>
             )}
           </div>
 

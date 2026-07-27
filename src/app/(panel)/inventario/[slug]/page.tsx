@@ -326,7 +326,7 @@ export default async function PlataformaPage({
 
   const { data: listaVendedores } = await supabase
     .from("vendedores")
-    .select("id, nombre, alias, cobra_en_paralela")
+    .select("id, nombre, alias, tipo, cobra_en_paralela")
     .eq("activo", true)
     .order("nombre");
 
@@ -334,6 +334,9 @@ export default async function PlataformaPage({
     id: v.id,
     nombre: v.nombre,
     alias: v.alias,
+    tipo: (v.tipo === "revendedor" ? "revendedor" : "intermediario") as
+      | "revendedor"
+      | "intermediario",
     cobraEnParalela: v.cobra_en_paralela,
   }));
 

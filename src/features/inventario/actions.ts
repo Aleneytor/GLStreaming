@@ -354,16 +354,36 @@ export async function reordenarListaCuentasAction(
   revalidatePath(slug ? `/inventario/${slug}` : "/inventario");
 }
 
+type OpcionesVendedor = {
+  tipo?: "revendedor" | "intermediario";
+  cobraEnParalela?: boolean;
+};
+
+/**
+ * El `tipo` y la base de tasa se guardan en el propio vendedor y se aplican
+ * solos a sus ventas y renovaciones (migraciones 0034/0035). Reglas:
+ *  · Intermediario → SIEMPRE BCV (nunca paralela).
+ *  · Revendedor → paralela según `cobraEnParalela`.
+ * Solo se persiste lo que llega explícitamente (undefined = no cambiar).
+ */
+function parcheVendedor(opts?: OpcionesVendedor): { tipo?: string; cobra_en_paralela?: boolean } {
+  const patch: { tipo?: string; cobra_en_paralela?: boolean } = {};
+  if (opts?.tipo) patch.tipo = opts.tipo;
+  if (opts?.tipo === "intermediario") {
+    patch.cobra_en_paralela = false; // regla de dominio (CHECK en la base)
+  } else if (typeof opts?.cobraEnParalela === "boolean") {
+    patch.cobra_en_paralela = opts.cobraEnParalela;
+  }
+  return patch;
+}
+
 async function resolverVendedorId(
   supabase: any,
   vendedorIdInput: string | null,
   vendedorNombreCustom: string | null,
-  cobraEnParalela?: boolean,
+  opts?: OpcionesVendedor,
 ): Promise<string | null> {
-  // La marca de tasa (cobra a paralela) se persiste en el revendedor: se aplica
-  // sola a todas sus ventas y renovaciones (migración 0034). Solo se toca cuando
-  // se pasa el valor explícitamente (undefined = no cambiar).
-  const fijarBase = typeof cobraEnParalela === "boolean";
+  const patch = parcheVendedor(opts);
 
   if (vendedorIdInput === "__nuevo__" && vendedorNombreCustom) {
     const nombreLimpio = vendedorNombreCustom.trim();
@@ -376,18 +396,20 @@ async function resolverVendedorId(
       .maybeSingle();
 
     if (existente) {
-      if (fijarBase) {
-        await supabase
-          .from("vendedores")
-          .update({ cobra_en_paralela: cobraEnParalela })
-          .eq("id", existente.id);
+      if (Object.keys(patch).length > 0) {
+        await supabase.from("vendedores").update(patch).eq("id", existente.id);
       }
       return existente.id;
     }
 
     const { data: nuevo } = await supabase
       .from("vendedores")
-      .insert({ nombre: nombreLimpio, activo: true, cobra_en_paralela: cobraEnParalela ?? false })
+      .insert({
+        nombre: nombreLimpio,
+        activo: true,
+        tipo: opts?.tipo ?? "intermediario",
+        cobra_en_paralela: patch.cobra_en_paralela ?? false,
+      })
       .select("id")
       .single();
 
@@ -395,11 +417,8 @@ async function resolverVendedorId(
   }
 
   if (vendedorIdInput && vendedorIdInput !== "__nuevo__") {
-    if (fijarBase) {
-      await supabase
-        .from("vendedores")
-        .update({ cobra_en_paralela: cobraEnParalela })
-        .eq("id", vendedorIdInput);
+    if (Object.keys(patch).length > 0) {
+      await supabase.from("vendedores").update(patch).eq("id", vendedorIdInput);
     }
     return vendedorIdInput;
   }
@@ -422,6 +441,8 @@ export async function venderUnidadRapidaAction(
   const fechaInicioTxt = String(formData.get("fecha_inicio") ?? "").trim();
   const vendedorIdInput = String(formData.get("vendedor_id") ?? "").trim() || null;
   const vendedorNombreCustom = String(formData.get("vendedor_nombre_custom") ?? "").trim() || null;
+  const vendedorTipo =
+    formData.get("vendedor_tipo") === "revendedor" ? "revendedor" : "intermediario";
   const cobraParalela = formData.get("vendedor_cobra_paralela") === "on";
   const slug = String(formData.get("slug") ?? "");
 
@@ -435,13 +456,13 @@ export async function venderUnidadRapidaAction(
   }
 
   const supabase = await createClient();
-  // Solo se fija la base cuando hay un revendedor de por medio (directa = BCV).
+  // Solo se fija tipo/base cuando hay un vendedor de por medio (directa = BCV).
   const hayVendedor = Boolean(vendedorIdInput);
   const vendedorId = await resolverVendedorId(
     supabase,
     vendedorIdInput,
     vendedorNombreCustom,
-    hayVendedor ? cobraParalela : undefined,
+    hayVendedor ? { tipo: vendedorTipo, cobraEnParalela: cobraParalela } : undefined,
   );
 
   // Obtener producto_plataforma_id de la cuenta

@@ -23,11 +23,12 @@ values ('bcv', 100, current_date, 'prueba', 'bt-bcv-1', now(), now(), 'vigente')
 insert into public.tasas_cambio (tipo, bs_por_usd, fuente, fuente_registro_id, observada_fuente_at, revalidada_at, estado)
 values ('paralela', 50, 'prueba', 'bt-par-1', now(), now(), 'vigente') returning id as tasa_par \gset
 
--- Dos revendedores: uno cobra a paralela, otro a BCV.
-insert into public.vendedores (nombre, activo, cobra_en_paralela)
-values ('Rev Paralela QA', true, true) returning id as rev_par \gset
-insert into public.vendedores (nombre, activo, cobra_en_paralela)
-values ('Rev BCV QA', true, false) returning id as rev_bcv \gset
+-- Dos revendedores: uno cobra a paralela, otro a BCV. (Un intermediario no puede
+-- ser paralela — CHECK de 0035 — por eso el de paralela es tipo 'revendedor'.)
+insert into public.vendedores (nombre, activo, tipo, cobra_en_paralela)
+values ('Rev Paralela QA', true, 'revendedor', true) returning id as rev_par \gset
+insert into public.vendedores (nombre, activo, tipo, cobra_en_paralela)
+values ('Rev BCV QA', true, 'revendedor', false) returning id as rev_bcv \gset
 
 reset role;
 select set_config('request.jwt.claims', json_build_object('sub', :'admin_id', 'role', 'authenticated')::text, true);
