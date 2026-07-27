@@ -1,6 +1,7 @@
 # AGENTS.md — Guía para agentes de GL Streaming
 
 > Este archivo se carga automáticamente como contexto. Léelo primero.
+> Consulta también `GEMINI.md` para el mapa técnico de RPCs de Supabase y nombres de columnas reales.
 > **Manténlo actualizado al final de cada sesión de trabajo** (junto con
 > `docs/00-plan-maestro.md`). Es la fuente de orientación para cualquier agente.
 

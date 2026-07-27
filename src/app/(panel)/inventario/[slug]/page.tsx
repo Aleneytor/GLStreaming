@@ -214,13 +214,21 @@ export default async function PlataformaPage({
       }
     } else if (asignacionCompleta) {
       const v = datosVenta(asignacionCompleta);
-      const cap = Math.max(c.capacidad ?? 1, 5);
+      // Un recurso indivisible (Spotify individual, Canva…) es UNA sola línea,
+      // como un perfil extra de Netflix. Una cuenta completa DE PERFILES
+      // (Netflix) se muestra como bloque de 5 para conservar la altura uniforme.
+      const esIndivisible = prod.tipo_inventario === "recurso_indivisible";
+      const cap = esIndivisible ? 1 : Math.max(c.capacidad ?? 1, 5);
       for (let slot = 1; slot <= cap; slot++) {
         const esPrimerSlot = slot === 1;
         filas.push({
           slotNumber: slot,
           clave: `${c.id}-completa-${slot}`,
-          cupo: esPrimerSlot ? "Cuenta Completa" : `Perfil ${slot}`,
+          cupo: esIndivisible
+            ? "Individual"
+            : esPrimerSlot
+              ? "Cuenta Completa"
+              : `Perfil ${slot}`,
           unidadId: null,
           nombreUnidad: null,
           suscripcionId: v?.suscripcionId ?? null,
@@ -280,7 +288,10 @@ export default async function PlataformaPage({
       costo: cicloVigente ? Number(cicloVigente.costo_usdt) : null,
       renovarProveedor: renovarProv,
       diasProveedor: diasProv,
-      esCuentaCompleta: Boolean(asignacionCompleta),
+      // Solo las cuentas completas DE PERFILES ocupan el bloque alto de 5 filas.
+      // Un recurso indivisible (Spotify individual, Canva…) va en una sola línea.
+      esCuentaCompleta:
+        Boolean(asignacionCompleta) && prod.tipo_inventario !== "recurso_indivisible",
       filas,
     });
     grupos.set(prod.id, grupo);
