@@ -9,6 +9,7 @@ import {
   cancelarVentaConLimpiezaAction,
 } from "./actions";
 import { ModalVentaRapida } from "./modal-venta-rapida";
+import type { VendedorOp } from "./modal-venta-rapida";
 import { ModalRenovarProveedorRapido } from "./modal-renovar-proveedor";
 import { ModalGestionVenta } from "./modal-gestion-venta";
 
@@ -22,6 +23,9 @@ export type CupoFila = {
   cliente: string | null;
   celular: string | null;
   vendio: string | null;
+  vendedorId: string | null;
+  vendedorTipo: "revendedor" | "intermediario" | null;
+  vendedorCobraEnParalela: boolean;
   clienteLogin: string | null;
   clienteClave: string | null;
   pin: string | null;
@@ -140,13 +144,7 @@ export function TablaInventario({
 }: {
   cuentas: BloqueCuenta[];
   slug: string;
-  vendedores?: {
-    id: string;
-    nombre: string;
-    alias: string | null;
-    tipo: "revendedor" | "intermediario";
-    cobraEnParalela: boolean;
-  }[];
+  vendedores?: VendedorOp[];
 }) {
   const [cuentasState, setCuentasState] = useState<BloqueCuenta[]>(cuentas);
   const [cuentaEditando, setCuentaEditando] = useState<BloqueCuenta | null>(null);
@@ -358,6 +356,9 @@ export function TablaInventario({
           pinPerfil={gestionVentaTarget.pin}
           vence={formatearFecha(gestionVentaTarget.vence)}
           precioUsd={gestionVentaTarget.ingreso}
+          vendedorActualId={gestionVentaTarget.vendedorId}
+          vendedorActualTipo={gestionVentaTarget.vendedorTipo}
+          vendedorActualCobraEnParalela={gestionVentaTarget.vendedorCobraEnParalela}
           slug={slug}
           vendedores={vendedores}
           onCerrar={() => setGestionVentaTarget(null)}

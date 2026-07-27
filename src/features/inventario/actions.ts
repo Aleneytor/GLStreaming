@@ -532,10 +532,23 @@ export async function editarVentaDirectaAction(
   const pinPerfil = String(formData.get("pin_perfil") ?? "").trim();
   const vendedorIdInput = String(formData.get("vendedor_id") ?? "").trim() || null;
   const vendedorNombreCustom = String(formData.get("vendedor_nombre_custom") ?? "").trim() || null;
+  const vendedorTipo =
+    formData.get("vendedor_tipo") === "revendedor" ? "revendedor" : "intermediario";
+  const vendedorCobraParalela = formData.get("vendedor_cobra_paralela") === "on";
   const slug = String(formData.get("slug") ?? "");
 
   const supabase = await createClient();
-  const vendedorId = await resolverVendedorId(supabase, vendedorIdInput, vendedorNombreCustom);
+  if (vendedorIdInput === "__nuevo__" && !vendedorNombreCustom) {
+    return { error: "Escribe el nombre del nuevo vendedor." };
+  }
+  const vendedorId = await resolverVendedorId(
+    supabase,
+    vendedorIdInput,
+    vendedorNombreCustom,
+    vendedorIdInput
+      ? { tipo: vendedorTipo, cobraEnParalela: vendedorCobraParalela }
+      : undefined,
+  );
 
   if (clienteId && clienteNombre) {
     // Solo se toca el WhatsApp si el formulario trae uno: si llega vacío se
@@ -550,9 +563,9 @@ export async function editarVentaDirectaAction(
     await supabase.from("clientes").update(patch).eq("id", clienteId);
   }
 
-  if (suscripcionId && vendedorId) {
+  if (suscripcionId) {
     // En `suscripciones` el vendedor es `vendedor_origen_id` (no `vendedor_id`,
-    // que no existe en esa tabla y hacía que el cambio se descartara en silencio).
+    // que no existe en esa tabla). `null` significa venta directa explícita.
     const { error: eVend } = await supabase
       .from("suscripciones")
       .update({ vendedor_origen_id: vendedorId })

@@ -232,6 +232,11 @@ Cada venta muestra además una franja táctil de vencimiento con estado relativo
 fecha legible; tocarla abre la gestión para renovar o cobrar sin depender de la
 tabla de escritorio.
 
+La gestión de una venta preselecciona su `vendedor_origen_id` y expone la
+clasificación revendedor/intermediario junto con BCV/paralela. La renovación
+hereda esa base automáticamente y la confirma en pantalla; si el operador cambia
+la configuración, debe guardarla antes de poder renovar.
+
 Validación de esta rebanada: **129 pruebas unitarias**, typecheck y build de
 producción en verde. PostgreSQL real contiene controles con Gmail para ambas
 variantes de Spotify. Queda pendiente una revisión visual manual completa en

@@ -119,6 +119,7 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **Selector de variantes en Netflix y Spotify**: `/inventario/[slug]` expone un selector URL-first para alternar `Cuenta estándar` / `Perfil extra` y `Individual` / `Familiar`, conservando búsqueda y estado. Son productos distintos en PostgreSQL; el selector solo filtra la vista y no transforma cuentas.
 - **Gmail pagador de Spotify en móvil**: `TarjetaCuentaMovil` muestra el Gmail y su origen. La página consulta `controles_pago_spotify` directamente por `cobertura_cuenta_id`; si una cuenta no tiene control registrado, muestra «No registrado».
 - **Vencimiento visible y accionable en móvil**: cada venta de `TarjetaCuentaMovil` muestra una franja con `Vence en N días`, `Vence hoy · renovar` o `Venció hace N días`, además de la fecha formateada. La franja abre `ModalGestionVenta` al tocarla.
+- **Renovación conserva vendedor y base de tasa**: `ModalGestionVenta` recibe el `vendedor_origen_id` real y lo preselecciona. Muestra/permite corregir `tipo` y `cobra_en_paralela`; si hay cambios sin guardar bloquea Renovar. La pantalla de renovación confirma vendedor + BCV/paralela antes de cobrar.
 - **Detección Limpia de Cuentas Completas**: Se simplificó `page.tsx` para basarse únicamente en `alcance === 'cuenta'` en `asignaciones_inventario`, eliminando la inferencia frágil por texto en `nombre_visible`.
 - **Simplificación de Menú Principal**: Se removió la sección duplicada `Vencimientos` del menú de navegación (toda la gestión central de vencimientos, renovaciones y cobros se realiza unificadamente desde `Operaciones` / `/dashboard`), dejando un flujo más limpio.
 - **Corrección de Firma `registrar_cobro_cliente` (Migración `0033`)**: Se ajustó la llamada interna dentro de `vender_unidad` para coincidir con la firma exacta de `registrar_cobro_cliente` en PostgreSQL (`p_periodo_id`, `p_monto_ves`, `p_referencia`, `p_monto_usd`).
@@ -211,10 +212,10 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 - La lectura económica NO cambia (siempre `monto_ves / paralela`); ambas tasas se
   siguen congelando. Si la base es paralela y no hay paralela confirmada, el cobro
   se **bloquea** (no inventa tasa).
-- UI: checkbox «cobra a tasa paralela» en `ModalVentaRapida` (se autocompleta con
-  la marca guardada del revendedor y la persiste al confirmar). Falta llevar el
-  mismo checkbox a `ModalGestionVenta`/`form-venta` si se quiere marcar desde ahí
-  (hoy la renovación ya hereda la base del revendedor, así que no es urgente).
+- UI: checkbox «cobra a tasa paralela» en `ModalVentaRapida` y
+  `ModalGestionVenta`; se autocompleta con la marca guardada y se persiste al
+  confirmar. La renovación no permite escoger una tasa independiente: muestra y
+  hereda la base del vendedor para evitar divergencias.
 - Validación: suite `supabase/tests/base_tasa.sql` (7 comprobaciones en verde).
 
 **Revendedor vs Intermediario (migración 0035):** `vendedores.tipo` distingue
@@ -267,6 +268,6 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 ---
 *Pendiente destacado: terminar la revisión visual responsive de plataformas y modales.*
 
-*Última actualización: 2026-07-27 (selector de variantes, Gmail pagador y alerta
-accionable de vencimiento incorporados a la vista móvil; 129 unitarias, typecheck
-y build en verde).*
+*Última actualización: 2026-07-27 (gestión móvil preselecciona vendedor y muestra
+la base BCV/paralela heredada antes de renovar; 129 unitarias, typecheck y suite
+SQL de base de tasa en verde).*
