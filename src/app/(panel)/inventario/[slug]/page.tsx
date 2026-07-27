@@ -5,6 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { uno } from "@/lib/supabase/util";
 import { descifrarSecreto } from "@/lib/crypto";
 import { badgeVencimiento, diasParaRenovar } from "@/domain/fechas";
+import {
+  coincideFiltroInventario,
+  normalizarFiltroInventario,
+} from "@/domain/filtros-inventario";
 import { FiltrosInventario } from "@/features/inventario/filtros";
 import {
   TablaInventario,
@@ -77,8 +81,6 @@ export default async function PlataformaPage({
              identidades_spotify ( login_cifrado, contrasena_cifrada ) ) ) )`,
     )
     .eq("productos_plataforma.plataforma_id", plataforma.id);
-
-  if (estado) consulta = consulta.eq("estado", estado);
 
   const { data: cuentas, error: errorCuentas } = await consulta.order("orden", { ascending: false });
   if (errorCuentas) throw new Error(`No se pudo cargar el inventario: ${errorCuentas.message}`);
@@ -352,25 +354,31 @@ export default async function PlataformaPage({
     }));
 
   const busqueda = (q ?? "").trim().toLowerCase();
+  const filtroOperativo = normalizarFiltroInventario(estado);
   let totalFilas = 0;
   const gruposFiltrados = [...grupos.values()]
     .filter((g) => !productoSeleccionado || g.codigo === productoSeleccionado)
     .map((g) => {
       const cuentasFiltradas = g.cuentas
         .map((cta) => {
-          if (
+          const coincideCuenta =
             !busqueda ||
             cta.correo.toLowerCase().includes(busqueda) ||
-            (cta.pagador && cta.pagador.toLowerCase().includes(busqueda))
-          )
-            return cta;
-          const filas = cta.filas.filter(
-            (f) =>
-              f.cliente?.toLowerCase().includes(busqueda) ||
-              f.celular?.includes(busqueda) ||
-              f.vendio?.toLowerCase().includes(busqueda) ||
-              f.clienteLogin?.toLowerCase().includes(busqueda),
+            Boolean(cta.pagador?.toLowerCase().includes(busqueda));
+          let filas = coincideCuenta
+            ? cta.filas
+            : cta.filas.filter(
+                (f) =>
+                  f.cliente?.toLowerCase().includes(busqueda) ||
+                  f.celular?.includes(busqueda) ||
+                  f.vendio?.toLowerCase().includes(busqueda) ||
+                  f.clienteLogin?.toLowerCase().includes(busqueda),
+              );
+
+          filas = filas.filter((fila) =>
+            coincideFiltroInventario(fila, filtroOperativo, cta.cuentaEstado),
           );
+
           return { ...cta, filas };
         })
         .filter((cta) => cta.filas.length > 0);
@@ -427,11 +435,12 @@ export default async function PlataformaPage({
 
       <FiltrosInventario
         productos={opcionesProducto}
-        estados={[
-          { valor: "activa", etiqueta: "Activas" },
-          { valor: "mantenimiento", etiqueta: "En mantenimiento" },
-          { valor: "suspendida", etiqueta: "Suspendidas" },
-          { valor: "archivada", etiqueta: "Archivadas" },
+        filtros={[
+          { valor: "disponibles", etiqueta: "Disponibles para vender" },
+          { valor: "proximas", etiqueta: "Próximos 5 días" },
+          { valor: "hoy", etiqueta: "Vencen hoy" },
+          { valor: "vencidas", etiqueta: "Vencidos" },
+          { valor: "suspendida", etiqueta: "Cuentas suspendidas" },
         ]}
       />
 

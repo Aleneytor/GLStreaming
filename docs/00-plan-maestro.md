@@ -237,8 +237,13 @@ clasificación revendedor/intermediario junto con BCV/paralela. La renovación
 hereda esa base automáticamente y la confirma en pantalla; si el operador cambia
 la configuración, debe guardarla antes de poder renovar.
 
-Validación de esta rebanada: **129 pruebas unitarias**, typecheck y build de
-producción en verde. PostgreSQL real contiene controles con Gmail para ambas
+El filtro principal del inventario también pasó de estados técnicos de cuenta a
+criterios operativos: cupos disponibles en cuentas activas, próximos 5 días,
+vencen hoy, vencidos y cuentas suspendidas. Estos filtros se aplican a los cupos,
+por lo que una cuenta solo conserva en pantalla las filas que coinciden.
+
+Validación acumulada: **134 pruebas unitarias** y typecheck en verde; el último
+build de producción también pasó. PostgreSQL real contiene controles con Gmail para ambas
 variantes de Spotify. Queda pendiente una revisión visual manual completa en
 teléfonos reales de todas las plataformas y sus modales.
 

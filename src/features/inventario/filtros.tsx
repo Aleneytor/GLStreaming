@@ -11,10 +11,10 @@ import { useTransition } from "react";
  * Es la regla de estado de UI del proyecto: "URL primero".
  */
 export function FiltrosInventario({
-  estados,
+  filtros,
   productos = [],
 }: {
-  estados: { valor: string; etiqueta: string }[];
+  filtros: { valor: string; etiqueta: string }[];
   productos?: { valor: string; etiqueta: string; cuentas: number }[];
 }) {
   const router = useRouter();
@@ -23,7 +23,10 @@ export function FiltrosInventario({
   const [pendiente, iniciar] = useTransition();
 
   const q = params.get("q") ?? "";
-  const estado = params.get("estado") ?? "";
+  const estadoParametro = params.get("estado") ?? "";
+  const estado = filtros.some((filtro) => filtro.valor === estadoParametro)
+    ? estadoParametro
+    : "";
   const producto = params.get("producto") ?? "";
 
   function actualizar(clave: string, valor: string) {
@@ -84,11 +87,11 @@ export function FiltrosInventario({
         <select
           value={estado}
           onChange={(e) => actualizar("estado", e.target.value)}
-          aria-label="Filtrar por estado"
+          aria-label="Filtrar inventario"
           className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base outline-none transition focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-neutral-300"
         >
-          <option value="">Todos los estados</option>
-          {estados.map((e) => (
+          <option value="">Todo el inventario</option>
+          {filtros.map((e) => (
             <option key={e.valor} value={e.valor}>
               {e.etiqueta}
             </option>
