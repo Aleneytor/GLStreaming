@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import type { BadgeVencimiento } from "@/domain/fechas";
 import { PanelLateralCuenta } from "./panel-lateral-cuenta";
-import { moverCuentaAction } from "./actions";
+import { moverCuentaAction, reordenarListaCuentasAction } from "./actions";
 
 export type CupoFila = {
   slotNumber: number;
@@ -41,26 +41,42 @@ export type BloqueCuenta = {
   filas: CupoFila[];
 };
 
-function ControlesOrden({ cuentaId, slug }: { cuentaId: string; slug: string }) {
+function ControlesOrden({
+  cuentaId,
+  slug,
+  dragHandleProps,
+}: {
+  cuentaId: string;
+  slug: string;
+  dragHandleProps?: {
+    draggable: boolean;
+    onDragStart: (e: React.DragEvent) => void;
+  };
+}) {
   const btn =
     "rounded px-0.5 py-0.2 text-[10px] text-neutral-400 hover:bg-neutral-200 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-white";
   return (
-    <form action={moverCuentaAction} className="inline-flex items-center gap-0.5">
-      <input type="hidden" name="cuenta_id" value={cuentaId} />
-      <input type="hidden" name="slug" value={slug} />
-      <button type="submit" name="accion" value="inicio" className={btn} title="Al inicio">
-        ⤒
-      </button>
-      <button type="submit" name="accion" value="subir" className={btn} title="Subir">
-        ▲
-      </button>
-      <button type="submit" name="accion" value="bajar" className={btn} title="Bajar">
-        ▼
-      </button>
-      <button type="submit" name="accion" value="final" className={btn} title="Al final">
-        ⤓
-      </button>
-    </form>
+    <div className="inline-flex items-center gap-1">
+      {/* Tirador para arrastrar y soltar (Drag and Drop) */}
+      <span
+        {...dragHandleProps}
+        className="cursor-grab text-xs font-bold text-neutral-400 hover:text-neutral-900 active:cursor-grabbing dark:hover:text-white"
+        title="Arrastra para reordenar esta cuenta"
+      >
+        ⠿
+      </span>
+
+      <form action={moverCuentaAction} className="inline-flex items-center gap-0.5">
+        <input type="hidden" name="cuenta_id" value={cuentaId} />
+        <input type="hidden" name="slug" value={slug} />
+        <button type="submit" name="accion" value="subir" className={btn} title="Subir uno">
+          ▲
+        </button>
+        <button type="submit" name="accion" value="bajar" className={btn} title="Bajar uno">
+          ▼
+        </button>
+      </form>
+    </div>
   );
 }
 
@@ -72,18 +88,39 @@ function formatearFecha(fecha: string | null): string {
 }
 
 export function TablaInventario({ cuentas, slug }: { cuentas: BloqueCuenta[]; slug: string }) {
+  const [cuentasState, setCuentasState] = useState<BloqueCuenta[]>(cuentas);
   const [cuentaEditando, setCuentaEditando] = useState<BloqueCuenta | null>(null);
+  const [arrastrandoIndex, setArrastrandoIndex] = useState<number | null>(null);
+  const [targetIndex, setTargetIndex] = useState<number | null>(null);
+  const [, startTransition] = useTransition();
 
-  // Determinar si debemos mostrar la columna "Pagador" (GPay / Spotify)
-  const tienePagador = cuentas.some((c) => Boolean(c.pagador)) || slug.includes("spotify");
+  const tienePagador = cuentasState.some((c) => Boolean(c.pagador)) || slug.includes("spotify");
+
+  // Reordenar arrastrando y soltando
+  const handleDrop = (origenIdx: number, destinoIdx: number) => {
+    if (origenIdx === destinoIdx) return;
+    const nuevas = [...cuentasState];
+    const [removido] = nuevas.splice(origenIdx, 1);
+    nuevas.splice(destinoIdx, 0, removido);
+
+    setCuentasState(nuevas);
+    setArrastrandoIndex(null);
+    setTargetIndex(null);
+
+    // Persistir el nuevo orden en segundo plano
+    startTransition(async () => {
+      await reordenarListaCuentasAction(
+        nuevas.map((c) => c.cuentaId),
+        slug,
+      );
+    });
+  };
 
   return (
     <div className="space-y-4">
-      {/* Contenedor con scroll horizontal y estilo denso estilo Excel */}
       <div className="overflow-x-auto border border-neutral-400 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
         <table className="w-full border-collapse text-left font-mono text-[11px] leading-tight">
           <thead>
-            {/* Cabecera idéntica a Excel con bloques azul y morado */}
             <tr className="text-[11px]">
               {tienePagador && (
                 <th className="border border-neutral-400 bg-[#1e3a8a] px-2 py-1 font-bold text-white">
@@ -150,14 +187,24 @@ export function TablaInventario({ cuentas, slug }: { cuentas: BloqueCuenta[]; sl
             </tr>
           </thead>
           <tbody>
-            {cuentas.map((cta, index) => (
+            {cuentasState.map((cta, index) => (
               <BloqueCuentaExcel
                 key={cta.cuentaId}
                 cta={cta}
                 slug={slug}
+                index={index}
                 numCuenta={index + 1}
                 tienePagador={tienePagador}
+                isTarget={targetIndex === index}
                 onEditar={() => setCuentaEditando(cta)}
+                onDragStart={() => setArrastrandoIndex(index)}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (targetIndex !== index) setTargetIndex(index);
+                }}
+                onDrop={() => {
+                  if (arrastrandoIndex !== null) handleDrop(arrastrandoIndex, index);
+                }}
               />
             ))}
           </tbody>
@@ -178,15 +225,25 @@ export function TablaInventario({ cuentas, slug }: { cuentas: BloqueCuenta[]; sl
 function BloqueCuentaExcel({
   cta,
   slug,
+  index,
   numCuenta,
   tienePagador,
+  isTarget,
   onEditar,
+  onDragStart,
+  onDragOver,
+  onDrop,
 }: {
   cta: BloqueCuenta;
   slug: string;
+  index: number;
   numCuenta: number;
   tienePagador: boolean;
+  isTarget: boolean;
   onEditar: () => void;
+  onDragStart: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: () => void;
 }) {
   const totalFilas = cta.filas.length;
 
@@ -195,11 +252,10 @@ function BloqueCuentaExcel({
       {cta.filas.map((f, i) => {
         const esPrimera = i === 0;
 
-        // Estilos de alerta exactos al Excel del cliente
-        let claseAlerta = "bg-[#16a34a] text-white"; // verde por defecto
+        let claseAlerta = "bg-[#16a34a] text-white";
         let textoAlerta = "";
         if (!f.cliente) {
-          claseAlerta = "bg-[#1d4ed8] text-white"; // azul para libre/vacío
+          claseAlerta = "bg-[#1d4ed8] text-white";
           textoAlerta = "Vacío";
         } else if (f.dias === null) {
           claseAlerta = "bg-neutral-200 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-300";
@@ -221,7 +277,6 @@ function BloqueCuentaExcel({
           }
         }
 
-        // Estilos de aviso proveedor
         let claseAvisoProv = "bg-[#16a34a] text-white";
         let textoAvisoProv = "";
         if (!cta.renovarProveedor) {
@@ -238,14 +293,17 @@ function BloqueCuentaExcel({
         return (
           <tr
             key={f.clave}
-            className={`hover:bg-amber-50/50 dark:hover:bg-neutral-800/60 ${
-              // Separación notoria y limpia entre cuentas madre
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+            className={`transition hover:bg-amber-50/50 dark:hover:bg-neutral-800/60 ${
+              isTarget && esPrimera ? "ring-2 ring-blue-500" : ""
+            } ${
               esPrimera
                 ? "border-t-[4px] border-neutral-700 dark:border-neutral-500"
                 : "border-t border-neutral-300 dark:border-neutral-700"
             }`}
           >
-            {/* Pagador (Si aplica a la plataforma o existe en la cuenta) */}
+            {/* Pagador */}
             {tienePagador && esPrimera && (
               <td
                 rowSpan={totalFilas}
@@ -311,7 +369,7 @@ function BloqueCuentaExcel({
               {formatearFecha(f.vence)}
             </td>
 
-            {/* 10. Alerta (Celda con color sólido de fondo) */}
+            {/* 10. Alerta */}
             <td className={`border border-neutral-300 px-2 py-0.5 text-center ${claseAlerta}`}>
               {textoAlerta}
             </td>
@@ -381,14 +439,24 @@ function BloqueCuentaExcel({
               </td>
             )}
 
-            {/* 19. Acciones (Fusionado) */}
+            {/* 19. Acciones & Drag Handle (Fusionado) */}
             {esPrimera && (
               <td
                 rowSpan={totalFilas}
                 className="border border-neutral-300 px-1.5 py-0.5 text-center"
               >
                 <div className="flex items-center justify-center gap-1">
-                  <ControlesOrden cuentaId={cta.cuentaId} slug={slug} />
+                  <ControlesOrden
+                    cuentaId={cta.cuentaId}
+                    slug={slug}
+                    dragHandleProps={{
+                      draggable: true,
+                      onDragStart: (e) => {
+                        e.dataTransfer.setData("text/plain", String(index));
+                        onDragStart();
+                      },
+                    }}
+                  />
                   <button
                     type="button"
                     onClick={onEditar}

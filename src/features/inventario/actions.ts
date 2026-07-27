@@ -456,3 +456,26 @@ export async function moverCuentaAction(formData: FormData): Promise<void> {
   await supabase.rpc("mover_cuenta", { p_cuenta_id: cuentaId, p_accion: accion });
   revalidatePath(slug ? `/inventario/${slug}` : "/inventario");
 }
+
+/** Reordena una lista completa de cuentas mediante arrastrar y soltar (Drag and Drop). */
+export async function reordenarListaCuentasAction(
+  cuentaIds: string[],
+  slug: string,
+): Promise<void> {
+  const usuario = await obtenerUsuarioActual();
+  if (!esAdmin(usuario)) return;
+  if (!cuentaIds || cuentaIds.length === 0) return;
+
+  const supabase = await createClient();
+  const baseOrden = Date.now();
+
+  for (let i = 0; i < cuentaIds.length; i++) {
+    await supabase
+      .from("cuentas")
+      .update({ orden: baseOrden - i })
+      .eq("id", cuentaIds[i]);
+  }
+
+  revalidatePath(slug ? `/inventario/${slug}` : "/inventario");
+}
+
