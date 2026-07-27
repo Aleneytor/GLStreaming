@@ -131,45 +131,30 @@ export default async function PlataformaPage({
       abiertas.filter((a) => a.unidad_id).map((a) => [a.unidad_id as string, a]),
     );
 
-    // Detección del Gmail Pagador GPay (para Spotify o cuentas con pagador)
     const cob = uno(c.coberturas_spotify);
     const ctrl = uno(cob?.controles_pago_spotify);
     const pagador = ctrl?.gmail_cifrado ? desc(ctrl.gmail_cifrado) : null;
 
     const filas: CupoFila[] = [];
+    const unidades = [...(c.unidades_inventario ?? [])].sort(
+      (a, b) => a.numero_slot - b.numero_slot,
+    );
 
-    if (completa) {
-      const v = datosVenta(completa);
-      filas.push({
-        slotNumber: 1,
-        clave: `${c.id}-completa`,
-        cupo: "Cuenta completa",
-        unidadId: null,
-        nombreUnidad: null,
-        clienteId: v?.clienteId ?? null,
-        cliente: v?.cliente ?? null,
-        celular: v?.celular ?? null,
-        vendio: v?.vendio ?? null,
-        clienteLogin: v?.clienteLogin ?? null,
-        clienteClave: v?.clienteClave ?? null,
-        pin: null,
-        ingreso: v?.ingreso ?? null,
-        inicio: v?.inicio ?? null,
-        vence: v?.vence ?? null,
-        dias: v?.dias ?? null,
-        badge: v?.badge ?? null,
-        suscEstado: v?.estado ?? null,
-      });
-    } else if (prod.tipo_inventario === "cuenta_con_unidades") {
-      const unidades = [...(c.unidades_inventario ?? [])].sort(
-        (a, b) => a.numero_slot - b.numero_slot,
-      );
+    if (unidades.length > 0) {
+      // Si la cuenta tiene unidades (ej. 5 perfiles en Netflix)
       for (const u of unidades) {
-        const v = datosVenta(porUnidad.get(u.id));
+        const vUnidad = datosVenta(porUnidad.get(u.id));
+        // Si hay una venta completa de la cuenta, los perfiles sin venta propia heredan la venta completa
+        const v = vUnidad ?? (completa ? datosVenta(completa) : null);
+        const esPrimerSlot = u.numero_slot === 1;
+
         filas.push({
           slotNumber: u.numero_slot,
           clave: `${c.id}-u${u.id}`,
-          cupo: u.nombre_visible ?? `Cupo ${u.numero_slot}`,
+          cupo:
+            completa && esPrimerSlot
+              ? "Cuenta Completa"
+              : u.nombre_visible ?? `Perfil ${u.numero_slot}`,
           unidadId: u.id as string,
           nombreUnidad: u.nombre_visible ?? null,
           clienteId: v?.clienteId ?? null,
@@ -179,7 +164,8 @@ export default async function PlataformaPage({
           clienteLogin: v?.clienteLogin ?? null,
           clienteClave: v?.clienteClave ?? null,
           pin: desc(uno(u.secretos_unidad)?.pin_cifrado) || null,
-          ingreso: v?.ingreso ?? null,
+          // El ingreso solo se muestra en el slot 1 si es venta completa para no duplicar el importe
+          ingreso: completa && !esPrimerSlot ? null : (v?.ingreso ?? null),
           inicio: v?.inicio ?? null,
           vence: v?.vence ?? null,
           dias: v?.dias ?? null,
@@ -187,7 +173,8 @@ export default async function PlataformaPage({
           suscEstado: v?.estado ?? null,
         });
       }
-      if (principal) {
+
+      if (principal && !completa) {
         const v = datosVenta(principal);
         filas.push({
           slotNumber: unidades.length + 1,
@@ -210,6 +197,29 @@ export default async function PlataformaPage({
           suscEstado: v?.estado ?? null,
         });
       }
+    } else if (completa) {
+      // Recurso indivisible o sin slots explícitos
+      const v = datosVenta(completa);
+      filas.push({
+        slotNumber: 1,
+        clave: `${c.id}-completa`,
+        cupo: "Cuenta Completa",
+        unidadId: null,
+        nombreUnidad: null,
+        clienteId: v?.clienteId ?? null,
+        cliente: v?.cliente ?? null,
+        celular: v?.celular ?? null,
+        vendio: v?.vendio ?? null,
+        clienteLogin: v?.clienteLogin ?? null,
+        clienteClave: v?.clienteClave ?? null,
+        pin: null,
+        ingreso: v?.ingreso ?? null,
+        inicio: v?.inicio ?? null,
+        vence: v?.vence ?? null,
+        dias: v?.dias ?? null,
+        badge: v?.badge ?? null,
+        suscEstado: v?.estado ?? null,
+      });
     } else {
       filas.push({
         slotNumber: 1,
