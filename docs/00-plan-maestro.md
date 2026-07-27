@@ -251,11 +251,13 @@ para que el operador reciba feedback inequívoco y no renueve dos veces.
 
 Las ventas de cuenta completa conservan en escritorio el bloque Excel de cinco
 filas numeradas (115px total), con correo, acceso, venta, cliente y proveedor
-fusionados mediante `rowSpan`. Se mantiene compatibilidad estricta con seis
-importaciones históricas que guardaron la venta en la primera unidad; en móvil se
-representan como una sola tarjeta.
+fusionados mediante `rowSpan`. Se mantiene compatibilidad estricta con 24
+importaciones históricas de Netflix, Disney+, HBO, Prime Video y Crunchyroll que
+guardaron la venta en la primera unidad; en móvil se representan como una sola
+tarjeta. La regla se limita a productos `cuenta_con_unidades`, por lo que Spotify
+individual conserva su única fila.
 
-Validación acumulada: **137 pruebas unitarias** y typecheck en verde; el último
+Validación acumulada: **144 pruebas unitarias** y typecheck en verde; el último
 build de producción también pasó. PostgreSQL real contiene controles con Gmail para ambas
 variantes de Spotify. Queda pendiente una revisión visual manual completa en
 teléfonos reales de todas las plataformas y sus modales.

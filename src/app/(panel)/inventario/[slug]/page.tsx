@@ -9,6 +9,7 @@ import {
   coincideFiltroInventario,
   normalizarFiltroInventario,
 } from "@/domain/filtros-inventario";
+import { esCuentaCompletaLegada } from "@/domain/cuentas-completas";
 import { FiltrosInventario } from "@/features/inventario/filtros";
 import {
   TablaInventario,
@@ -159,16 +160,18 @@ export default async function PlataformaPage({
     );
 
     let asignacionCompleta = abiertas.find((a) => a.alcance === "cuenta");
-    // Compatibilidad con las seis cuentas completas importadas antes de que el
-    // modelo usara `alcance = cuenta`: su venta vive en la primera unidad y el
-    // nombre exacto de esa unidad es "Cuenta Completa". No usamos un `includes`
-    // amplio para evitar confundir nombres de perfiles normales.
-    if (!asignacionCompleta && prod.codigo === "netflix") {
+    // Compatibilidad con cuentas completas importadas antes de que el modelo
+    // usara `alcance = cuenta`: su venta vive en la primera unidad. Aplica a
+    // cualquier plataforma con unidades, no solo a Netflix.
+    if (!asignacionCompleta) {
       const primeraUnidad = unidades.find((u) => u.numero_slot === 1);
-      const nombrePrimera = primeraUnidad?.nombre_visible?.trim().toLowerCase();
       if (
         primeraUnidad &&
-        (nombrePrimera === "cuenta completa" || nombrePrimera === "completa")
+        esCuentaCompletaLegada({
+          tipoInventario: prod.tipo_inventario,
+          numeroSlot: primeraUnidad.numero_slot,
+          nombreVisible: primeraUnidad.nombre_visible,
+        })
       ) {
         asignacionCompleta = abiertas.find((a) => a.unidad_id === primeraUnidad.id);
       }
