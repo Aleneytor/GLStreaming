@@ -158,7 +158,31 @@ export function TablaInventario({
 
   return (
     <div className="space-y-4">
-      <div className="overflow-x-auto border border-neutral-400 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+      {/* VISTA MÓVIL (Tarjetas apiladas por cuenta) */}
+      <div className="block space-y-4 md:hidden">
+        {cuentasState.map((cta, index) => (
+          <TarjetaCuentaMovil
+            key={cta.cuentaId}
+            cta={cta}
+            numCuenta={index + 1}
+            onEditar={() => setCuentaEditando(cta)}
+            onIniciarVenta={(unidadId, nombrePerfil) =>
+              setVentaTarget({ cuentaId: cta.cuentaId, unidadId, nombrePerfil })
+            }
+            onGestionarVenta={(fila) => setGestionVentaTarget(fila)}
+            onRenovarProveedor={() =>
+              setRenovarProvTarget({
+                cuentaId: cta.cuentaId,
+                correoCuenta: cta.correo,
+                costoActual: cta.costo,
+              })
+            }
+          />
+        ))}
+      </div>
+
+      {/* VISTA ESCRITORIO (Tabla Excel de 16 columnas) */}
+      <div className="hidden overflow-x-auto border border-neutral-400 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900 md:block">
         <table className="w-full border-collapse text-left font-mono text-[11px] leading-tight">
           <thead>
             <tr className="text-[11px]">
@@ -622,5 +646,159 @@ function BloqueCuentaExcel({
         );
       })}
     </>
+  );
+}
+
+function TarjetaCuentaMovil({
+  cta,
+  numCuenta,
+  onEditar,
+  onIniciarVenta,
+  onGestionarVenta,
+  onRenovarProveedor,
+}: {
+  cta: BloqueCuenta;
+  numCuenta: number;
+  onEditar: () => void;
+  onIniciarVenta: (unidadId: string | null, nombrePerfil: string) => void;
+  onGestionarVenta: (fila: CupoFila) => void;
+  onRenovarProveedor: () => void;
+}) {
+  const [mostrarCredenciales, setMostrarCredenciales] = useState(false);
+
+  return (
+    <div className="rounded-xl border border-neutral-300 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+      {/* Encabezado de la cuenta */}
+      <div className="flex items-center justify-between border-b border-neutral-200 pb-2 dark:border-neutral-800">
+        <div className="flex items-center gap-2">
+          <span className="rounded bg-indigo-100 px-2 py-0.5 font-mono text-xs font-bold text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200">
+            #{numCuenta}
+          </span>
+          <span className="font-mono text-xs font-semibold text-neutral-900 dark:text-white">
+            {cta.correo}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onEditar}
+          className="rounded-md border border-neutral-300 px-2 py-1 text-xs text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+        >
+          ⚙️ Editar
+        </button>
+      </div>
+
+      {/* Info proveedor y credenciales */}
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-600 dark:text-neutral-400">
+        <div>
+          <span>Proveedor: </span>
+          <strong className="text-neutral-900 dark:text-white">{cta.proveedor ?? "Directo"}</strong>
+          {cta.costo != null && (
+            <span className="ml-2 font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+              ${cta.costo.toFixed(2)}
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setMostrarCredenciales(!mostrarCredenciales)}
+          className="font-mono text-[11px] text-blue-600 underline dark:text-blue-400"
+        >
+          {mostrarCredenciales ? "Ocultar clave" : "Ver clave"}
+        </button>
+      </div>
+
+      {mostrarCredenciales && (
+        <div className="mt-2 rounded bg-neutral-100 p-2 font-mono text-xs text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
+          🔑 Clave: {cta.contrasena}
+        </div>
+      )}
+
+      {/* Lista de cupos/perfiles */}
+      <div className="mt-3 space-y-2">
+        {cta.filas.map((fila) => {
+          const estaVendido = Boolean(fila.suscripcionId);
+          const whatsappLimpio = fila.celular?.replace(/[^0-9+]/g, "");
+
+          return (
+            <div
+              key={fila.clave}
+              className={`flex flex-col gap-1.5 rounded-lg border p-2.5 transition ${
+                estaVendido
+                  ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-950 dark:bg-emerald-950/20"
+                  : "border-dashed border-neutral-300 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-800/40"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-neutral-900 dark:text-white">
+                  <span>{fila.cupo}</span>
+                  {fila.pin && (
+                    <span className="rounded bg-neutral-200 px-1 py-0.2 font-mono text-[10px] text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300">
+                      PIN: {fila.pin}
+                    </span>
+                  )}
+                </div>
+
+                {estaVendido ? (
+                  <button
+                    type="button"
+                    onClick={() => onGestionarVenta(fila)}
+                    className="rounded bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white active:scale-95"
+                  >
+                    ⚙️ Gestionar
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onIniciarVenta(fila.unidadId, fila.cupo)}
+                    className="rounded bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white active:scale-95"
+                  >
+                    ⚡ Vender
+                  </button>
+                )}
+              </div>
+
+              {estaVendido && (
+                <div className="flex items-center justify-between text-xs">
+                  <div className="space-y-0.5">
+                    <div className="font-semibold text-neutral-800 dark:text-neutral-200">
+                      👤 {fila.cliente ?? "Cliente"}
+                    </div>
+                    {fila.vendio && (
+                      <div className="text-[11px] text-neutral-500">
+                        🏷️ Vendió: {fila.vendio}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-right font-mono text-[11px]">
+                    {fila.ingreso != null && (
+                      <div className="font-semibold text-emerald-600 dark:text-emerald-400">
+                        ${fila.ingreso.toFixed(2)}
+                      </div>
+                    )}
+                    {fila.vence && (
+                      <div className="text-neutral-500">
+                        Vence: {fila.vence}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {whatsappLimpio && (
+                <a
+                  href={`https://wa.me/${whatsappLimpio.replace("+", "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400"
+                >
+                  💬 WhatsApp ({fila.celular})
+                </a>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

@@ -130,18 +130,7 @@ export default async function PlataformaPage({
       (a, b) => a.numero_slot - b.numero_slot,
     );
 
-    let asignacionCompleta = abiertas.find((a) => a.alcance === "cuenta");
-    if (!asignacionCompleta && unidades.length > 0) {
-      const u1 = unidades[0];
-      const asig1 = abiertas.find((a) => a.unidad_id === u1.id);
-      if (
-        asig1 &&
-        (u1.nombre_visible?.toLowerCase().includes("cuenta completa") ||
-          u1.nombre_visible?.toLowerCase().trim() === "completa")
-      ) {
-        asignacionCompleta = asig1;
-      }
-    }
+    const asignacionCompleta = abiertas.find((a) => a.alcance === "cuenta");
 
     const principal = abiertas.find((a) => a.alcance === "principal");
     const porUnidad = new Map(

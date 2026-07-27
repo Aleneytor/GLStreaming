@@ -114,7 +114,9 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 
 ## Estado actual
 
-**Gestión Directa, Registro Flexible y Revendedores en Inventario (COMPLETO 2026-07-27).**
+**Gestión Directa, Registro Flexible, Revendedores y Vista Responsive Móvil en Inventario (COMPLETO 2026-07-27).**
+- **Vista Responsive en Móviles (Mobile-First)**: En teléfonos y pantallas pequeñas (`< 768px`), el inventario se muestra mediante **tarjetas apiladas por cuenta (`TarjetaCuentaMovil`)** con botones táctiles grandes (`⚡ Vender` / `⚙️ Gestionar`) y enlaces directos a WhatsApp, evitando desbordamientos horizontales de 16 columnas. En escritorio (`>= 768px`) se mantiene la densidad de tabla Excel.
+- **Detección Limpia de Cuentas Completas**: Se simplificó `page.tsx` para basarse únicamente en `alcance === 'cuenta'` en `asignaciones_inventario`, eliminando la inferencia frágil por texto en `nombre_visible`.
 - **Simplificación de Menú Principal**: Se removió la sección duplicada `Vencimientos` del menú de navegación (toda la gestión central de vencimientos, renovaciones y cobros se realiza unificadamente desde `Operaciones` / `/dashboard`), dejando un flujo más limpio.
 - **Corrección de Firma `registrar_cobro_cliente` (Migración `0033`)**: Se ajustó la llamada interna dentro de `vender_unidad` para coincidir con la firma exacta de `registrar_cobro_cliente` en PostgreSQL (`p_periodo_id`, `p_monto_ves`, `p_referencia`, `p_monto_usd`).
 - **Eliminación de Sobrecargas Duplicadas de Funciones**: Se depuraron las versiones/sobrecargas anteriores de `vender_unidad` en Postgres mediante un bloque `DO`, dejando una única versión limpia e inambigua para llamadas RPC.
