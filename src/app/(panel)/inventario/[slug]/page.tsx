@@ -86,6 +86,25 @@ export default async function PlataformaPage({
   const { data: cuentas, error: errorCuentas } = await consulta.order("orden", { ascending: false });
   if (errorCuentas) throw new Error(`No se pudo cargar el inventario: ${errorCuentas.message}`);
 
+  const proveedoresIds = Array.from(
+    new Set(
+      (cuentas ?? [])
+        .map((cuenta) => uno(cuenta.proveedores)?.id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+  const proveedoresConTarjeta = new Set<string>();
+  if (proveedoresIds.length > 0) {
+    const { data: tarjetas, error: errorTarjetas } = await supabase
+      .from("tarjetas_proveedor_cifradas")
+      .select("proveedor_id")
+      .in("proveedor_id", proveedoresIds);
+    if (errorTarjetas) {
+      throw new Error(`No se pudo comprobar las tarjetas cifradas: ${errorTarjetas.message}`);
+    }
+    for (const tarjeta of tarjetas ?? []) proveedoresConTarjeta.add(tarjeta.proveedor_id);
+  }
+
   // El control de pago referencia `coberturas_spotify.cuenta_id` directamente.
   // Consultarlo aparte evita depender de un embed inverso ambiguo de PostgREST
   // y garantiza que el Gmail pagador llegue tanto a escritorio como a móvil.
@@ -337,6 +356,7 @@ export default async function PlataformaPage({
       cuentaEstado: c.estado as string,
       proveedorId: uno(c.proveedores)?.id ?? null,
       proveedor: uno(c.proveedores)?.nombre_o_alias ?? null,
+      proveedorTieneTarjeta: proveedoresConTarjeta.has(uno(c.proveedores)?.id ?? ""),
       costo: cicloVigente ? Number(cicloVigente.costo_usdt) : null,
       renovarProveedor: renovarProv,
       diasProveedor: diasProv,

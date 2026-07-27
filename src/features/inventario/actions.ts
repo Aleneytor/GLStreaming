@@ -310,6 +310,69 @@ export async function revelarCredencialesAction(
   return { ok: true, correo, contrasena, perfiles };
 }
 
+export type TarjetaProveedorRevelada =
+  | { ok: true; numero: string; vencimiento: string | null }
+  | { ok: false; error: string };
+
+/** Revela temporalmente la tarjeta propia asociada a un proveedor. */
+export async function revelarTarjetaProveedorAction(
+  proveedorId: string,
+): Promise<TarjetaProveedorRevelada> {
+  const usuario = await obtenerUsuarioActual();
+  if (!esAdmin(usuario)) return { ok: false, error: "No autorizado." };
+  if (!z.string().uuid().safeParse(proveedorId).success) {
+    return { ok: false, error: "Proveedor no válido." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tarjetas_proveedor_cifradas")
+    .select("datos_cifrados")
+    .eq("proveedor_id", proveedorId)
+    .maybeSingle();
+
+  if (error || !data) {
+    return {
+      ok: false,
+      error: "Esta tarjeta no tiene datos cifrados. Vuelve a importarla desde el Excel.",
+    };
+  }
+
+  let tarjeta: { numero?: unknown; vencimiento?: unknown };
+  try {
+    tarjeta = JSON.parse(descifrarSecreto(data.datos_cifrados)) as {
+      numero?: unknown;
+      vencimiento?: unknown;
+    };
+  } catch {
+    return {
+      ok: false,
+      error: "No se pudo descifrar la tarjeta (¿cambió GLS_ENCRYPTION_KEY?).",
+    };
+  }
+
+  if (typeof tarjeta.numero !== "string" || !/^\d{13,19}$/.test(tarjeta.numero)) {
+    return { ok: false, error: "Los datos cifrados de la tarjeta no son válidos." };
+  }
+
+  const vencimiento =
+    typeof tarjeta.vencimiento === "string" ? tarjeta.vencimiento : null;
+
+  const auditoria = await supabase.from("eventos_auditoria").insert({
+    actor_id: usuario!.id,
+    accion: "revelar_tarjeta_proveedor",
+    entidad: "proveedores",
+    entidad_id: proveedorId,
+    resultado: "ok",
+    metadata: { incluye: ["pan", "vencimiento"], cvv: false },
+  });
+  if (auditoria.error) {
+    return { ok: false, error: "No se pudo registrar el acceso a la tarjeta." };
+  }
+
+  return { ok: true, numero: tarjeta.numero, vencimiento };
+}
+
 export type EstadoInline = { error?: string; ok?: string } | null;
 
 export async function guardarCuentaInlineAction(

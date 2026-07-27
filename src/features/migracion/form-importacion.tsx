@@ -275,9 +275,11 @@ export function FormImportacion({
             esa familia— en vez de duplicar la cuenta.
           </p>
           <p>
-            ¿Pagaste con tarjeta? Anota en <strong>proveedor</strong> el banco y los{" "}
-            <strong>últimos 4</strong> (ej. «Bancamiga 0477»): identifica la tarjeta sin
-            riesgo. Si pegas el número completo, se guarda solo el final —nunca el CVV.
+            ¿Pagaste con una tarjeta propia? Puedes pegar en <strong>Proveedor</strong> el
+            número y vencimiento. En el inventario solo se verán el banco/apodo y los{" "}
+            <strong>últimos 4</strong>; el número completo y el vencimiento quedarán
+            cifrados y podrás revelarlos como administrador. El <strong>CVV se descarta</strong>
+            y nunca se guarda.
           </p>
           <p>
             Si el <strong>cliente</strong> está vacío pero hay monto o teléfono, se usa el

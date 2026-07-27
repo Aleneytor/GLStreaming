@@ -2481,6 +2481,38 @@ export type Database = {
           },
         ]
       }
+      tarjetas_proveedor_cifradas: {
+        Row: {
+          created_at: string
+          datos_cifrados: string
+          proveedor_id: string
+          updated_at: string
+          version_clave: number
+        }
+        Insert: {
+          created_at?: string
+          datos_cifrados: string
+          proveedor_id: string
+          updated_at?: string
+          version_clave?: number
+        }
+        Update: {
+          created_at?: string
+          datos_cifrados?: string
+          proveedor_id?: string
+          updated_at?: string
+          version_clave?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tarjetas_proveedor_cifradas_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: true
+            referencedRelation: "proveedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasas_cambio: {
         Row: {
           bs_por_usd: number

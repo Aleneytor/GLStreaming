@@ -51,6 +51,8 @@ export type FilaImportacion = {
   inversion: number | null;
   /** Proveedor al que se le compra la cuenta (columna «Proveedor»). */
   proveedor: string | null;
+  /** Tarjeta propia detectada en Proveedor. Solo PAN y vencimiento; nunca CVV. */
+  tarjetaProveedor: { numero: string; vencimiento: string | null } | null;
   /** Cuándo toca pagarle al proveedor (columna «Renovar»), en ISO. Por cuenta. */
   renovarProveedor: string | null;
   /** Spotify: login propio del miembro de una familia («Correo Cliente»). */
@@ -79,6 +81,19 @@ export type ConfiguracionVendedorImportacion = {
   tipo: "revendedor" | "intermediario" | null;
   tasa: "bcv" | "paralela" | null;
 };
+
+/**
+ * Produce los valores descendentes que usa Inventario para dejar primero la
+ * primera cuenta del Excel. `ids` ya debe venir sin duplicados y en el orden de
+ * su primera aparición (una cuenta completa puede ocupar varias filas).
+ */
+export function calcularOrdenCuentasImportadas(
+  ids: string[],
+  maximoActual: number,
+): Array<{ id: string; orden: number }> {
+  const base = (Number.isFinite(maximoActual) ? maximoActual : 0) + ids.length + 1;
+  return ids.map((id, indice) => ({ id, orden: base - indice }));
+}
 
 /** Misma decisión de base para la vista previa y la acción de servidor. */
 export function baseCobroImportacion(
@@ -209,17 +224,22 @@ export function separarPagador(texto: string): {
   return { proveedor: resto, pagador: m[0] };
 }
 
+export type TarjetaProveedorDetectada = {
+  valor: string;
+  oculto: boolean;
+  tarjeta: { numero: string; vencimiento: string | null } | null;
+};
+
 /**
- * Oculta un número de tarjeta si aparece en el texto (red de seguridad).
+ * Separa una tarjeta propia de la etiqueta visible del proveedor.
  *
- * Para recordar CON QUÉ tarjeta se pagó una cuenta basta el banco y los últimos
- * cuatro dígitos. Guardar el número completo —y menos aún el CVV— es un riesgo
- * innecesario: no aporta nada para identificarla y sí es peligroso si los datos
- * se filtran. Así que si alguien pega el número entero, aquí se recorta.
+ * La grilla recibe únicamente banco/apodo + últimos cuatro. El número completo
+ * y el vencimiento viajan aparte para que la acción del servidor los cifre.
+ * Cualquier CVV escrito en la celda se descarta y nunca llega al almacén.
  */
-export function enmascararTarjeta(valor: string): { valor: string; oculto: boolean } {
+export function prepararTarjetaProveedor(valor: string): TarjetaProveedorDetectada {
   const t = valor.replace(/\s+/g, " ").trim();
-  if (!t) return { valor: t, oculto: false };
+  if (!t) return { valor: t, oculto: false, tarjeta: null };
 
   // Tramos de dígitos (admite espacios o guiones entre grupos, como se escriben
   // las tarjetas). Interesa el más largo: el número, no el CVV ni la fecha.
@@ -233,15 +253,30 @@ export function enmascararTarjeta(valor: string): { valor: string; oculto: boole
       mejorDigitos = digitos;
     }
   }
-  if (mejorDigitos.length < 13) return { valor: t, oculto: false };
+  if (mejorDigitos.length < 13) {
+    return { valor: t, oculto: false, tarjeta: null };
+  }
 
-  // Una tarjeta tiene 13-19 dígitos; si el tramo arrastró la fecha o el CVV,
-  // los de más se ignoran quedándose con los primeros 16.
-  const ultimos = mejorDigitos.slice(0, 16).slice(-4);
+  // Las hojas actuales contienen Visa/Mastercard de 16 dígitos. Limitar aquí
+  // impide que un CVV separado por espacios se concatene accidentalmente.
+  const numero = mejorDigitos.slice(0, 16);
+  const ultimos = numero.slice(-4);
+  const vence = t.match(/\b(0[1-9]|1[0-2])\s*[/.\-]\s*(\d{2}|\d{4})\b/);
+  const vencimiento = vence ? `${vence[1]}/${vence[2]}` : null;
 
   // Se conserva el texto anterior al número (el banco o apodo, si lo hay).
   const antes = t.slice(0, t.indexOf(mejor)).replace(/[^\p{L}\p{N} .]/gu, "").trim();
-  return { valor: `${antes || "tarjeta"} ···${ultimos}`, oculto: true };
+  return {
+    valor: `${antes || "tarjeta"} ···${ultimos}`,
+    oculto: true,
+    tarjeta: { numero, vencimiento },
+  };
+}
+
+/** Compatibilidad para consumidores que solo necesitan la máscara. */
+export function enmascararTarjeta(valor: string): { valor: string; oculto: boolean } {
+  const { valor: enmascarado, oculto } = prepararTarjetaProveedor(valor);
+  return { valor: enmascarado, oculto };
 }
 
 type Campo =
@@ -580,9 +615,10 @@ export function analizarFilas(
     const inversionCruda = leer(c, "inversion");
     // La celda de proveedor puede traer el Gmail pagador dentro (familias de
     // Spotify con GPay propio): se separa antes de nada. Y si en su lugar
-    // viene un número de tarjeta, se guarda solo el final.
+    // viene una tarjeta propia, el listado recibe solo la máscara y la acción
+    // del servidor podrá cifrar por separado el número y el vencimiento.
     const provSeparado = separarPagador(leer(c, "proveedor"));
-    const proveedorCrudo = enmascararTarjeta(provSeparado.proveedor);
+    const proveedorCrudo = prepararTarjetaProveedor(provSeparado.proveedor);
     const proveedor = proveedorCrudo.valor || null;
     const renovarCrudo = leer(c, "renovar");
     // Spotify: el paréntesis con el que se anota el Gmail pagador se descarta.
@@ -676,7 +712,7 @@ export function analizarFilas(
 
     if (proveedorCrudo.oculto) {
       avisos.push(
-        `Se ocultó el número de tarjeta por seguridad: se guarda «${proveedorCrudo.valor}».`,
+        `La tarjeta se mostrará como «${proveedorCrudo.valor}» y sus datos quedarán cifrados. El CVV no se guarda.`,
       );
     }
 
@@ -762,6 +798,7 @@ export function analizarFilas(
         monto: monto === "invalido" ? null : monto,
         inversion: inversion === "invalido" ? null : inversion,
         proveedor,
+        tarjetaProveedor: proveedorCrudo.tarjeta,
         renovarProveedor,
         correoCliente,
         claveCliente,

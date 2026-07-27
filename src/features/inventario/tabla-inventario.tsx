@@ -13,6 +13,7 @@ import type { VendedorOp } from "./modal-venta-rapida";
 import { ModalRenovarProveedorRapido } from "./modal-renovar-proveedor";
 import { ModalRenovarProveedorLote } from "./modal-renovar-proveedor-lote";
 import { ModalGestionVenta } from "./modal-gestion-venta";
+import { BotonTarjetaProveedor } from "./credenciales";
 
 export type CupoFila = {
   slotNumber: number;
@@ -50,6 +51,7 @@ export type BloqueCuenta = {
   cuentaEstado: string;
   proveedorId: string | null;
   proveedor: string | null;
+  proveedorTieneTarjeta: boolean;
   costo: number | null;
   renovarProveedor: string | null;
   diasProveedor: number | null;
@@ -811,7 +813,10 @@ function BloqueCuentaExcel({
                 rowSpan={totalFilas}
                 className="border border-neutral-300 px-2 py-0.5 font-medium text-neutral-800 dark:border-neutral-700 dark:text-neutral-200"
               >
-                {cta.proveedor ?? ""}
+                <span className="block">{cta.proveedor ?? ""}</span>
+                {cta.proveedorId && cta.proveedorTieneTarjeta && (
+                  <BotonTarjetaProveedor proveedorId={cta.proveedorId} />
+                )}
               </td>
             )}
 
@@ -952,6 +957,9 @@ function TarjetaCuentaMovil({
             <span className="ml-2 font-mono font-semibold text-emerald-600 dark:text-emerald-400">
               ${cta.costo.toFixed(2)}
             </span>
+          )}
+          {cta.proveedorId && cta.proveedorTieneTarjeta && (
+            <BotonTarjetaProveedor proveedorId={cta.proveedorId} />
           )}
         </div>
         <button

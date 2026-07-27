@@ -2,13 +2,31 @@ import { describe, expect, it } from "vitest";
 import {
   analizarFilas,
   baseCobroImportacion,
+  calcularOrdenCuentasImportadas,
   enmascararTarjeta,
+  prepararTarjetaProveedor,
   normalizarFecha,
   normalizarMonto,
   parsearTabla,
   restarUnMes,
   separarPagador,
 } from "@/domain/importacion";
+
+describe("calcularOrdenCuentasImportadas", () => {
+  it("deja la primera cuenta pegada primero en el orden descendente", () => {
+    const plan = calcularOrdenCuentasImportadas(["primera", "segunda", "tercera"], 500);
+    expect(plan).toEqual([
+      { id: "primera", orden: 504 },
+      { id: "segunda", orden: 503 },
+      { id: "tercera", orden: 502 },
+    ]);
+    expect([...plan].sort((a, b) => b.orden - a.orden).map((item) => item.id)).toEqual([
+      "primera",
+      "segunda",
+      "tercera",
+    ]);
+  });
+});
 
 describe("baseCobroImportacion", () => {
   it("conserva la base guardada cuando la hoja vieja solo trae el nombre", () => {
@@ -417,6 +435,16 @@ describe("analizarFilas", () => {
     );
     expect(r.conError).toBe(1);
     expect(r.filas[0].errores[0]).toContain("vencimiento no entendida");
+  });
+
+  it("separa PAN y vencimiento para cifrarlos, y descarta el CVV", () => {
+    const resultado = prepararTarjetaProveedor("Bancamiga 4130371000040477 01/28 766");
+    expect(resultado.valor).toBe("Bancamiga ···0477");
+    expect(resultado.tarjeta).toEqual({
+      numero: "4130371000040477",
+      vencimiento: "01/28",
+    });
+    expect(JSON.stringify(resultado.tarjeta)).not.toContain("766");
   });
 
   it("lee los metadatos operativos nuevos sin cambiar las columnas anteriores", () => {

@@ -7,6 +7,7 @@ import { cifrarSecreto, huellaSecreto } from "@/lib/crypto";
 import {
   analizarFilas,
   baseCobroImportacion,
+  calcularOrdenCuentasImportadas,
   modoDeProducto,
   restarUnMes,
   type ConfiguracionVendedorImportacion,
@@ -277,15 +278,23 @@ export async function importarAction(
     else {
       metadatosPorCuenta.set(clave, {
         ...anterior,
+        inversion: anterior.inversion ?? fila.datos.inversion,
+        proveedor: anterior.proveedor ?? fila.datos.proveedor,
+        renovarProveedor: anterior.renovarProveedor ?? fila.datos.renovarProveedor,
         aliasCuenta: anterior.aliasCuenta ?? fila.datos.aliasCuenta,
         notasCuenta: anterior.notasCuenta ?? fila.datos.notasCuenta,
         estadoCuenta: anterior.estadoCuenta ?? fila.datos.estadoCuenta,
+        tarjetaProveedor: anterior.tarjetaProveedor ?? fila.datos.tarjetaProveedor,
         tipoProveedor: anterior.tipoProveedor ?? fila.datos.tipoProveedor,
         telefonoProveedor: anterior.telefonoProveedor ?? fila.datos.telefonoProveedor,
         notasProveedor: anterior.notasProveedor ?? fila.datos.notasProveedor,
       });
     }
   }
+
+  const cuentasImportadasEnOrden: string[] = [];
+  const cuentasImportadasVistas = new Set<string>();
+  const tarjetasProveedorGuardadas = new Set<string>();
 
   for (const fila of validas) {
     const d = fila.datos;
@@ -317,9 +326,9 @@ export async function importarAction(
 
     // El Premium puede salir de GPay propio (con su Gmail pagador anotado) o
     // de un proveedor externo. Vale igual para familias e individuales.
-    const gpay = /gpay/i.test(d.proveedor ?? "") || Boolean(d.gmailPagador);
+    const gpay = /gpay/i.test(cuentaMeta.proveedor ?? "") || Boolean(d.gmailPagador);
     const origenGpay = gpay
-      ? /nigeria/i.test(d.proveedor ?? "")
+      ? /nigeria/i.test(cuentaMeta.proveedor ?? "")
         ? "gpay_nigeria"
         : "gpay_usa"
       : null;
@@ -347,7 +356,7 @@ export async function importarAction(
         p_monto_ves: montoVes,
         p_vendedor_id: vendedorId,
         p_costo_usdt: d.inversion,
-        p_proveedor_nombre: d.proveedor,
+        p_proveedor_nombre: cuentaMeta.proveedor,
         p_prov_inicio: provInicio,
         // Una familia que no se vendió como individual igual tiene pagador.
         p_gmail_pagador_cifrado: d.gmailPagador ? cifrarSecreto(d.gmailPagador) : null,
@@ -375,7 +384,7 @@ export async function importarAction(
         p_monto_ves: montoVes,
         p_vendedor_id: vendedorId,
         p_costo_usdt: d.inversion,
-        p_proveedor_nombre: d.proveedor,
+        p_proveedor_nombre: cuentaMeta.proveedor,
         p_prov_inicio: provInicio,
       }));
     } else {
@@ -398,7 +407,7 @@ export async function importarAction(
         p_monto_ves: montoVes,
         p_vendedor_id: vendedorId,
         p_costo_usdt: d.inversion,
-        p_proveedor_nombre: d.proveedor,
+        p_proveedor_nombre: cuentaMeta.proveedor,
         p_prov_inicio: provInicio,
       }));
     }
@@ -410,6 +419,10 @@ export async function importarAction(
       suscripcion_id?: string;
     } | null;
     if (!error && ids?.cuenta_id) {
+      if (!cuentasImportadasVistas.has(ids.cuenta_id)) {
+        cuentasImportadasVistas.add(ids.cuenta_id);
+        cuentasImportadasEnOrden.push(ids.cuenta_id);
+      }
       const patchCuenta: { alias?: string; notas?: string; estado?: string; archived_at?: string } = {};
       if (cuentaMeta.aliasCuenta) patchCuenta.alias = cuentaMeta.aliasCuenta;
       if (cuentaMeta.notasCuenta) patchCuenta.notas = cuentaMeta.notasCuenta;
@@ -450,11 +463,12 @@ export async function importarAction(
         if (meta.error) advertenciasMeta.push(`notas del cliente: ${meta.error.message}`);
       }
     }
-    if (
-      !error &&
-      ids?.cuenta_id &&
-      (cuentaMeta.tipoProveedor || cuentaMeta.telefonoProveedor || cuentaMeta.notasProveedor)
-    ) {
+    if (!error && ids?.cuenta_id && (
+      cuentaMeta.tipoProveedor ||
+      cuentaMeta.telefonoProveedor ||
+      cuentaMeta.notasProveedor ||
+      cuentaMeta.tarjetaProveedor
+    )) {
       const { data: cuenta } = await supabase
         .from("cuentas")
         .select("proveedor_operativo_id")
@@ -479,6 +493,22 @@ export async function importarAction(
           .update(patchProveedor)
           .eq("id", cuenta.proveedor_operativo_id);
         if (meta.error) advertenciasMeta.push(`datos del proveedor: ${meta.error.message}`);
+
+        if (
+          cuentaMeta.tarjetaProveedor &&
+          !tarjetasProveedorGuardadas.has(cuenta.proveedor_operativo_id)
+        ) {
+          const tarjeta = await supabase.from("tarjetas_proveedor_cifradas").upsert({
+            proveedor_id: cuenta.proveedor_operativo_id,
+            datos_cifrados: cifrarSecreto(JSON.stringify(cuentaMeta.tarjetaProveedor)),
+            updated_at: new Date().toISOString(),
+          });
+          if (tarjeta.error) {
+            advertenciasMeta.push(`tarjeta cifrada: ${tarjeta.error.message}`);
+          } else {
+            tarjetasProveedorGuardadas.add(cuenta.proveedor_operativo_id);
+          }
+        }
       }
     }
     if (!error && d.cliente && d.monto === 0 && periodoId) {
@@ -506,6 +536,38 @@ export async function importarAction(
     });
   }
 
+  // `orden` se lee descendente en Inventario. Se asigna el valor mayor a la
+  // primera cuenta pegada para conservar exactamente la secuencia del Excel.
+  // Las filas repetidas de una misma cuenta madre solo ocupan una posición.
+  let avisoOrden: string | null = null;
+  if (cuentasImportadasEnOrden.length > 0) {
+    const { data: primeraPorOrden, error: errorMaximo } = await supabase
+      .from("cuentas")
+      .select("orden")
+      .order("orden", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (errorMaximo) {
+      avisoOrden = `No se pudo preparar el orden: ${errorMaximo.message}`;
+    } else {
+      const planOrden = calcularOrdenCuentasImportadas(
+        cuentasImportadasEnOrden,
+        Number(primeraPorOrden?.orden ?? Date.now() / 1000),
+      );
+      for (const posicion of planOrden) {
+        const { error: errorOrden } = await supabase
+          .from("cuentas")
+          .update({ orden: posicion.orden })
+          .eq("id", posicion.id);
+        if (errorOrden) {
+          avisoOrden = `No se pudo conservar todo el orden: ${errorOrden.message}`;
+          break;
+        }
+      }
+    }
+  }
+
   revalidatePath("/inventario");
   revalidatePath("/clientes");
   revalidatePath("/vencimientos");
@@ -522,7 +584,12 @@ export async function importarAction(
       `Importadas ${ok} de ${resultados.length} filas.` +
       (fallidas ? ` ${fallidas} fallaron.` : "") +
       (omitidas ? ` ${omitidas} se omitieron por errores de formato.` : "") +
-      (vendedores.size ? ` Revendedores: ${vendedores.size}.` : ""),
+      (vendedores.size ? ` Revendedores: ${vendedores.size}.` : "") +
+      (avisoOrden
+        ? ` Aviso: ${avisoOrden}`
+        : cuentasImportadasEnOrden.length
+          ? " Orden del Excel conservado."
+          : ""),
     filas: resultados,
   };
 }
