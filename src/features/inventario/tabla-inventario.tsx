@@ -328,11 +328,12 @@ function BloqueCuentaExcel({
   onDragOver: (e: React.DragEvent) => void;
   onDrop: () => void;
 }) {
-  const totalFilas = cta.filas.length;
+  const filasARenderizar = cta.esCuentaCompleta ? cta.filas.slice(0, 1) : cta.filas;
+  const totalFilas = filasARenderizar.length;
 
   return (
     <>
-      {cta.filas.map((f, i) => {
+      {filasARenderizar.map((f, i) => {
         const esPrimera = i === 0;
 
         let claseAlerta = "bg-[#16a34a] text-white";
@@ -384,6 +385,8 @@ function BloqueCuentaExcel({
             onDragOver={onDragOver}
             onDrop={onDrop}
             className={`transition hover:bg-amber-50/50 dark:hover:bg-neutral-800/60 ${
+              cta.esCuentaCompleta ? "h-[115px]" : ""
+            } ${
               isTarget && esPrimera ? "ring-2 ring-blue-500" : ""
             } ${
               esPrimera
@@ -402,14 +405,9 @@ function BloqueCuentaExcel({
             )}
 
             {/* 1. N° */}
-            {(!cta.esCuentaCompleta || esPrimera) && (
-              <td
-                rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                className="border border-neutral-300 bg-neutral-100 px-1.5 py-0.5 text-center font-bold text-neutral-700 align-middle dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-              >
-                {cta.esCuentaCompleta ? 1 : f.slotNumber}
-              </td>
-            )}
+            <td className="border border-neutral-300 bg-neutral-100 px-1.5 py-0.5 text-center font-bold text-neutral-700 align-middle dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+              {cta.esCuentaCompleta ? 1 : f.slotNumber}
+            </td>
 
             {/* 2. Correo (Fusionado) */}
             {esPrimera && (
@@ -433,33 +431,20 @@ function BloqueCuentaExcel({
             )}
 
             {/* 4. Perfil */}
-            {(!cta.esCuentaCompleta || esPrimera) && (
-              <td
-                rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                className="border border-neutral-300 px-2 py-0.5 font-medium text-neutral-900 align-middle dark:border-neutral-700 dark:text-white"
-              >
-                {cta.esCuentaCompleta ? "Cuenta Completa" : f.cupo}
-              </td>
-            )}
+            <td className="border border-neutral-300 px-2 py-0.5 font-medium text-neutral-900 align-middle dark:border-neutral-700 dark:text-white">
+              {cta.esCuentaCompleta ? "Cuenta Completa" : f.cupo}
+            </td>
 
             {/* 5. Pin */}
-            {(!cta.esCuentaCompleta || esPrimera) && (
-              <td
-                rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                className="border border-neutral-300 px-1.5 py-0.5 text-center font-mono text-neutral-700 align-middle dark:border-neutral-700 dark:text-neutral-300"
-              >
-                {f.pin ?? ""}
-              </td>
-            )}
+            <td className="border border-neutral-300 px-1.5 py-0.5 text-center font-mono text-neutral-700 align-middle dark:border-neutral-700 dark:text-neutral-300">
+              {f.pin ?? ""}
+            </td>
 
             {/* Columnas de Venta (Fusionadas visualmente si es Cuenta Completa) */}
             {(!cta.esCuentaCompleta || esPrimera) && (
               <>
                 {/* 6. Ingresos */}
-                <td
-                  rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                  className="border border-neutral-300 px-2 py-0.5 text-right font-medium tabular-nums text-neutral-900 align-middle dark:border-neutral-700 dark:text-white"
-                >
+                <td className="border border-neutral-300 px-2 py-0.5 text-right font-medium tabular-nums text-neutral-900 align-middle dark:border-neutral-700 dark:text-white">
                   {f.ingreso != null
                     ? `$ ${f.ingreso.toFixed(2)}`
                     : cta.esCuentaCompleta && cta.filas[0]?.ingreso != null
@@ -468,32 +453,22 @@ function BloqueCuentaExcel({
                 </td>
 
                 {/* 7. Inicio */}
-                <td
-                  rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                  className="border border-neutral-300 px-1.5 py-0.5 text-center align-middle text-neutral-700 dark:border-neutral-700 dark:text-neutral-300"
-                >
+                <td className="border border-neutral-300 px-1.5 py-0.5 text-center align-middle text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
                   {formatearFecha(f.inicio)}
                 </td>
 
                 {/* 8. Días */}
-                <td
-                  rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                  className="border border-neutral-300 px-1.5 py-0.5 text-center align-middle text-neutral-700 dark:border-neutral-700 dark:text-neutral-300"
-                >
+                <td className="border border-neutral-300 px-1.5 py-0.5 text-center align-middle text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
                   {f.cliente ? 30 : ""}
                 </td>
 
                 {/* 9. Vence */}
-                <td
-                  rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                  className="border border-neutral-300 px-1.5 py-0.5 text-center font-semibold text-neutral-900 align-middle dark:border-neutral-700 dark:text-white"
-                >
+                <td className="border border-neutral-300 px-1.5 py-0.5 text-center font-semibold text-neutral-900 align-middle dark:border-neutral-700 dark:text-white">
                   {formatearFecha(f.vence)}
                 </td>
 
                 {/* 10. Alerta */}
                 <td
-                  rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
                   onClick={() => {
                     if (esLibre) {
                       onIniciarVenta(f.unidadId, f.cupo);
@@ -509,7 +484,6 @@ function BloqueCuentaExcel({
 
                 {/* 11. Cliente */}
                 <td
-                  rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
                   onClick={() => {
                     if (!esLibre) onGestionarVenta(f);
                   }}
@@ -537,18 +511,12 @@ function BloqueCuentaExcel({
                 </td>
 
                 {/* 12. N° Celular */}
-                <td
-                  rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                  className="border border-neutral-300 px-2 py-0.5 font-mono text-neutral-800 align-middle dark:border-neutral-700 dark:text-neutral-200"
-                >
+                <td className="border border-neutral-300 px-2 py-0.5 font-mono text-neutral-800 align-middle dark:border-neutral-700 dark:text-neutral-200">
                   {f.celular ?? ""}
                 </td>
 
                 {/* 13. Vendió */}
-                <td
-                  rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                  className="border border-neutral-300 px-2 py-0.5 text-neutral-700 align-middle dark:border-neutral-700 dark:text-neutral-300"
-                >
+                <td className="border border-neutral-300 px-2 py-0.5 text-neutral-700 align-middle dark:border-neutral-700 dark:text-neutral-300">
                   {f.vendio ?? ""}
                 </td>
               </>
