@@ -200,15 +200,25 @@ export async function editarCuentaAction(
   }
 
   const costoTxt = String(formData.get("costo") ?? "").trim();
+  const renovarProvTxt = String(formData.get("renovar_proveedor") ?? "").trim();
+
+  const camposCiclo: { costo_usdt?: number; proxima_renovacion?: string } = {};
   if (costoTxt) {
     const costo = Number(costoTxt.replace(",", "."));
     if (Number.isFinite(costo) && costo >= 0) {
-      await supabase
-        .from("ciclos_proveedor")
-        .update({ costo_usdt: costo })
-        .eq("cuenta_id", cuentaId)
-        .eq("estado", "vigente");
+      camposCiclo.costo_usdt = costo;
     }
+  }
+  if (renovarProvTxt) {
+    camposCiclo.proxima_renovacion = renovarProvTxt;
+  }
+
+  if (Object.keys(camposCiclo).length > 0) {
+    await supabase
+      .from("ciclos_proveedor")
+      .update(camposCiclo)
+      .eq("cuenta_id", cuentaId)
+      .eq("estado", "vigente");
   }
 
   revalidatePath(slug ? `/inventario/${slug}` : "/inventario");

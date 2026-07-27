@@ -90,8 +90,8 @@ export function PanelEditarCuenta({
             </select>
           </div>
 
-          {/* Proveedor y Costo */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Proveedor, Costo y Fecha de Renovación */}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             <div>
               <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                 Proveedor
@@ -108,6 +108,17 @@ export function PanelEditarCuenta({
                 defaultValue={cuenta.costo != null ? cuenta.costo.toFixed(2) : ""}
                 placeholder="0.00"
                 className={`${CAMPO} font-mono tabular-nums`}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                Renovación Proveedor
+              </label>
+              <input
+                type="date"
+                name="renovar_proveedor"
+                defaultValue={cuenta.renovarProveedor ?? ""}
+                className={`${CAMPO} font-mono`}
               />
             </div>
           </div>
