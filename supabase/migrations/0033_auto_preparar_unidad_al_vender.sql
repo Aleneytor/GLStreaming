@@ -2,7 +2,7 @@
 -- 0033_auto_preparar_unidad_al_vender.sql
 -- Auto-preparar y habilitar unidad_inventario al venderla directamente si estaba
 -- deshabilitada o pendiente de limpieza tras cancelaciones/importaciones.
--- Elimina dinámicamente cualquier sobrecarga previa de vender_unidad.
+-- Corregida la llamada interna a registrar_cobro_cliente y sobrecargas de vender_unidad.
 -- ----------------------------------------------------------------------------
 
 do $$
@@ -210,15 +210,10 @@ begin
   if (p_monto_ves is not null and p_monto_ves > 0)
      or (p_monto_usd is not null and p_monto_usd > 0) then
     perform public.registrar_cobro_cliente(
-      p_periodo_id  => v_periodo_id,
-      p_fecha_cobro => coalesce(p_fecha_venta, p_inicio),
-      p_monto_ves   => p_monto_ves,
-      p_banco       => p_banco_destino,
-      p_ref_ves     => p_referencia_ves,
-      p_tasa_bcv    => p_tasa_bcv_aplicada,
-      p_monto_usd   => p_monto_usd,
-      p_forma_usd   => p_forma_pago_usd,
-      p_ref_usd     => p_referencia_usd
+      p_periodo_id => v_periodo_id,
+      p_monto_ves  => p_monto_ves,
+      p_referencia => coalesce(p_referencia_usd, p_referencia_ves),
+      p_monto_usd  => p_monto_usd
     );
   end if;
 

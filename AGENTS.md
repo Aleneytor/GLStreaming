@@ -114,7 +114,8 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 ## Estado actual
 
 **Gestión Directa, Registro Flexible y Revendedores en Inventario (COMPLETO 2026-07-27).**
-- **Eliminación de Sobrecargas Duplicadas de Funciones (Migración `0033`)**: Se depuraron las versiones/sobrecargas anteriores de `vender_unidad` en Postgres mediante un bloque `DO`, dejando una única versión limpia e inambigua para llamadas RPC.
+- **Corrección de Firma `registrar_cobro_cliente` (Migración `0033`)**: Se ajustó la llamada interna dentro de `vender_unidad` para coincidir con la firma exacta de `registrar_cobro_cliente` en PostgreSQL (`p_periodo_id`, `p_monto_ves`, `p_referencia`, `p_monto_usd`).
+- **Eliminación de Sobrecargas Duplicadas de Funciones**: Se depuraron las versiones/sobrecargas anteriores de `vender_unidad` en Postgres mediante un bloque `DO`, dejando una única versión limpia e inambigua para llamadas RPC.
 - **Auto-preparación de Perfiles en Venta**: Si un perfil estaba deshabilitado o en estado `por_limpiar` tras cancelar una venta previa, la función `vender_unidad` lo habilita y marca como `lista` automáticamente al venderlo, eliminando bloqueos de limpieza.
 - **Resolución Dinámica de Modalidad por Producto**: `venderUnidadRapidaAction` detecta automáticamente la `modalidad_id` activa registrada en `public.producto_modalidades` para cada plataforma (Canva, Netflix, Disney+, Spotify, etc.), evitando errores de modalidad no permitida.
 - **Vendedores e Intermediarios (`public.vendedores`)**: Se consulta directamente la tabla `public.vendedores` (donde viven los revendedores/intermediarios con o sin usuario web), permitiendo asociar cualquier revendedor (ej. Gabriel Nadales, Edgar Esperanza) o registrar uno nuevo al vuelo (`+ Registrar nuevo revendedor...`).
@@ -125,4 +126,4 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **129 pruebas unitarias** pasando en verde y chequeo de tipos TypeScript sin errores.
 
 ---
-*Última actualización: 2026-07-27 (Depuración de funciones ambiguas en Postgres y auto-preparación de perfiles).*
+*Última actualización: 2026-07-27 (Corrección de llamadas internas en Postgres y migraciones sincronizadas).*
