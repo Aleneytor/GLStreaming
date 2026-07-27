@@ -402,9 +402,14 @@ function BloqueCuentaExcel({
             )}
 
             {/* 1. N° */}
-            <td className="border border-neutral-300 bg-neutral-100 px-1.5 py-0.5 text-center font-bold text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
-              {f.slotNumber}
-            </td>
+            {(!cta.esCuentaCompleta || esPrimera) && (
+              <td
+                rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
+                className="border border-neutral-300 bg-neutral-100 px-1.5 py-0.5 text-center font-bold text-neutral-700 align-middle dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+              >
+                {cta.esCuentaCompleta ? 1 : f.slotNumber}
+              </td>
+            )}
 
             {/* 2. Correo (Fusionado) */}
             {esPrimera && (
@@ -428,14 +433,24 @@ function BloqueCuentaExcel({
             )}
 
             {/* 4. Perfil */}
-            <td className="border border-neutral-300 px-2 py-0.5 font-medium text-neutral-900 dark:border-neutral-700 dark:text-white">
-              {f.cupo}
-            </td>
+            {(!cta.esCuentaCompleta || esPrimera) && (
+              <td
+                rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
+                className="border border-neutral-300 px-2 py-0.5 font-medium text-neutral-900 align-middle dark:border-neutral-700 dark:text-white"
+              >
+                {cta.esCuentaCompleta ? "Cuenta Completa" : f.cupo}
+              </td>
+            )}
 
             {/* 5. Pin */}
-            <td className="border border-neutral-300 px-1.5 py-0.5 text-center font-mono text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
-              {f.pin ?? ""}
-            </td>
+            {(!cta.esCuentaCompleta || esPrimera) && (
+              <td
+                rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
+                className="border border-neutral-300 px-1.5 py-0.5 text-center font-mono text-neutral-700 align-middle dark:border-neutral-700 dark:text-neutral-300"
+              >
+                {f.pin ?? ""}
+              </td>
+            )}
 
             {/* Columnas de Venta (Fusionadas visualmente si es Cuenta Completa) */}
             {(!cta.esCuentaCompleta || esPrimera) && (
