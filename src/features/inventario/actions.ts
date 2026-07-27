@@ -461,6 +461,7 @@ export async function venderUnidadRapidaAction(
   revalidatePath(slug ? `/inventario/${slug}` : "/inventario");
   revalidatePath("/caja");
   revalidatePath("/vencimientos");
+  revalidatePath("/dashboard");
   revalidatePath("/clientes");
 
   return { ok: "Venta registrada con éxito." };
@@ -527,6 +528,7 @@ export async function editarVentaDirectaAction(
 
   revalidatePath(slug ? `/inventario/${slug}` : "/inventario");
   revalidatePath("/vencimientos");
+  revalidatePath("/dashboard");
   revalidatePath("/clientes");
 
   return { ok: "Datos de la venta actualizados." };
@@ -588,6 +590,7 @@ export async function cancelarVentaConLimpiezaAction(
 
   revalidatePath(slug ? `/inventario/${slug}` : "/inventario");
   revalidatePath("/vencimientos");
+  revalidatePath("/dashboard");
   revalidatePath("/clientes");
 
   return { ok: "Venta eliminada y cupo liberado." };

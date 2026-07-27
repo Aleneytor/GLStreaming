@@ -16,6 +16,7 @@ async function guard() {
 function refrescar() {
   revalidatePath("/inventario");
   revalidatePath("/vencimientos");
+  revalidatePath("/dashboard");
   revalidatePath("/clientes");
 }
 

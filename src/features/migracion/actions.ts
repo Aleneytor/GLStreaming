@@ -304,6 +304,7 @@ export async function importarAction(
   revalidatePath("/inventario");
   revalidatePath("/clientes");
   revalidatePath("/vencimientos");
+  revalidatePath("/dashboard");
   revalidatePath("/cobros");
   revalidatePath("/caja");
 
