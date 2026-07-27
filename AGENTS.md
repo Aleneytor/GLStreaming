@@ -45,7 +45,7 @@ tasa paralela) y revendedores. Reemplaza un Excel. Zona horaria del negocio:
 # Requiere Docker Desktop corriendo. En PowerShell, anteponer el PATH de docker:
 #   $env:PATH = "C:\Program Files\Docker\Docker\resources\bin;$env:PATH"
 npx supabase start        # levanta el stack local (imprime claves para .env.local)
-npm run db:reset          # migraciones + seed + RECREA los usuarios de prueba
+npm run db:reset          # DESTRUCTIVO: migraciones + seed + recrea usuarios; confirmar respaldo si hay datos operativos
 npm run db:types          # regenera src/lib/supabase/database.types.ts
 npm test                  # pruebas unitarias (Vitest)
 npm run dev               # app en http://localhost:3000
@@ -124,6 +124,7 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **Renovación anticipada encadenada**: `ModalGestionVenta` no usa «hoy» ciegamente. Si el servicio sigue vigente, el período nuevo comienza en `fecha_renovacion` (ej. 29/07 → 29/08); si ya venció, comienza hoy y envía `tardia=on`. La regla pura es `planificarRenovacionCliente`.
 - **Confirmación visible de renovación**: tras el éxito, `ModalGestionVenta` muestra un aviso verde con el período creado y reemplaza las acciones por `Listo`; el botón de confirmar desaparece para impedir una renovación duplicada.
 - **Cuentas completas compatibles y fusionadas en todas las plataformas**: la detección prioriza `alcance='cuenta'`, pero conserva compatibilidad estricta con 24 ventas importadas antiguas de Netflix, Disney+, HBO, Prime Video y Crunchyroll cuya primera unidad tiene exactamente `Cuenta Completa`/`Completa`. En escritorio mantiene sus filas numeradas de 23px (cinco filas = 115px) y fusiona los datos con `rowSpan`; en móvil muestra una sola tarjeta. Spotify individual queda excluido porque es `recurso_indivisible`.
+- **Pagos de proveedor por lote (migración `0036`)**: el inventario permite seleccionar todas las cuentas visibles de un mismo proveedor, desmarcar excepciones y editar el costo de cada ciclo. Comparten una sola `fecha_pago` y un `lote_pago_id`, pero cada ciclo nuevo comienza en la `proxima_renovacion` individual ya guardada. La operación es atómica y rechaza mezclar proveedores. El pago individual también usa `registrar_renovacion_y_pago`, por lo que ahora sí crea el egreso en Caja.
 - **Simplificación de Menú Principal**: Se removió la sección duplicada `Vencimientos` del menú de navegación (toda la gestión central de vencimientos, renovaciones y cobros se realiza unificadamente desde `Operaciones` / `/dashboard`), dejando un flujo más limpio.
 - **Corrección de Firma `registrar_cobro_cliente` (Migración `0033`)**: Se ajustó la llamada interna dentro de `vender_unidad` para coincidir con la firma exacta de `registrar_cobro_cliente` en PostgreSQL (`p_periodo_id`, `p_monto_ves`, `p_referencia`, `p_monto_usd`).
 - **Eliminación de Sobrecargas Duplicadas de Funciones**: Se depuraron las versiones/sobrecargas anteriores de `vender_unidad` en Postgres mediante un bloque `DO`, dejando una única versión limpia e inambigua para llamadas RPC.
@@ -267,6 +268,6 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 ---
 *Pendiente destacado: terminar la revisión visual responsive de plataformas y modales.*
 
-*Última actualización: 2026-07-27 (restaurada la fusión Excel de cuentas completas
-en cinco filas/115px y compatibilidad con 6 asignaciones históricas; 137 unitarias
-y typecheck en verde).*
+*Última actualización: 2026-07-27 (pagos de proveedor individuales y por lote
+corregidos; calendarios independientes, costo editable y fecha de pago común;
+144 unitarias, 15 suites SQL y typecheck en verde).*

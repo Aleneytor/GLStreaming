@@ -257,7 +257,15 @@ guardaron la venta en la primera unidad; en móvil se representan como una sola
 tarjeta. La regla se limita a productos `cuenta_con_unidades`, por lo que Spotify
 individual conserva su única fila.
 
-Validación acumulada: **144 pruebas unitarias** y typecheck en verde; el último
+Los pagos al proveedor pueden registrarse individualmente o por lote desde el
+inventario. En el flujo masivo se elige un proveedor, se seleccionan todas sus
+cuentas visibles (con posibilidad de desmarcar), se edita el costo de cada una y
+se confirma una sola fecha real de pago. Cada ciclo comienza en la renovación
+individual que ya tenía guardada; por eso cuentas pagadas juntas pueden seguir
+venciendo en días distintos. La migración `0036` agrupa las asignaciones bajo un
+lote auditable y ejecuta todo en una transacción.
+
+Validación acumulada: **144 pruebas unitarias**, **15 suites SQL** y typecheck en verde; el último
 build de producción también pasó. PostgreSQL real contiene controles con Gmail para ambas
 variantes de Spotify. Queda pendiente una revisión visual manual completa en
 teléfonos reales de todas las plataformas y sus modales.

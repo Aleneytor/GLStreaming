@@ -16,6 +16,8 @@ Cuando llames a funciones de Postgres mediante `supabase.rpc(...)`, usa **EXCLUS
 | **Eliminar Cliente** | `eliminar_cliente` | `p_cliente_id` | `borrar_cliente` ❌ |
 | **Cobrar Período** | `registrar_cobro_cliente` | `p_periodo_id`, `p_monto_ves`, `p_referencia`, `p_ocurrido_at`, `p_monto_usd` | `p_banco`, `p_ref_ves`, `p_tasa_bcv` ❌ |
 | **Renovar Período** | `renovar_y_cobrar` | `p_suscripcion_id`, `p_monto_ves`, `p_referencia`, `p_precio_usd` | |
+| **Renovar/Pagar Proveedor** | `registrar_renovacion_y_pago` | `p_cuenta_id`, `p_costo_usdt`, `p_inicio`, `p_fecha_pago`, `p_referencia`, `p_pagar` | `registrar_ciclo_proveedor` no crea pagos ❌ |
+| **Renovar Proveedor por Lote** | `registrar_renovaciones_proveedor_lote` | `p_items` (JSONB con `cuenta_id`/`costo_usdt`), `p_fecha_pago`, `p_referencia` | No usar la fecha común de pago como inicio de todos los ciclos ❌ |
 | **Confirmar Limpieza** | `confirmar_limpieza_unidad` | `p_unidad_id` | `limpiar_unidad` ❌ |
 
 ---

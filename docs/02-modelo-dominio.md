@@ -561,7 +561,12 @@ Estados persistidos: `pendiente`, `vigente`, `cancelado`, `reemplazado`. `por_ve
 
 #### `pagos_proveedor`
 
-Caja real pagada por un ciclo: `id`, `ciclo_proveedor_id`, `tipo`, `monto_usdt`, `tasa_paralela_id`, `monto_ves_snapshot`, `fecha_pago`, `confirmado_at`, `estado`, `pago_original_id` opcional, `referencia_no_sensible`, `created_by`, `created_at`.
+Caja real pagada por un ciclo: `id`, `ciclo_proveedor_id`, `tipo`, `monto_usdt`, `tasa_paralela_id`, `monto_ves_snapshot`, `fecha_pago`, `confirmado_at`, `estado`, `pago_original_id` opcional, `lote_pago_id` opcional, `referencia_no_sensible`, `created_by`, `created_at`.
+
+Cuando un solo desembolso cubre varias cuentas del mismo proveedor,
+`lotes_pago_proveedor` conserva la fecha y el total comunes. Cada pago asignado
+sigue vinculado a su ciclo mediante `pagos_proveedor`, y cada ciclo empieza en su
+propia `proxima_renovacion`; la fecha del lote nunca reemplaza ese calendario.
 
 `tipo`: `inicial | renovacion | reverso`. Los dos primeros siempre cubren el costo completo del ciclo; un reverso referencia el pago original mediante `pago_original_id` y no borra el movimiento.
 
