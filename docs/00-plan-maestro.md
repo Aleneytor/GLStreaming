@@ -293,6 +293,13 @@ la importación se bloquea antes de crear los servicios. El selector de modalida
 también queda sincronizado al cambiar de producto, evitando reutilizar la
 modalidad de la plataforma anterior.
 
+La pantalla dejó de ser un formulario largo sin jerarquía. El importador ahora
+guía en cuatro pasos visibles, usa selectores tipo tarjeta para moneda, concentra
+el pegado en un área principal y repliega la documentación extensa. La revisión
+muestra métricas claras, tabla densa en escritorio y tarjetas por fila en móvil;
+la acción final queda visible en una barra sticky con el producto, modalidad y
+cantidad exacta que se importará.
+
 Validación acumulada: **148 pruebas unitarias**, **15 suites SQL** y typecheck en verde; el último
 build de producción también pasó. PostgreSQL real contiene controles con Gmail para ambas
 variantes de Spotify. Queda pendiente una revisión visual manual completa en
