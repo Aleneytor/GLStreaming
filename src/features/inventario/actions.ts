@@ -516,5 +516,5 @@ export async function registrarPagoProveedorRapidoAction(
   revalidatePath(slug ? `/inventario/${slug}` : "/inventario");
   revalidatePath("/finanzas");
 
-  return { ok: "Pago a proveedor registrado y 30 días extendidos." };
+  return { ok: "Pago a proveedor registrado (renovado 1 mes)." };
 }

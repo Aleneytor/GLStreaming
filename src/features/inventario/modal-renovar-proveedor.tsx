@@ -83,7 +83,7 @@ export function ModalRenovarProveedorRapido({
               className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-mono text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
             />
             <p className="mt-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              Al confirmar, se extienden 30 días a partir de la fecha seleccionada y se registra el egreso en Finanzas.
+              Al confirmar, se renueva 1 mes completo (al mismo día del siguiente mes) y se registra el egreso en Finanzas.
             </p>
           </div>
 
@@ -112,7 +112,7 @@ export function ModalRenovarProveedorRapido({
               disabled={pendiente}
               className="rounded-lg bg-purple-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
             >
-              {pendiente ? "Registrando..." : "Extender 30 Días"}
+              {pendiente ? "Registrando..." : "Renovar 1 Mes"}
             </button>
           </div>
         </form>
