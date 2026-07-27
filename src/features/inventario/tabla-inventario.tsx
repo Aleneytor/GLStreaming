@@ -102,7 +102,7 @@ export function TablaInventario({
 }: {
   cuentas: BloqueCuenta[];
   slug: string;
-  vendedores?: { id: string; nombre: string; alias: string | null }[];
+  vendedores?: { id: string; nombre: string; alias: string | null; cobraEnParalela: boolean }[];
 }) {
   const [cuentasState, setCuentasState] = useState<BloqueCuenta[]>(cuentas);
   const [cuentaEditando, setCuentaEditando] = useState<BloqueCuenta | null>(null);

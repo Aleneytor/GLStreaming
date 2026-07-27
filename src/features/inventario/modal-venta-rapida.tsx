@@ -3,7 +3,12 @@
 import { useActionState, useState } from "react";
 import { venderUnidadRapidaAction } from "./actions";
 
-export type VendedorOp = { id: string; nombre: string; alias: string | null };
+export type VendedorOp = {
+  id: string;
+  nombre: string;
+  alias: string | null;
+  cobraEnParalela: boolean;
+};
 
 export function ModalVentaRapida({
   cuentaId,
@@ -22,6 +27,15 @@ export function ModalVentaRapida({
 }) {
   const [estado, action, pendiente] = useActionState(venderUnidadRapidaAction, null);
   const [seleccionVendedor, setSeleccionVendedor] = useState<string>("");
+  // La base de tasa (BCV/paralela) se guarda en el revendedor: al elegirlo, el
+  // checkbox refleja su marca actual; al confirmar la venta, la persiste.
+  const [cobraParalela, setCobraParalela] = useState(false);
+
+  function onCambiarVendedor(valor: string) {
+    setSeleccionVendedor(valor);
+    const v = vendedores.find((x) => x.id === valor);
+    setCobraParalela(v?.cobraEnParalela ?? false);
+  }
 
   const hoyIso = new Date().toISOString().split("T")[0];
   const esNombreGenerico =
@@ -117,7 +131,7 @@ export function ModalVentaRapida({
             <select
               name="vendedor_id"
               value={seleccionVendedor}
-              onChange={(e) => setSeleccionVendedor(e.target.value)}
+              onChange={(e) => onCambiarVendedor(e.target.value)}
               className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
             >
               <option value="">Venta Directa (Sin revendedor)</option>
@@ -140,6 +154,23 @@ export function ModalVentaRapida({
             <p className="mt-1 text-[10px] text-neutral-500 dark:text-neutral-400">
               Selecciona o escribe el revendedor/intermediario que realizó la venta.
             </p>
+
+            {seleccionVendedor !== "" && (
+              <label className="mt-2 flex items-start gap-2 rounded-lg bg-amber-50 px-2.5 py-2 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                <input
+                  type="checkbox"
+                  name="vendedor_cobra_paralela"
+                  checked={cobraParalela}
+                  onChange={(e) => setCobraParalela(e.target.checked)}
+                  className="mt-0.5"
+                />
+                <span>
+                  Este revendedor cobra a <strong>tasa paralela</strong>. Si lo
+                  marcas, sus ventas y renovaciones se cobran a paralela (si no, a
+                  BCV). Queda guardado en el revendedor.
+                </span>
+              </label>
+            )}
           </div>
 
           {estado?.error && (

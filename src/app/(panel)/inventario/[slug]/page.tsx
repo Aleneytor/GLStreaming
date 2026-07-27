@@ -326,9 +326,16 @@ export default async function PlataformaPage({
 
   const { data: listaVendedores } = await supabase
     .from("vendedores")
-    .select("id, nombre, alias")
+    .select("id, nombre, alias, cobra_en_paralela")
     .eq("activo", true)
     .order("nombre");
+
+  const vendedoresUI = (listaVendedores ?? []).map((v) => ({
+    id: v.id,
+    nombre: v.nombre,
+    alias: v.alias,
+    cobraEnParalela: v.cobra_en_paralela,
+  }));
 
   return (
     <div className="w-full space-y-4">
@@ -377,7 +384,7 @@ export default async function PlataformaPage({
             <h2 className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
               {g.nombre} ({g.cuentas.length} {g.cuentas.length === 1 ? "cuenta" : "cuentas"})
             </h2>
-            <TablaInventario cuentas={g.cuentas} slug={slug} vendedores={listaVendedores ?? []} />
+            <TablaInventario cuentas={g.cuentas} slug={slug} vendedores={vendedoresUI} />
           </section>
         ))
       )}

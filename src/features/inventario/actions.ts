@@ -358,7 +358,13 @@ async function resolverVendedorId(
   supabase: any,
   vendedorIdInput: string | null,
   vendedorNombreCustom: string | null,
+  cobraEnParalela?: boolean,
 ): Promise<string | null> {
+  // La marca de tasa (cobra a paralela) se persiste en el revendedor: se aplica
+  // sola a todas sus ventas y renovaciones (migración 0034). Solo se toca cuando
+  // se pasa el valor explícitamente (undefined = no cambiar).
+  const fijarBase = typeof cobraEnParalela === "boolean";
+
   if (vendedorIdInput === "__nuevo__" && vendedorNombreCustom) {
     const nombreLimpio = vendedorNombreCustom.trim();
     if (!nombreLimpio) return null;
@@ -369,11 +375,19 @@ async function resolverVendedorId(
       .ilike("nombre", nombreLimpio)
       .maybeSingle();
 
-    if (existente) return existente.id;
+    if (existente) {
+      if (fijarBase) {
+        await supabase
+          .from("vendedores")
+          .update({ cobra_en_paralela: cobraEnParalela })
+          .eq("id", existente.id);
+      }
+      return existente.id;
+    }
 
     const { data: nuevo } = await supabase
       .from("vendedores")
-      .insert({ nombre: nombreLimpio, activo: true })
+      .insert({ nombre: nombreLimpio, activo: true, cobra_en_paralela: cobraEnParalela ?? false })
       .select("id")
       .single();
 
@@ -381,6 +395,12 @@ async function resolverVendedorId(
   }
 
   if (vendedorIdInput && vendedorIdInput !== "__nuevo__") {
+    if (fijarBase) {
+      await supabase
+        .from("vendedores")
+        .update({ cobra_en_paralela: cobraEnParalela })
+        .eq("id", vendedorIdInput);
+    }
     return vendedorIdInput;
   }
 
@@ -402,6 +422,7 @@ export async function venderUnidadRapidaAction(
   const fechaInicioTxt = String(formData.get("fecha_inicio") ?? "").trim();
   const vendedorIdInput = String(formData.get("vendedor_id") ?? "").trim() || null;
   const vendedorNombreCustom = String(formData.get("vendedor_nombre_custom") ?? "").trim() || null;
+  const cobraParalela = formData.get("vendedor_cobra_paralela") === "on";
   const slug = String(formData.get("slug") ?? "");
 
   if (!cuentaId || !clienteNombre || !precioUsdTxt) {
@@ -414,7 +435,14 @@ export async function venderUnidadRapidaAction(
   }
 
   const supabase = await createClient();
-  const vendedorId = await resolverVendedorId(supabase, vendedorIdInput, vendedorNombreCustom);
+  // Solo se fija la base cuando hay un revendedor de por medio (directa = BCV).
+  const hayVendedor = Boolean(vendedorIdInput);
+  const vendedorId = await resolverVendedorId(
+    supabase,
+    vendedorIdInput,
+    vendedorNombreCustom,
+    hayVendedor ? cobraParalela : undefined,
+  );
 
   // Obtener producto_plataforma_id de la cuenta
   const { data: cuentaData } = await supabase

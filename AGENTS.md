@@ -189,6 +189,29 @@ fallaban enteras. Se pasaron **todas** esas llamadas a **argumentos por nombre**
   Operaciones). Se agregó `revalidatePath('/dashboard')` en venderUnidadRapida,
   cancelarVentaConLimpieza, registrarPagoProveedorRapido, renovar e importación.
 
+### Base de tasa por revendedor: BCV vs Paralela (migración 0034)
+
+Situación real: las ventas **directas** se cobran a **BCV**, pero algunos
+**revendedores** cobran a **paralela** (y los egresos ya van a paralela). El motor
+(0019) ya lee el ingreso económico a paralela, así que la ganancia sale bien con
+solo registrar los Bs reales; faltaba la ergonomía de entrada.
+
+- **`vendedores.cobra_en_paralela`** (bool): marca por revendedor. `registrar_cobro_cliente`
+  lee la marca vía `suscripciones.vendedor_origen_id` y elige la base: **paralela**
+  para revendedores marcados, **BCV** en directa. Así toda venta Y renovación de
+  ese revendedor heredan la base sola (sin elegir nada por venta).
+- Efecto: al indicar el cobro en USD, convierte a Bs con la tasa correcta, y
+  `precio_comercial_usd` (columna «Ingreso») se deriva a la MISMA base → un $5 de
+  revendedor-paralela graba `5×paralela` Bs y se lee como $5 (no inflado a BCV).
+- La lectura económica NO cambia (siempre `monto_ves / paralela`); ambas tasas se
+  siguen congelando. Si la base es paralela y no hay paralela confirmada, el cobro
+  se **bloquea** (no inventa tasa).
+- UI: checkbox «cobra a tasa paralela» en `ModalVentaRapida` (se autocompleta con
+  la marca guardada del revendedor y la persiste al confirmar). Falta llevar el
+  mismo checkbox a `ModalGestionVenta`/`form-venta` si se quiere marcar desde ahí
+  (hoy la renovación ya hereda la base del revendedor, así que no es urgente).
+- Validación: suite `supabase/tests/base_tasa.sql` (7 comprobaciones en verde).
+
 ### Decisiones de diseño CONFIRMADAS por el usuario (no cambiar sin avisar)
 
 - **Venta = pago inmediato; solo las renovaciones quedan pendientes.** Por eso la

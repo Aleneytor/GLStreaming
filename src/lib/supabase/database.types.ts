@@ -2555,6 +2555,7 @@ export type Database = {
         Row: {
           activo: boolean
           alias: string | null
+          cobra_en_paralela: boolean
           created_at: string
           id: string
           nombre: string
@@ -2563,6 +2564,7 @@ export type Database = {
         Insert: {
           activo?: boolean
           alias?: string | null
+          cobra_en_paralela?: boolean
           created_at?: string
           id?: string
           nombre: string
@@ -2571,6 +2573,7 @@ export type Database = {
         Update: {
           activo?: boolean
           alias?: string | null
+          cobra_en_paralela?: boolean
           created_at?: string
           id?: string
           nombre?: string
@@ -3036,6 +3039,7 @@ export type Database = {
       }
       registrar_cobro_cliente: {
         Args: {
+          p_monto_usd?: number
           p_monto_ves?: number
           p_ocurrido_at?: string
           p_periodo_id: string
@@ -3092,6 +3096,7 @@ export type Database = {
         Args: {
           p_inicio?: string
           p_meses?: number
+          p_monto_usd?: number
           p_monto_ves?: number
           p_referencia?: string
           p_suscripcion_id: string
@@ -3179,17 +3184,23 @@ export type Database = {
       }
       vender_unidad: {
         Args: {
+          p_banco_destino?: string
           p_cantidad_periodos?: number
           p_cliente_id?: string
           p_cliente_nombre?: string
           p_cliente_whatsapp?: string
-          p_cuenta_id?: string
+          p_cuenta_id: string
           p_fecha_venta?: string
+          p_forma_pago_usd?: string
           p_inicio?: string
           p_modalidad_id?: string
+          p_monto_usd?: number
           p_monto_ves?: number
           p_nombre_perfil?: string
           p_precio_usd?: number
+          p_referencia_usd?: string
+          p_referencia_ves?: string
+          p_tasa_bcv_aplicada?: number
           p_unidad_id?: string
           p_vendedor_id?: string
         }
