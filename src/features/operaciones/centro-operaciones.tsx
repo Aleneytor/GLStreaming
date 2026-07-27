@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { DatosOperaciones, SuscripcionOperativa } from "./obtener-operaciones";
 import { BotonCopiarWhatsapp } from "./boton-copiar-whatsapp";
 import { ModalRenovacion } from "./modal-renovacion";
+import { ModalGestionSuscripcion } from "./modal-gestion-suscripcion";
 import { BotonLimpieza } from "@/features/ventas/boton-limpieza";
 
 type TabTipo = "urgente" | "proximos" | "todos" | "limpieza";
@@ -12,6 +13,7 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
   const [busqueda, setBusqueda] = useState("");
   const [tab, setTab] = useState<TabTipo>("urgente");
   const [renovandoItem, setRenovandoItem] = useState<SuscripcionOperativa | null>(null);
+  const [gestionandoItem, setGestionandoItem] = useState<SuscripcionOperativa | null>(null);
 
   const urgenteItems = [...datos.vencidos, ...datos.hoy];
   const totalLimpiezas = datos.limpiezas.length;
@@ -24,6 +26,7 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
       (item) =>
         item.clienteNombre.toLowerCase().includes(q) ||
         (item.clienteWhatsapp && item.clienteWhatsapp.includes(q)) ||
+        (item.vendedorNombre && item.vendedorNombre.toLowerCase().includes(q)) ||
         item.plataformaNombre.toLowerCase().includes(q) ||
         item.productoNombre.toLowerCase().includes(q) ||
         (item.perfilNombre && item.perfilNombre.toLowerCase().includes(q)),
@@ -48,7 +51,7 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
             type="text"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="🔍 Buscar cliente, teléfono, plataforma..."
+            placeholder="🔍 Buscar cliente, teléfono, revendedor, plataforma..."
             className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm shadow-sm transition focus:border-neutral-900 focus:outline-none dark:border-neutral-800 dark:bg-neutral-900 dark:focus:border-white"
           />
           {busqueda && (
@@ -161,10 +164,23 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
             >
               {/* Info principal */}
               <div className="min-w-0 flex-1 space-y-1">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold text-neutral-900 dark:text-white">
                     {item.clienteNombre}
                   </span>
+
+                  {item.clienteWhatsapp && (
+                    <span className="font-mono text-xs text-neutral-500 dark:text-neutral-400">
+                      📞 {item.clienteWhatsapp}
+                    </span>
+                  )}
+
+                  {item.vendedorNombre && (
+                    <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[11px] text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                      Revendedor: {item.vendedorNombre}
+                    </span>
+                  )}
+
                   {item.badge && (
                     <span
                       className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
@@ -213,14 +229,23 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
                   💳 Renovar y Cobrar
                 </button>
 
-                <BotonCopiarWhatsapp suscripcionId={item.id} whatsapp={item.clienteWhatsapp} />
+                <BotonCopiarWhatsapp suscripcionId={item.id} />
+
+                <button
+                  type="button"
+                  onClick={() => setGestionandoItem(item)}
+                  className="rounded-xl border border-neutral-200 bg-neutral-50 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+                  title="Gestionar estado, pausar, cancelar o ir al inventario"
+                >
+                  ⚙️ Gestionar
+                </button>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Modal de Renovación si está activo */}
+      {/* Modal de Renovación */}
       {renovandoItem && (
         <ModalRenovacion
           suscripcionId={renovandoItem.id}
@@ -229,6 +254,15 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
           renovacionActual={renovandoItem.renovacion}
           bcv={datos.bcv}
           onCerrar={() => setRenovandoItem(null)}
+        />
+      )}
+
+      {/* Modal de Gestión (Pausar/Cancelar/Inventario) */}
+      {gestionandoItem && (
+        <ModalGestionSuscripcion
+          item={gestionandoItem}
+          bcv={datos.bcv}
+          onCerrar={() => setGestionandoItem(null)}
         />
       )}
     </div>
