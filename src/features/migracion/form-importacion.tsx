@@ -117,7 +117,15 @@ export function FormImportacion({
       <input type="hidden" name="producto_codigo" value={producto?.codigo ?? ""} />
       <input type="hidden" name="moneda" value={moneda} />
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
+        <div className="flex items-start gap-3 border-b border-neutral-200 px-4 py-4 sm:px-5 dark:border-neutral-800">
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-violet-100 text-sm font-semibold text-violet-700 dark:bg-violet-950 dark:text-violet-300">1</span>
+          <div>
+            <h2 className="font-semibold">Configura el destino</h2>
+            <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">El producto define cómo se agrupan las cuentas y sus cupos.</p>
+          </div>
+        </div>
+      <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
         <label className="block text-sm">
           <span className="mb-1 block text-neutral-600 dark:text-neutral-400">Producto</span>
           <select
@@ -127,7 +135,7 @@ export function FormImportacion({
               setProductoId(e.target.value);
               setModalidadId(siguiente?.modalidades[0]?.id ?? "");
             }}
-            className={CAMPO}
+            className={`${CAMPO} h-11 bg-neutral-50 font-medium dark:bg-neutral-900`}
           >
             {productos.map((p) => (
               <option key={p.id} value={p.id}>
@@ -141,7 +149,7 @@ export function FormImportacion({
           <span className="mb-1 block text-neutral-600 dark:text-neutral-400">Modalidad</span>
           <select
             name="modalidad_id"
-            className={CAMPO}
+            className={`${CAMPO} h-11 bg-neutral-50 font-medium dark:bg-neutral-900`}
             value={modalidadId}
             onChange={(e) => setModalidadId(e.target.value)}
           >
@@ -154,61 +162,79 @@ export function FormImportacion({
         </label>
       </div>
 
-      {/* Moneda de los montos: el Excel del negocio va en divisas. */}
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-neutral-200 p-3 text-sm dark:border-neutral-800">
-        <span className="text-neutral-600 dark:text-neutral-400">Los montos están en:</span>
-        <label className="flex items-center gap-1.5">
+      <div className="border-t border-neutral-100 px-4 py-4 sm:px-5 dark:border-neutral-900">
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Moneda de los ingresos</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+        <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition ${moneda === "usd" ? "border-violet-400 bg-violet-50 ring-2 ring-violet-100 dark:border-violet-700 dark:bg-violet-950/30 dark:ring-violet-950" : "border-neutral-200 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"}`}>
           <input
             type="radio"
             name="moneda-ui"
             checked={moneda === "usd"}
             onChange={() => setMoneda("usd")}
           />
-          Dólares{" "}
-          {bcv ? (
-            <span className="text-xs text-neutral-500">
-              (BCV {bcv.toLocaleString("es-VE")}
-              {paralela ? ` · paralela ${paralela.toLocaleString("es-VE")}` : ""} Bs/USD)
+          <span className="min-w-0">
+            <strong className="block text-sm">Dólares</strong>
+            <span className="block truncate text-xs text-neutral-500">
+              {bcv ? `BCV ${bcv.toLocaleString("es-VE")}` : "Falta BCV"}
+              {paralela ? ` · Paralela ${paralela.toLocaleString("es-VE")}` : ""}
             </span>
-          ) : (
-            <span className="text-xs text-amber-600">(falta BCV para convertir)</span>
-          )}
+          </span>
         </label>
-        <label className="flex items-center gap-1.5">
+        <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition ${moneda === "ves" ? "border-violet-400 bg-violet-50 ring-2 ring-violet-100 dark:border-violet-700 dark:bg-violet-950/30 dark:ring-violet-950" : "border-neutral-200 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"}`}>
           <input
             type="radio"
             name="moneda-ui"
             checked={moneda === "ves"}
             onChange={() => setMoneda("ves")}
           />
-          Bolívares
+          <span>
+            <strong className="block text-sm">Bolívares</strong>
+            <span className="block text-xs text-neutral-500">Se guardan tal como vienen</span>
+          </span>
         </label>
+        </div>
       </div>
+      </section>
 
-      <div>
-        <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-          <label htmlFor="filas" className="text-sm font-medium">
-            Pega aquí las filas del Excel
-          </label>
+      <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
+        <div className="flex items-start justify-between gap-3 border-b border-neutral-200 px-4 py-4 sm:px-5 dark:border-neutral-800">
+          <div className="flex items-start gap-3">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-sky-100 text-sm font-semibold text-sky-700 dark:bg-sky-950 dark:text-sky-300">2</span>
+            <div>
+              <h2 className="font-semibold">Pega las filas del Excel</h2>
+              <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">Incluye los encabezados; no necesitas limpiar ni reordenar columnas.</p>
+            </div>
+          </div>
           <button
             type="button"
             onClick={() => setTexto(EJEMPLO)}
-            className="text-xs text-neutral-500 underline underline-offset-2 dark:text-neutral-400"
+            className="shrink-0 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium transition hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
           >
-            Ver un ejemplo
+            Usar ejemplo
           </button>
+        </div>
+        <div className="p-4 sm:p-5">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <label htmlFor="filas" className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Datos pegados</label>
+          {texto && (
+            <button type="button" onClick={() => setTexto("")} className="text-xs text-neutral-500 underline underline-offset-4 hover:text-neutral-900 dark:hover:text-white">
+              Limpiar
+            </button>
+          )}
         </div>
         <textarea
           id="filas"
           name="filas"
-          rows={10}
+          rows={12}
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           spellCheck={false}
           placeholder={"correo\tcontraseña\tperfil\tpin\tmonto\tinicio\tvence\tcliente\twhatsapp\tvendió"}
-          className={`${CAMPO} font-mono text-xs`}
+          className="min-h-64 w-full resize-y rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50 p-4 font-mono text-xs leading-5 outline-none transition placeholder:text-neutral-400 focus:border-violet-500 focus:bg-white focus:ring-4 focus:ring-violet-100 dark:border-neutral-700 dark:bg-neutral-900/70 dark:focus:border-violet-600 dark:focus:bg-neutral-950 dark:focus:ring-violet-950"
         />
-        <div className="mt-1 space-y-1 text-xs text-neutral-500 dark:text-neutral-400">
+        <details className="mt-3 rounded-xl border border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900/50">
+          <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium">Guía de columnas y casos especiales</summary>
+        <div className="space-y-2 border-t border-neutral-200 px-4 py-3 text-xs leading-5 text-neutral-600 dark:border-neutral-800 dark:text-neutral-400">
           <p>
             <strong>Pega tu Excel con la fila de títulos.</strong> La app reconoce las
             columnas por su nombre —en cualquier orden— y descarta las que no usa (Días,
@@ -270,7 +296,9 @@ export function FormImportacion({
             «Vacío») se ignoran solas, no ocupan cupo.
           </p>
         </div>
-      </div>
+        </details>
+        </div>
+      </section>
 
       {desajusteSpotify && (
         <div className="rounded-xl border-2 border-red-400 bg-red-50 p-3 text-sm dark:border-red-800 dark:bg-red-950/40">
@@ -313,21 +341,33 @@ export function FormImportacion({
       )}
 
       {analisis && (
-        <div className="space-y-2">
-          <div className="flex flex-wrap gap-4 rounded-xl border border-neutral-200 p-3 text-sm dark:border-neutral-800">
-            <span>
-              <strong className="tabular-nums">{analisis.filas.length}</strong> filas
-            </span>
-            <span>
-              <strong className="tabular-nums">{analisis.cuentas}</strong> cuentas
-            </span>
-            <span className="text-emerald-600 dark:text-emerald-400">
-              <strong className="tabular-nums">{analisis.validas}</strong> listas
-            </span>
+        <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
+          <div className="flex items-start gap-3 border-b border-neutral-200 px-4 py-4 sm:px-5 dark:border-neutral-800">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">3</span>
+            <div>
+              <h2 className="font-semibold">Revisa antes de importar</h2>
+              <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">Esta vista usa el mismo analizador que guardará los datos.</p>
+            </div>
+          </div>
+          <div className="space-y-4 p-4 sm:p-5">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="rounded-xl bg-neutral-100 p-3 dark:bg-neutral-900">
+              <span className="block text-2xl font-semibold tabular-nums">{analisis.filas.length}</span>
+              <span className="text-xs text-neutral-500">Filas detectadas</span>
+            </div>
+            <div className="rounded-xl bg-neutral-100 p-3 dark:bg-neutral-900">
+              <span className="block text-2xl font-semibold tabular-nums">{analisis.cuentas}</span>
+              <span className="text-xs text-neutral-500">Cuentas madre</span>
+            </div>
+            <div className="rounded-xl bg-emerald-50 p-3 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+              <span className="block text-2xl font-semibold tabular-nums">{analisis.validas}</span>
+              <span className="text-xs">Listas para importar</span>
+            </div>
             {analisis.conError > 0 && (
-              <span className="text-red-600 dark:text-red-400">
-                <strong className="tabular-nums">{analisis.conError}</strong> con error
-              </span>
+              <div className="rounded-xl bg-red-50 p-3 text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                <span className="block text-2xl font-semibold tabular-nums">{analisis.conError}</span>
+                <span className="text-xs">Necesitan corrección</span>
+              </div>
             )}
           </div>
 
@@ -338,7 +378,34 @@ export function FormImportacion({
             </p>
           )}
 
-          <div className="max-h-96 overflow-auto rounded-xl border border-neutral-200 dark:border-neutral-800">
+          <div className="space-y-2 md:hidden">
+            {analisis.filas.map((f) => {
+              const bs = aBs(f.datos.monto, f.datos.vendio);
+              const base = baseDeVendedor(f.datos.vendio);
+              return (
+                <article key={f.numero} className={`rounded-xl border p-3 ${f.errores.length ? "border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/30" : "border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900/60"}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{f.datos.cliente ?? f.datos.perfil ?? "Cupo libre"}</p>
+                      <p className="mt-0.5 truncate text-xs text-neutral-500">#{f.numero} · {f.heredaCuenta ? "↳ " : ""}{f.datos.correo}</p>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-medium ${f.errores.length ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"}`}>
+                      {f.errores.length ? "Revisar" : "Lista"}
+                    </span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                    <div><span className="block text-neutral-500">Perfil</span>{f.slot || "—"}{f.datos.perfil ? ` · ${f.datos.perfil}` : ""}</div>
+                    <div><span className="block text-neutral-500">Vence</span>{f.datos.vence ?? "—"}</div>
+                    <div><span className="block text-neutral-500">Ingreso</span>{f.datos.monto == null ? "—" : moneda === "usd" ? `$${f.datos.monto}` : `${f.datos.monto} Bs`}{moneda === "usd" && bs != null ? <span className="block text-[10px] text-neutral-500">≈ {bs.toLocaleString("es-VE", { maximumFractionDigits: 2 })} Bs</span> : null}</div>
+                    <div><span className="block text-neutral-500">Vendido por</span>{f.datos.vendio ? `${f.datos.vendio} · ${base === "paralela" ? "Paralela" : "BCV"}` : "Directa · BCV"}</div>
+                  </div>
+                  {(f.errores.length > 0 || f.avisos.length > 0) && <p className={`mt-3 border-t pt-2 text-xs ${f.errores.length ? "border-red-200 text-red-700 dark:border-red-900 dark:text-red-300" : "border-amber-200 text-amber-700 dark:border-amber-900 dark:text-amber-300"}`}>{f.errores.length ? f.errores.join(" ") : f.avisos.join(" ")}</p>}
+                </article>
+              );
+            })}
+          </div>
+
+          <div className="hidden max-h-[32rem] overflow-auto rounded-xl border border-neutral-200 md:block dark:border-neutral-800">
             <table className="w-full text-left text-xs">
               <thead className="sticky top-0 bg-neutral-100 dark:bg-neutral-900">
                 <tr>
@@ -450,30 +517,19 @@ export function FormImportacion({
               </tbody>
             </table>
           </div>
-        </div>
+          </div>
+        </section>
       )}
 
-      <button
-        type="submit"
-        disabled={pendiente || !analisis || analisis.validas === 0 || desajusteSpotify}
-        className="rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white transition active:scale-[0.98] disabled:opacity-60 dark:bg-white dark:text-neutral-900"
-      >
-        {pendiente
-          ? "Importando…"
-          : analisis
-            ? `Importar ${analisis.validas} filas`
-            : "Importar"}
-      </button>
-
       {estado?.error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
           {estado.error}
         </p>
       )}
 
       {estado?.resumen && (
-        <div className="space-y-2">
-          <p className="text-sm font-medium">{estado.resumen}</p>
+        <div className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/30">
+          <p className="font-medium text-emerald-900 dark:text-emerald-200">✓ {estado.resumen}</p>
           <div className="max-h-64 overflow-auto rounded-xl border border-neutral-200 dark:border-neutral-800">
             <ul className="divide-y divide-neutral-200 text-xs dark:divide-neutral-800">
               {estado.filas?.map((r) => (
@@ -489,6 +545,32 @@ export function FormImportacion({
           </div>
         </div>
       )}
+
+      <div className="sticky bottom-16 z-20 flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white/95 p-3 shadow-xl shadow-black/10 backdrop-blur sm:flex-row sm:items-center sm:justify-between md:bottom-4 dark:border-neutral-800 dark:bg-neutral-950/95">
+        <div className="min-w-0">
+          <p className="text-sm font-medium">
+            {!analisis
+              ? "Pega el Excel para continuar"
+              : desajusteSpotify
+                ? "Corrige el producto seleccionado"
+                : analisis.conError > 0
+                  ? `${analisis.validas} listas · ${analisis.conError} se omitirán`
+                  : `${analisis.validas} filas listas para importar`}
+          </p>
+          <p className="mt-0.5 truncate text-xs text-neutral-500">{producto?.etiqueta} · {producto?.modalidades.find((m) => m.id === modalidadId)?.nombre}</p>
+        </div>
+        <button
+          type="submit"
+          disabled={pendiente || !analisis || analisis.validas === 0 || desajusteSpotify}
+          className="min-h-11 shrink-0 rounded-xl bg-neutral-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+        >
+          {pendiente
+            ? "Importando…"
+            : analisis
+              ? `Importar ${analisis.validas} filas`
+              : "Importar cartera"}
+        </button>
+      </div>
     </form>
   );
 }
