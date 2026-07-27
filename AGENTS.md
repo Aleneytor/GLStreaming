@@ -114,7 +114,8 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 ## Estado actual
 
 **Gestión Directa, Registro Flexible y Revendedores en Inventario (COMPLETO 2026-07-27).**
-- **Auto-preparación de Perfiles en Venta (Migración `0033`)**: Si un perfil estaba deshabilitado o en estado `por_limpiar` tras cancelar una venta previa, la función `vender_unidad` lo habilita y marca como `lista` automáticamente al venderlo, eliminando bloqueos de limpieza.
+- **Eliminación de Sobrecargas Duplicadas de Funciones (Migración `0033`)**: Se depuraron las versiones/sobrecargas anteriores de `vender_unidad` en Postgres mediante un bloque `DO`, dejando una única versión limpia e inambigua para llamadas RPC.
+- **Auto-preparación de Perfiles en Venta**: Si un perfil estaba deshabilitado o en estado `por_limpiar` tras cancelar una venta previa, la función `vender_unidad` lo habilita y marca como `lista` automáticamente al venderlo, eliminando bloqueos de limpieza.
 - **Resolución Dinámica de Modalidad por Producto**: `venderUnidadRapidaAction` detecta automáticamente la `modalidad_id` activa registrada en `public.producto_modalidades` para cada plataforma (Canva, Netflix, Disney+, Spotify, etc.), evitando errores de modalidad no permitida.
 - **Vendedores e Intermediarios (`public.vendedores`)**: Se consulta directamente la tabla `public.vendedores` (donde viven los revendedores/intermediarios con o sin usuario web), permitiendo asociar cualquier revendedor (ej. Gabriel Nadales, Edgar Esperanza) o registrar uno nuevo al vuelo (`+ Registrar nuevo revendedor...`).
 - **Venta Flexible con Fecha de Inicio & Revendedor**: `ModalVentaRapida` y `ModalGestionVenta` permiten elegir fecha de inicio de venta (útil para pagos de días anteriores) y asignar el revendedor/vendedor para comisiones y registros.
@@ -124,4 +125,4 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **129 pruebas unitarias** pasando en verde y chequeo de tipos TypeScript sin errores.
 
 ---
-*Última actualización: 2026-07-27 (Auto-preparación de unidades al vender y migraciones actualizadas).*
+*Última actualización: 2026-07-27 (Depuración de funciones ambiguas en Postgres y auto-preparación de perfiles).*

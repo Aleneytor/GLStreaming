@@ -2,7 +2,22 @@
 -- 0033_auto_preparar_unidad_al_vender.sql
 -- Auto-preparar y habilitar unidad_inventario al venderla directamente si estaba
 -- deshabilitada o pendiente de limpieza tras cancelaciones/importaciones.
+-- Elimina dinámicamente cualquier sobrecarga previa de vender_unidad.
 -- ----------------------------------------------------------------------------
+
+do $$
+declare
+  r record;
+begin
+  for r in (
+    select oid::regprocedure as func_sig
+    from pg_proc
+    where proname = 'vender_unidad'
+      and pronamespace = 'public'::regnamespace
+  ) loop
+    execute 'drop function ' || r.func_sig || ' cascade;';
+  end loop;
+end $$;
 
 create or replace function public.vender_unidad(
   p_cuenta_id           uuid,
@@ -210,3 +225,6 @@ begin
   return v_suscripcion_id;
 end;
 $$;
+
+revoke execute on function public.vender_unidad from public, anon, authenticated;
+grant  execute on function public.vender_unidad to authenticated;
