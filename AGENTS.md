@@ -175,21 +175,62 @@ fallaban enteras. Se pasaron **todas** esas llamadas a **argumentos por nombre**
   crecieron por el final, así que las llamadas posicionales existentes siguen
   válidas.
 
+### Más correcciones de inventario (2026-07-27, tarde)
+
+- **Spotify individual en una sola línea.** Un Spotify individual es
+  `recurso_indivisible` (capacidad 1, sin unidades, alcance `cuenta`): caía en la
+  rama de "cuenta completa" que rellenaba hasta 5 filas y heredaba `h-[115px]`,
+  viéndose tan alto como un familiar. Ahora los indivisibles generan **1 fila**
+  (cupo «Individual») y NO se marcan `esCuentaCompleta` (en `page.tsx`). Esto
+  además evita el caso patológico de un indivisible de capacidad grande (Canva
+  500) generando cientos de filas.
+- **El dashboard ya se refresca solo** («pedía F5»). Las acciones revalidaban
+  `/vencimientos` (fuera del menú) pero no `/dashboard` (el Centro de
+  Operaciones). Se agregó `revalidatePath('/dashboard')` en venderUnidadRapida,
+  cancelarVentaConLimpieza, registrarPagoProveedorRapido, renovar e importación.
+
+### Decisiones de diseño CONFIRMADAS por el usuario (no cambiar sin avisar)
+
+- **Venta = pago inmediato; solo las renovaciones quedan pendientes.** Por eso la
+  venta rápida en celda **exige precio y cobra al instante** — es intencional. La
+  opción de "dejar pendiente" es exclusiva de renovaciones (monto en blanco →
+  «Por cobrar»). Ver memoria `project-glstreaming-cobro-venta-vs-renovacion`.
+- **Cancelar auto-borra el cliente** si se queda sin servicios: el usuario lo
+  acepta ("si vuelve a comprar se registra de nuevo"). No hace falta conservarlo.
+
 ### ⚠️ Pendiente para el próximo agente
 
-- **Decisiones de diseño a confirmar con el usuario** (no tocadas):
-  - `cancelarVentaConLimpiezaAction` **auto-borra el cliente** si se queda sin
-    servicios activos. Es destructivo (se pierde su contacto para revender). Está
-    hecho a propósito, pero conviene confirmarlo.
-  - `venderUnidadRapidaAction` **exige precio > 0 y cobra siempre** al instante
-    (`p_monto_usd = precio`): la venta rápida en celda no permite "vender y dejar
-    pendiente" como sí hace el formulario grande.
+- **🔴 RESPONSIVE EN MÓVIL (prioridad alta).** Todo el sistema nuevo de inventario
+  (la tabla densa tipo Excel: `tabla-inventario.tsx` + modales) **no se ve bien en
+  móvil**: la tabla de ~16 columnas se desborda y las celdas se amontonan. El
+  negocio es **mobile-first** (el usuario y los revendedores trabajan desde el
+  teléfono). Hay que **compactar/adaptar** la vista de inventario para móvil (p.
+  ej. tarjetas apiladas por cuenta, u ocultar columnas secundarias en pantallas
+  chicas), sin perder la densidad tipo Excel en escritorio. Ver memoria
+  `project-glstreaming-mobile-pwa`.
+- **Auditoría — inconsistencias detectadas (2026-07-27):**
+  - **Detección frágil de "Cuenta Completa"**: `page.tsx` la infiere por **match
+    de texto** en `nombre_visible` (`ilike '%cuenta completa%'`) además del
+    `alcance='cuenta'`. Si el perfil se llama distinto, falla. Conviene apoyarse
+    solo en el alcance real de la asignación (24 unidades dependen del texto hoy).
+  - **Modalidad con UUID quemado como fallback** en `venderUnidadRapidaAction`
+    (`'1111…1101'`): si la resolución dinámica falla, mejor error claro que un
+    UUID adivinado (en otra plataforma daría "modalidad no permitida").
+  - **3 «perfiles fantasma»**: unidades con `nombre_visible` de cliente pero sin
+    venta abierta (restos de cancelaciones viejas). Limpieza puntual pendiente
+    (UPDATE a `nombre_visible = null`), previa luz verde del usuario (datos reales).
+  - **NO son bugs** (revisados): 0 cuentas sin credenciales, 0 dobles ventas, y
+    los 11 períodos «completo» sin BCV son **cortesías** de importación (costo 0,
+    sin cobro): correcto que no congelen tasa.
 - **Convención:** `vender_unidad` (0033) quedó como `security definer` con
   `search_path = public`, apartándose del resto del proyecto (`search_path = ''` +
   nombres calificados, invoker). Funciona porque valida `es_admin()` de primero,
-  pero conviene reconciliarlo en una migración futura.
+  pero conviene reconciliarlo en una migración futura. También hay `any` sueltos
+  en `resolverVendedorId`.
 
 ---
+*Pendiente destacado: hacer el inventario nuevo RESPONSIVE en móvil (mobile-first).*
+
 *Última actualización: 2026-07-27 (revisión: corregidos 4 bugs silenciosos de
 inventario, registrada 0033, y restauradas las suites SQL a la nueva firma de
 `vender_unidad` — 235 comprobaciones en verde).*
