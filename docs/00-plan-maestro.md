@@ -300,6 +300,19 @@ muestra métricas claras, tabla densa en escritorio y tarjetas por fila en móvi
 la acción final queda visible en una barra sticky con el producto, modalidad y
 cantidad exacta que se importará.
 
+La secuencia pegada también es ahora la secuencia del Inventario: la primera
+cuenta del Excel recibe el mayor `orden`, la segunda el siguiente y así
+sucesivamente. Una cuenta madre con varios perfiles solo toma la posición de su
+primera aparición. La importación deja la confirmación explícita «Orden del Excel
+conservado» o informa el fallo, en vez de invertir silenciosamente la lista.
+
+Cuando la columna `Proveedor` contiene una tarjeta propia, la migración `0037`
+separa la presentación del secreto. La grilla conserva solo alias/banco y últimos
+cuatro; PAN y vencimiento se cifran con AES-256-GCM en
+`tarjetas_proveedor_cifradas`. El administrador puede revelarlos durante 90
+segundos desde escritorio o móvil y cada acceso queda auditado. El CVV se elimina
+durante el análisis y no se almacena ni siquiera cifrado.
+
 El bloque financiero también se reorganizó alrededor de preguntas reales del
 negocio. La navegación dejó los rótulos contables ambiguos y ahora separa:
 `Resumen diario` (dinero que entró/salió), `Pagos pendientes` (servicios ya

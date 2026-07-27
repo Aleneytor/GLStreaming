@@ -197,7 +197,12 @@ Campos: `id`, `tipo`, `nombre_o_alias` opcional, `telefono_original` opcional, `
 
 `tipo`: `propio | tercero`. Debe existir al menos `nombre_o_alias` o `telefono_original`; ambos teléfonos son texto. Se crea un registro canónico propio, mostrado como `Yo`, que puede ser el valor predeterminado de YouTube. Crear o seleccionar este proveedor operativo no crea un ciclo, costo ni pago.
 
-No guarda PAN, vencimiento ni código de seguridad de tarjetas. Si se necesita identificar un método externo, se usa un alias no sensible o un token del proveedor de pagos.
+`proveedores` no guarda el instrumento en claro: solo conserva un alias no
+sensible (banco/apodo + últimos cuatro) o un token externo. Cuando el proveedor
+es una tarjeta propia importada del Excel, `tarjetas_proveedor_cifradas` guarda
+PAN y vencimiento cifrados en la aplicación y enlazados uno a uno al proveedor.
+Solo un administrador los revela temporalmente y con auditoría. El código de
+seguridad/CVV se descarta antes del cifrado y nunca se persiste.
 
 ### Inventario y secretos
 

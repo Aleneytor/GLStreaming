@@ -169,9 +169,18 @@ El Gmail pagador de una individual activada por GPay es una identidad operativa 
 
 ### Datos de tarjetas
 
-La aplicación no procesará ni almacenará números completos de tarjeta o códigos de seguridad. PCI SSC indica que el código de verificación no puede conservarse después de autorizar una transacción, incluso cifrado: [FAQ 1280](https://www.pcisecuritystandards.org/faqs/1280/). También distingue ocultar un PAN al mostrarlo de volverlo ilegible al almacenarlo: [FAQ 1146](https://www.pcisecuritystandards.org/faqs/1146/).
+La aplicación no procesa pagos. Por decisión explícita del propietario, puede
+conservar PAN y vencimiento de sus propias tarjetas como secreto operativo. Se
+guardan con AES-256-GCM fuera de `proveedores`; la grilla solo recibe una máscara,
+el revelado es admin-only, dura 90 segundos y genera auditoría sin valores.
 
-El sistema guardará como máximo un alias no sensible —por ejemplo, nombre del banco y últimos cuatro dígitos cuando realmente sea necesario— o un token emitido por un proveedor de pagos. `Proveedor` y `medio de pago` son conceptos distintos.
+El código de seguridad/CVV permanece prohibido. PCI SSC indica que no puede
+conservarse después de autorizar una transacción, incluso cifrado: [FAQ 1280](https://www.pcisecuritystandards.org/faqs/1280/).
+También distingue ocultar un PAN al mostrarlo de volverlo ilegible al almacenarlo:
+[FAQ 1146](https://www.pcisecuritystandards.org/faqs/1146/). Por eso el importador
+extrae el PAN/vencimiento para cifrarlos, descarta el CVV y deja en `Proveedor`
+solo banco/apodo + últimos cuatro. `Proveedor` y `medio de pago` siguen siendo
+conceptos separados.
 
 ### Datos personales
 
