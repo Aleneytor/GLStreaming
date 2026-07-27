@@ -247,6 +247,18 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 - **Cancelar auto-borra el cliente** si se queda sin servicios: el usuario lo
   acepta ("si vuelve a comprar se registra de nuevo"). No hace falta conservarlo.
 
+### Menú visual del inventario (2026-07-27)
+
+- `/inventario` dejó la lista plana y ahora funciona como tablero responsive de
+  plataformas. La cabecera resume cuentas, servicios activos, cupos libres y
+  plataformas con inventario.
+- Cada una de las 15 plataformas activas tiene una identidad cromática estable
+  por `slug` (Netflix rojo, Spotify verde, Disney+/Paramount azul, HBO violeta,
+  etc.), con estado, métricas de ocupación y acceso táctil a su inventario.
+- Las plataformas con cuentas se priorizan por actividad. Las que todavía están
+  vacías se muestran aparte y en tarjetas más compactas para no alargar de más la
+  navegación móvil.
+
 ### ⚠️ Pendiente para el próximo agente
 
 - **Responsive móvil todavía en revisión.** La tabla ya fue sustituida por
@@ -273,7 +285,7 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 ---
 *Pendiente destacado: terminar la revisión visual responsive de plataformas y modales.*
 
-*Última actualización: 2026-07-27 (Finanzas rediseñadas con lenguaje operativo;
-importador como flujo visual responsive; Catálogo y Clientes responsive; pagos
-de proveedor individuales y por lote corregidos; 148 unitarias, 15 suites SQL
-y typecheck en verde).*
+*Última actualización: 2026-07-27 (Inventario convertido en tablero visual por
+plataforma; Finanzas rediseñadas con lenguaje operativo; importador como flujo
+visual responsive; Catálogo y Clientes responsive; 148 unitarias, 15 suites SQL,
+typecheck y build de producción en verde).*

@@ -314,6 +314,13 @@ dinero, no cambia ventas y no recalcula tasas**. Si después falta un dato, se
 crea una versión corregida y la anterior se conserva. La lógica SQL y las reglas
 de auditoría no cambiaron: solo se tradujeron y jerarquizaron en la interfaz.
 
+La entrada de `/inventario` también dejó de ser una lista monocromática. Ahora
+abre con un resumen del stock y separa las plataformas activas de las que aún no
+tienen cuentas. Cada servicio usa una tarjeta responsive con identidad de color
+propia, estado disponible/completo, cuentas, ventas, cupos libres y porcentaje
+de ocupación. Las plataformas vacías mantienen su identidad, pero ocupan menos
+altura para conservar una navegación móvil ágil.
+
 Validación acumulada: **148 pruebas unitarias**, **15 suites SQL** y typecheck en verde; el último
 build de producción también pasó. PostgreSQL real contiene controles con Gmail para ambas
 variantes de Spotify. Queda pendiente una revisión visual manual completa en
