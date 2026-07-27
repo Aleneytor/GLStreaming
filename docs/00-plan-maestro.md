@@ -242,7 +242,12 @@ criterios operativos: cupos disponibles en cuentas activas, próximos 5 días,
 vencen hoy, vencidos y cuentas suspendidas. Estos filtros se aplican a los cupos,
 por lo que una cuenta solo conserva en pantalla las filas que coinciden.
 
-Validación acumulada: **134 pruebas unitarias** y typecheck en verde; el último
+Las renovaciones anticipadas se encadenan al vencimiento vigente, no a la fecha
+del pago: un servicio que vence el 29/07 y se paga el 27/07 genera el período
+29/07 → 29/08. Si ya venció, el período empieza en la fecha real del pago y se
+marca como renovación tardía.
+
+Validación acumulada: **137 pruebas unitarias** y typecheck en verde; el último
 build de producción también pasó. PostgreSQL real contiene controles con Gmail para ambas
 variantes de Spotify. Queda pendiente una revisión visual manual completa en
 teléfonos reales de todas las plataformas y sus modales.

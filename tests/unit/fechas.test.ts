@@ -4,6 +4,7 @@ import {
   badgeVencimiento,
   calcularFechaRenovacion,
   diasParaRenovar,
+  planificarRenovacionCliente,
   proximaRenovacionProveedor,
   ultimoDiaDelMes,
 } from "@/domain/fechas";
@@ -64,6 +65,30 @@ describe("diasParaRenovar", () => {
     expect(diasParaRenovar(renov, "2026-08-22")).toBe(0); // renueva hoy
     expect(diasParaRenovar(renov, "2026-08-23")).toBe(-1); // vencido hace 1 día
     expect(diasParaRenovar(renov, "2026-08-16")).toBe(6); // faltan 6
+  });
+});
+
+describe("planificarRenovacionCliente", () => {
+  it("encadena una renovación anticipada al vencimiento actual", () => {
+    expect(planificarRenovacionCliente("2026-07-29", "2026-07-27")).toEqual({
+      inicio: "2026-07-29",
+      tardia: false,
+    });
+    expect(calcularFechaRenovacion("2026-07-29", 1)).toBe("2026-08-29");
+  });
+
+  it("permite renovar el mismo día sin marcarla tardía", () => {
+    expect(planificarRenovacionCliente("2026-07-29", "2026-07-29")).toEqual({
+      inicio: "2026-07-29",
+      tardia: false,
+    });
+  });
+
+  it("una renovación vencida comienza hoy y se marca tardía", () => {
+    expect(planificarRenovacionCliente("2026-07-20", "2026-07-27")).toEqual({
+      inicio: "2026-07-27",
+      tardia: true,
+    });
   });
 });
 

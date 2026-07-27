@@ -121,6 +121,7 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **Vencimiento visible y accionable en móvil**: cada venta de `TarjetaCuentaMovil` muestra una franja con `Vence en N días`, `Vence hoy · renovar` o `Venció hace N días`, además de la fecha formateada. La franja abre `ModalGestionVenta` al tocarla.
 - **Renovación conserva vendedor y base de tasa**: `ModalGestionVenta` recibe el `vendedor_origen_id` real y lo preselecciona. Muestra/permite corregir `tipo` y `cobra_en_paralela`; si hay cambios sin guardar bloquea Renovar. La pantalla de renovación confirma vendedor + BCV/paralela antes de cobrar.
 - **Filtros operativos de inventario**: el desplegable de `/inventario/[slug]` ya no usa los estados técnicos poco útiles de la cuenta. Filtra cupos `Disponibles para vender` (libres y con cuenta activa), `Próximos 5 días`, `Vencen hoy`, `Vencidos` y conserva `Cuentas suspendidas`. La lógica pura vive en `src/domain/filtros-inventario.ts`.
+- **Renovación anticipada encadenada**: `ModalGestionVenta` no usa «hoy» ciegamente. Si el servicio sigue vigente, el período nuevo comienza en `fecha_renovacion` (ej. 29/07 → 29/08); si ya venció, comienza hoy y envía `tardia=on`. La regla pura es `planificarRenovacionCliente`.
 - **Detección Limpia de Cuentas Completas**: Se simplificó `page.tsx` para basarse únicamente en `alcance === 'cuenta'` en `asignaciones_inventario`, eliminando la inferencia frágil por texto en `nombre_visible`.
 - **Simplificación de Menú Principal**: Se removió la sección duplicada `Vencimientos` del menú de navegación (toda la gestión central de vencimientos, renovaciones y cobros se realiza unificadamente desde `Operaciones` / `/dashboard`), dejando un flujo más limpio.
 - **Corrección de Firma `registrar_cobro_cliente` (Migración `0033`)**: Se ajustó la llamada interna dentro de `vender_unidad` para coincidir con la firma exacta de `registrar_cobro_cliente` en PostgreSQL (`p_periodo_id`, `p_monto_ves`, `p_referencia`, `p_monto_usd`).
@@ -269,6 +270,6 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 ---
 *Pendiente destacado: terminar la revisión visual responsive de plataformas y modales.*
 
-*Última actualización: 2026-07-27 (filtros comerciales de disponibilidad y
-vencimientos reemplazan los estados técnicos del inventario; 134 unitarias,
-typecheck y suite SQL de base de tasa en verde).*
+*Última actualización: 2026-07-27 (renovaciones anticipadas se encadenan al fin
+del período vigente y las vencidas arrancan hoy como tardías; 137 unitarias,
+typecheck y comprobación transaccional contra PostgreSQL real en verde).*

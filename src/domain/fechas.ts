@@ -72,6 +72,24 @@ export function diasParaRenovar(fechaRenovacion: string, hoy: string): number {
 }
 
 /**
+ * Decide desde cuándo comienza el período nuevo.
+ * - Anticipada o el mismo día: se encadena al fin actual para no solapar ni
+ *   regalar/quitar días.
+ * - Ya vencida: comienza hoy y se registra como renovación tardía.
+ */
+export function planificarRenovacionCliente(
+  fechaRenovacionActual: string | null,
+  hoy: string,
+): { inicio: string; tardia: boolean } {
+  parseFecha(hoy);
+  if (!fechaRenovacionActual) return { inicio: hoy, tardia: false };
+  parseFecha(fechaRenovacionActual);
+  return fechaRenovacionActual < hoy
+    ? { inicio: hoy, tardia: true }
+    : { inicio: fechaRenovacionActual, tardia: false };
+}
+
+/**
  * Próxima renovación con el PROVEEDOR.
  *
  * A diferencia del cliente (fecha flexible que se recalcula desde el pago real),

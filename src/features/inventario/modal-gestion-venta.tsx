@@ -4,6 +4,25 @@ import { useActionState, useState, useEffect, useRef } from "react";
 import { cancelarVentaConLimpiezaAction, editarVentaDirectaAction } from "./actions";
 import { renovarAction } from "@/features/ventas/acciones-suscripcion";
 import type { VendedorOp } from "./modal-venta-rapida";
+import {
+  calcularFechaRenovacion,
+  planificarRenovacionCliente,
+} from "@/domain/fechas";
+
+function hoyCaracas(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Caracas",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function formatearFecha(fecha: string | null): string {
+  if (!fecha) return "";
+  const [anio, mes, dia] = fecha.split("-");
+  return anio && mes && dia ? `${Number(dia)}/${Number(mes)}/${anio}` : fecha;
+}
 
 export function ModalGestionVenta({
   suscripcionId,
@@ -59,7 +78,9 @@ export function ModalGestionVenta({
   );
   const ultimaEdicionAplicada = useRef<typeof estadoEdicion>(null);
 
-  const hoyFormato = new Date().toISOString().slice(0, 10);
+  const hoyFormato = hoyCaracas();
+  const planRenovacion = planificarRenovacionCliente(vence, hoyFormato);
+  const proximoVencimiento = calcularFechaRenovacion(planRenovacion.inicio, 1);
   const revendedores = vendedores.filter((v) => v.tipo === "revendedor");
   const intermediarios = vendedores.filter((v) => v.tipo !== "revendedor");
   const vendedorSeleccionado = vendedores.find((v) => v.id === seleccionVendedor);
@@ -120,7 +141,7 @@ export function ModalGestionVenta({
               ⚙️ Gestionar Venta: {clienteNombre}
             </h3>
             <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400">
-              {nombrePerfil} {vence ? `· Vence: ${vence}` : ""}
+              {nombrePerfil} {vence ? `· Vence: ${formatearFecha(vence)}` : ""}
             </p>
           </div>
           <button
@@ -342,12 +363,27 @@ export function ModalGestionVenta({
         {modo === "renovar" && (
           <form action={actionRenovar} className="space-y-4">
             <input type="hidden" name="suscripcion_id" value={suscripcionId} />
-            <input type="hidden" name="inicio" value={hoyFormato} />
+            <input type="hidden" name="inicio" value={planRenovacion.inicio} />
             <input type="hidden" name="meses" value="1" />
+            {planRenovacion.tardia && <input type="hidden" name="tardia" value="on" />}
 
             <p className="text-xs text-neutral-600 dark:text-neutral-300">
               Registrar renovación de 1 mes para <strong className="text-neutral-900 dark:text-white">{clienteNombre}</strong>.
             </p>
+
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+              <strong>
+                {planRenovacion.tardia ? "Renovación tardía" : "Período encadenado"}
+              </strong>
+              <p className="mt-1 font-mono text-[11px]">
+                {formatearFecha(planRenovacion.inicio)} → {formatearFecha(proximoVencimiento)}
+              </p>
+              <p className="mt-1 text-[11px] font-normal opacity-80">
+                {planRenovacion.tardia
+                  ? "El servicio ya venció: el mes nuevo comienza hoy, fecha real del pago."
+                  : "El mes nuevo comienza cuando termina el actual, aunque pagues anticipadamente."}
+              </p>
+            </div>
 
             <div
               className={`rounded-lg border px-3 py-2 text-xs ${

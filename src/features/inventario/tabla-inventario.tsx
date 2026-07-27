@@ -354,7 +354,7 @@ export function TablaInventario({
           clienteCelular={gestionVentaTarget.celular}
           nombrePerfil={gestionVentaTarget.cupo}
           pinPerfil={gestionVentaTarget.pin}
-          vence={formatearFecha(gestionVentaTarget.vence)}
+          vence={gestionVentaTarget.vence}
           precioUsd={gestionVentaTarget.ingreso}
           vendedorActualId={gestionVentaTarget.vendedorId}
           vendedorActualTipo={gestionVentaTarget.vendedorTipo}
