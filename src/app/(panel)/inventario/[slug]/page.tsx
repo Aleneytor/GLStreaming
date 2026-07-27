@@ -158,7 +158,21 @@ export default async function PlataformaPage({
       (a, b) => a.numero_slot - b.numero_slot,
     );
 
-    const asignacionCompleta = abiertas.find((a) => a.alcance === "cuenta");
+    let asignacionCompleta = abiertas.find((a) => a.alcance === "cuenta");
+    // Compatibilidad con las seis cuentas completas importadas antes de que el
+    // modelo usara `alcance = cuenta`: su venta vive en la primera unidad y el
+    // nombre exacto de esa unidad es "Cuenta Completa". No usamos un `includes`
+    // amplio para evitar confundir nombres de perfiles normales.
+    if (!asignacionCompleta && prod.codigo === "netflix") {
+      const primeraUnidad = unidades.find((u) => u.numero_slot === 1);
+      const nombrePrimera = primeraUnidad?.nombre_visible?.trim().toLowerCase();
+      if (
+        primeraUnidad &&
+        (nombrePrimera === "cuenta completa" || nombrePrimera === "completa")
+      ) {
+        asignacionCompleta = abiertas.find((a) => a.unidad_id === primeraUnidad.id);
+      }
+    }
 
     const principal = abiertas.find((a) => a.alcance === "principal");
     const porUnidad = new Map(

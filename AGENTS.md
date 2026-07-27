@@ -123,7 +123,7 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **Filtros operativos de inventario**: el desplegable de `/inventario/[slug]` ya no usa los estados técnicos poco útiles de la cuenta. Filtra cupos `Disponibles para vender` (libres y con cuenta activa), `Próximos 5 días`, `Vencen hoy`, `Vencidos` y conserva `Cuentas suspendidas`. La lógica pura vive en `src/domain/filtros-inventario.ts`.
 - **Renovación anticipada encadenada**: `ModalGestionVenta` no usa «hoy» ciegamente. Si el servicio sigue vigente, el período nuevo comienza en `fecha_renovacion` (ej. 29/07 → 29/08); si ya venció, comienza hoy y envía `tardia=on`. La regla pura es `planificarRenovacionCliente`.
 - **Confirmación visible de renovación**: tras el éxito, `ModalGestionVenta` muestra un aviso verde con el período creado y reemplaza las acciones por `Listo`; el botón de confirmar desaparece para impedir una renovación duplicada.
-- **Detección Limpia de Cuentas Completas**: Se simplificó `page.tsx` para basarse únicamente en `alcance === 'cuenta'` en `asignaciones_inventario`, eliminando la inferencia frágil por texto en `nombre_visible`.
+- **Cuentas completas compatibles y fusionadas**: la detección prioriza `alcance='cuenta'`, pero conserva compatibilidad estricta con 6 ventas importadas antiguas cuya primera unidad tiene exactamente `Cuenta Completa`/`Completa`. En escritorio mantiene 5 filas numeradas de 23px (115px total) y fusiona los datos con `rowSpan=5`; en móvil muestra una sola tarjeta.
 - **Simplificación de Menú Principal**: Se removió la sección duplicada `Vencimientos` del menú de navegación (toda la gestión central de vencimientos, renovaciones y cobros se realiza unificadamente desde `Operaciones` / `/dashboard`), dejando un flujo más limpio.
 - **Corrección de Firma `registrar_cobro_cliente` (Migración `0033`)**: Se ajustó la llamada interna dentro de `vender_unidad` para coincidir con la firma exacta de `registrar_cobro_cliente` en PostgreSQL (`p_periodo_id`, `p_monto_ves`, `p_referencia`, `p_monto_usd`).
 - **Eliminación de Sobrecargas Duplicadas de Funciones**: Se depuraron las versiones/sobrecargas anteriores de `vender_unidad` en Postgres mediante un bloque `DO`, dejando una única versión limpia e inambigua para llamadas RPC.
@@ -249,10 +249,6 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
   por todas las plataformas y modales para detectar ajustes específicos; no
   volver a marcar el responsive completo hasta terminar esa revisión.
 - **Auditoría — inconsistencias detectadas (2026-07-27):**
-  - **Detección frágil de "Cuenta Completa"**: `page.tsx` la infiere por **match
-    de texto** en `nombre_visible` (`ilike '%cuenta completa%'`) además del
-    `alcance='cuenta'`. Si el perfil se llama distinto, falla. Conviene apoyarse
-    solo en el alcance real de la asignación (24 unidades dependen del texto hoy).
   - **Modalidad con UUID quemado como fallback** en `venderUnidadRapidaAction`
     (`'1111…1101'`): si la resolución dinámica falla, mejor error claro que un
     UUID adivinado (en otra plataforma daría "modalidad no permitida").
@@ -271,6 +267,6 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 ---
 *Pendiente destacado: terminar la revisión visual responsive de plataformas y modales.*
 
-*Última actualización: 2026-07-27 (renovaciones encadenadas y confirmación visual
-persistente con protección contra doble envío; 137 unitarias, typecheck y
-comprobación transaccional contra PostgreSQL real en verde).*
+*Última actualización: 2026-07-27 (restaurada la fusión Excel de cuentas completas
+en cinco filas/115px y compatibilidad con 6 asignaciones históricas; 137 unitarias
+y typecheck en verde).*

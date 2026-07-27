@@ -249,6 +249,12 @@ marca como renovación tardía.
 Al confirmarse, el modal muestra el período creado y oculta el botón de envío
 para que el operador reciba feedback inequívoco y no renueve dos veces.
 
+Las ventas de cuenta completa conservan en escritorio el bloque Excel de cinco
+filas numeradas (115px total), con correo, acceso, venta, cliente y proveedor
+fusionados mediante `rowSpan`. Se mantiene compatibilidad estricta con seis
+importaciones históricas que guardaron la venta en la primera unidad; en móvil se
+representan como una sola tarjeta.
+
 Validación acumulada: **137 pruebas unitarias** y typecheck en verde; el último
 build de producción también pasó. PostgreSQL real contiene controles con Gmail para ambas
 variantes de Spotify. Queda pendiente una revisión visual manual completa en
