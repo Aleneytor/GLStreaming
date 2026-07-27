@@ -113,10 +113,11 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 
 ## Estado actual
 
-**Rediseño UX/UI — Formato Denso Excel 1:1 (COMPLETO 2026-07-27).**
-- **Dashboard de Operaciones (`/dashboard`)**: buscador en tiempo real, banderas de vencimiento, renovaciones/cobros en 1 solo clic, modal de gestión rápida y copiado inmediato de datos.
-- **Tabla de Inventario Estilo Excel (1:1)**: replicación exacta de las 18 columnas del Excel original con cabeceras en azul/morado, celdas de alerta sólidas (verde, amarillo, rojo), fuente monoespaciada compacta y densidad de datos idéntica a la hoja de cálculo.
+**Gestión Directa en Celda de Inventario (COMPLETO 2026-07-27).**
+- **Clic en Celda de Cliente / Alerta**: abre `ModalGestionVenta` para renovar y cobrar, editar cliente/perfil/PIN o eliminar la venta en 1 clic.
+- **Actualización Inmediata en Pantalla (sin F5)**: sincronización en vivo del estado local al ejecutar Server Actions.
+- **Reset de Perfiles & Borrado de Clientes**: al eliminar una venta, el nombre del perfil se restablece a `Perfil X` y, si el cliente no tiene otros servicios activos, se borra automáticamente.
 - **129 pruebas unitarias** pasando en verde y chequeo de tipos TypeScript sin errores.
 
 ---
-*Última actualización: 2026-07-27 (Formato Denso 1:1 Excel completado). Actualiza este archivo al terminar cada sesión.*
+*Última actualización: 2026-07-27 (Gestión directa en celda de inventario completada). Actualiza este archivo al terminar cada sesión.*
