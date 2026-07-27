@@ -126,7 +126,24 @@ export default async function PlataformaPage({
     const cred = uno(c.credenciales_cuenta);
 
     const abiertas = (c.asignaciones_inventario ?? []).filter((a) => a.fin === null);
-    const completa = abiertas.find((a) => a.alcance === "cuenta");
+    const unidades = [...(c.unidades_inventario ?? [])].sort(
+      (a, b) => a.numero_slot - b.numero_slot,
+    );
+
+    let asignacionCompleta = abiertas.find((a) => a.alcance === "cuenta");
+    if (!asignacionCompleta && unidades.length > 0) {
+      const u1 = unidades[0];
+      const asig1 = abiertas.find((a) => a.unidad_id === u1.id);
+      if (
+        asig1 &&
+        (u1.nombre_visible?.toLowerCase().includes("completa") ||
+          u1.nombre_visible?.toLowerCase().includes("cuenta completa") ||
+          (abiertas.length === 1 && c.capacidad > 1))
+      ) {
+        asignacionCompleta = asig1;
+      }
+    }
+
     const principal = abiertas.find((a) => a.alcance === "principal");
     const porUnidad = new Map(
       abiertas.filter((a) => a.unidad_id).map((a) => [a.unidad_id as string, a]),
@@ -137,21 +154,20 @@ export default async function PlataformaPage({
     const pagador = ctrl?.gmail_cifrado ? desc(ctrl.gmail_cifrado) : null;
 
     const filas: CupoFila[] = [];
-    const unidades = [...(c.unidades_inventario ?? [])].sort(
-      (a, b) => a.numero_slot - b.numero_slot,
-    );
 
     if (unidades.length > 0) {
       for (const u of unidades) {
         const vUnidad = datosVenta(porUnidad.get(u.id));
-        const v = vUnidad ?? (completa ? datosVenta(completa) : null);
+        const v = asignacionCompleta
+          ? datosVenta(asignacionCompleta)
+          : vUnidad;
         const esPrimerSlot = u.numero_slot === 1;
 
         filas.push({
           slotNumber: u.numero_slot,
           clave: `${c.id}-u${u.id}`,
           cupo:
-            completa && esPrimerSlot
+            asignacionCompleta && esPrimerSlot
               ? "Cuenta Completa"
               : u.nombre_visible ?? `Perfil ${u.numero_slot}`,
           unidadId: u.id as string,
@@ -164,7 +180,7 @@ export default async function PlataformaPage({
           clienteLogin: v?.clienteLogin ?? null,
           clienteClave: v?.clienteClave ?? null,
           pin: desc(uno(u.secretos_unidad)?.pin_cifrado) || null,
-          ingreso: completa && !esPrimerSlot ? null : (v?.ingreso ?? null),
+          ingreso: asignacionCompleta && !esPrimerSlot ? null : (v?.ingreso ?? null),
           inicio: v?.inicio ?? null,
           vence: v?.vence ?? null,
           dias: v?.dias ?? null,
@@ -173,7 +189,7 @@ export default async function PlataformaPage({
         });
       }
 
-      if (principal && !completa) {
+      if (principal && !asignacionCompleta) {
         const v = datosVenta(principal);
         filas.push({
           slotNumber: unidades.length + 1,
@@ -197,8 +213,8 @@ export default async function PlataformaPage({
           suscEstado: v?.estado ?? null,
         });
       }
-    } else if (completa) {
-      const v = datosVenta(completa);
+    } else if (asignacionCompleta) {
+      const v = datosVenta(asignacionCompleta);
       filas.push({
         slotNumber: 1,
         clave: `${c.id}-completa`,
