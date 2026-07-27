@@ -354,6 +354,39 @@ export async function reordenarListaCuentasAction(
   revalidatePath(slug ? `/inventario/${slug}` : "/inventario");
 }
 
+async function resolverVendedorId(
+  supabase: any,
+  vendedorIdInput: string | null,
+  vendedorNombreCustom: string | null,
+): Promise<string | null> {
+  if (vendedorIdInput === "__nuevo__" && vendedorNombreCustom) {
+    const nombreLimpio = vendedorNombreCustom.trim();
+    if (!nombreLimpio) return null;
+
+    const { data: existente } = await supabase
+      .from("vendedores")
+      .select("id")
+      .ilike("nombre", nombreLimpio)
+      .maybeSingle();
+
+    if (existente) return existente.id;
+
+    const { data: nuevo } = await supabase
+      .from("vendedores")
+      .insert({ nombre: nombreLimpio, activo: true })
+      .select("id")
+      .single();
+
+    return nuevo?.id ?? null;
+  }
+
+  if (vendedorIdInput && vendedorIdInput !== "__nuevo__") {
+    return vendedorIdInput;
+  }
+
+  return null;
+}
+
 export async function venderUnidadRapidaAction(
   _prev: { error?: string; ok?: string } | null,
   formData: FormData,
@@ -367,7 +400,8 @@ export async function venderUnidadRapidaAction(
   const clienteWhatsapp = String(formData.get("cliente_whatsapp") ?? "").trim();
   const precioUsdTxt = String(formData.get("precio_usd") ?? "").trim();
   const fechaInicioTxt = String(formData.get("fecha_inicio") ?? "").trim();
-  const vendedorId = String(formData.get("vendedor_id") ?? "").trim() || null;
+  const vendedorIdInput = String(formData.get("vendedor_id") ?? "").trim() || null;
+  const vendedorNombreCustom = String(formData.get("vendedor_nombre_custom") ?? "").trim() || null;
   const slug = String(formData.get("slug") ?? "");
 
   if (!cuentaId || !clienteNombre || !precioUsdTxt) {
@@ -380,6 +414,7 @@ export async function venderUnidadRapidaAction(
   }
 
   const supabase = await createClient();
+  const vendedorId = await resolverVendedorId(supabase, vendedorIdInput, vendedorNombreCustom);
 
   const modalidadId = unidadId
     ? "11111111-1111-4111-a111-111111111101"
@@ -421,10 +456,12 @@ export async function editarVentaDirectaAction(
   const clienteWhatsapp = String(formData.get("cliente_whatsapp") ?? "").trim();
   const nombrePerfil = String(formData.get("nombre_perfil") ?? "").trim();
   const pinPerfil = String(formData.get("pin_perfil") ?? "").trim();
-  const vendedorId = String(formData.get("vendedor_id") ?? "").trim() || null;
+  const vendedorIdInput = String(formData.get("vendedor_id") ?? "").trim() || null;
+  const vendedorNombreCustom = String(formData.get("vendedor_nombre_custom") ?? "").trim() || null;
   const slug = String(formData.get("slug") ?? "");
 
   const supabase = await createClient();
+  const vendedorId = await resolverVendedorId(supabase, vendedorIdInput, vendedorNombreCustom);
 
   if (clienteId && clienteNombre) {
     await supabase.from("clientes").update({

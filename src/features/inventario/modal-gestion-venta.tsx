@@ -28,10 +28,11 @@ export function ModalGestionVenta({
   vence: string | null;
   precioUsd: number | null;
   slug: string;
-  vendedores?: { id: string; nombre: string; rol: string }[];
+  vendedores?: { id: string; nombre: string; alias: string | null }[];
   onCerrar: () => void;
 }) {
   const [modo, setModo] = useState<"ver" | "renovar" | "eliminar">("ver");
+  const [seleccionVendedor, setSeleccionVendedor] = useState<string>("");
   const [estadoEdicion, actionEditar, pendienteEditar] = useActionState(editarVentaDirectaAction, null);
   const [estadoRenovar, actionRenovar, pendienteRenovar] = useActionState(renovarAction, null);
   const [estadoEliminar, actionEliminar, pendienteEliminar] = useActionState(
@@ -135,15 +136,27 @@ export function ModalGestionVenta({
               </label>
               <select
                 name="vendedor_id"
+                value={seleccionVendedor}
+                onChange={(e) => setSeleccionVendedor(e.target.value)}
                 className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
               >
-                <option value="">Mantener actual / Administrador</option>
+                <option value="">Mantener actual / Venta Directa</option>
                 {vendedores.map((v) => (
                   <option key={v.id} value={v.id}>
-                    {v.nombre} ({v.rol})
+                    {v.nombre} {v.alias ? `(${v.alias})` : ""}
                   </option>
                 ))}
+                <option value="__nuevo__">+ Registrar nuevo revendedor / intermediario...</option>
               </select>
+
+              {seleccionVendedor === "__nuevo__" && (
+                <input
+                  name="vendedor_nombre_custom"
+                  required
+                  placeholder="Escribe el nombre del revendedor (ej. Gabriel Nadales)"
+                  className="mt-2 w-full rounded-lg border border-emerald-500 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:bg-neutral-800 dark:text-white"
+                />
+              )}
             </div>
 
             {estadoEdicion?.error && (

@@ -114,11 +114,12 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 ## Estado actual
 
 **Gestión Directa, Registro Flexible y Revendedores en Inventario (COMPLETO 2026-07-27).**
-- **Venta Flexible con Fecha de Inicio & Revendedor**: `ModalVentaRapida` y `ModalGestionVenta` permiten elegir fecha de inicio de venta (útil para pagos de días anteriores) y seleccionar el revendedor/vendedor (ej. Gabriel Nadales) para comisiones y registros.
+- **Vendedores e Intermediarios (`public.vendedores`)**: Se consulta directamente la tabla `public.vendedores` (donde viven los revendedores/intermediarios con o sin usuario web), permitiendo asociar cualquier revendedor (ej. Gabriel Nadales, Edgar Esperanza) o registrar uno nuevo al vuelo (`+ Registrar nuevo revendedor...`).
+- **Venta Flexible con Fecha de Inicio & Revendedor**: `ModalVentaRapida` y `ModalGestionVenta` permiten elegir fecha de inicio de venta (útil para pagos de días anteriores) y asignar el revendedor/vendedor para comisiones y registros.
 - **Pre-llenado de Cliente**: Si el perfil ya tiene un nombre visible (ej. `Luis Martínez`), el formulario lo auto-completa sin forzar a volverlo a escribir.
 - **Unificación Visual de Cuentas Completas**: Las cuentas vendidas completas fusionan sus celdas verticalmente en un bloque limpio de altura uniforme (`h-[115px]`), impidiendo la venta duplicada de perfiles individuales.
 - **Clic en Celda de Cliente / Alerta**: Abre `ModalGestionVenta` para renovar/cobrar 1 mes de mes a mes, editar cliente/perfil/PIN/revendedor o eliminar la venta con reseteo de perfil y limpieza de clientes huérfanos.
 - **129 pruebas unitarias** pasando en verde y chequeo de tipos TypeScript sin errores.
 
 ---
-*Última actualización: 2026-07-27 (Gestión de ventas flexibles, asignación de revendedores y unificación visual completadas).*
+*Última actualización: 2026-07-27 (Gestión de ventas flexibles, soporte completo a public.vendedores e intermediarios sin login completados).*

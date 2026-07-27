@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { venderUnidadRapidaAction } from "./actions";
 
-export type VendedorOp = { id: string; nombre: string; rol: string };
+export type VendedorOp = { id: string; nombre: string; alias: string | null };
 
 export function ModalVentaRapida({
   cuentaId,
@@ -21,6 +21,7 @@ export function ModalVentaRapida({
   onCerrar: () => void;
 }) {
   const [estado, action, pendiente] = useActionState(venderUnidadRapidaAction, null);
+  const [seleccionVendedor, setSeleccionVendedor] = useState<string>("");
 
   const hoyIso = new Date().toISOString().split("T")[0];
   const esNombreGenerico =
@@ -115,17 +116,29 @@ export function ModalVentaRapida({
             </label>
             <select
               name="vendedor_id"
+              value={seleccionVendedor}
+              onChange={(e) => setSeleccionVendedor(e.target.value)}
               className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
             >
-              <option value="">Yo (Administrador)</option>
+              <option value="">Venta Directa (Sin revendedor)</option>
               {vendedores.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.nombre} ({v.rol})
+                  {v.nombre} {v.alias ? `(${v.alias})` : ""}
                 </option>
               ))}
+              <option value="__nuevo__">+ Registrar nuevo revendedor / intermediario...</option>
             </select>
+
+            {seleccionVendedor === "__nuevo__" && (
+              <input
+                name="vendedor_nombre_custom"
+                required
+                placeholder="Escribe el nombre del revendedor (ej. Gabriel Nadales)"
+                className="mt-2 w-full rounded-lg border border-emerald-500 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:bg-neutral-800 dark:text-white"
+              />
+            )}
             <p className="mt-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              Indica si la venta la realizó un revendedor (ej. Gabriel Nadales) para registrar sus comisiones.
+              Selecciona o escribe el revendedor/intermediario que realizó la venta.
             </p>
           </div>
 
