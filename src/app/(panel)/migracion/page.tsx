@@ -16,7 +16,7 @@ export default async function MigracionPage() {
 
   // Productos que se cargan por perfil (alcance "unidad"): tanto los extras
   // (capacidad 1, cada uno con su correo) como los perfiles de una cuenta madre.
-  const [{ data: productos }, { data: vendedores }, { bcv }] = await Promise.all([
+  const [{ data: productos }, { data: vendedores }, { bcv, paralela }] = await Promise.all([
     supabase
       .from("productos_plataforma")
       .select(
@@ -26,12 +26,19 @@ export default async function MigracionPage() {
       )
       .eq("estado_comercial", "abierto")
       .order("nombre"),
-    supabase.from("vendedores").select("nombre").order("nombre"),
+    supabase
+      .from("vendedores")
+      .select("nombre, alias, tipo, cobra_en_paralela")
+      .order("nombre"),
     obtenerTasasVigentes(),
   ]);
 
   const bcvUsable =
     bcv && evaluarFrescura(confirmadaAt(bcv)).nivel !== "inservible" ? bcv.bs_por_usd : null;
+  const paralelaUsable =
+    paralela && evaluarFrescura(confirmadaAt(paralela)).nivel !== "inservible"
+      ? paralela.bs_por_usd
+      : null;
 
   const opciones: OpcionProducto[] = (productos ?? [])
     .map((p) => {
@@ -85,8 +92,14 @@ export default async function MigracionPage() {
       ) : (
         <FormImportacion
           productos={opciones}
-          vendedoresExistentes={(vendedores ?? []).map((v) => v.nombre)}
+          vendedoresExistentes={(vendedores ?? []).map((v) => ({
+            nombre: v.nombre,
+            alias: v.alias,
+            tipo: v.tipo as "revendedor" | "intermediario",
+            cobraEnParalela: v.cobra_en_paralela,
+          }))}
           bcv={bcvUsable}
+          paralela={paralelaUsable}
         />
       )}
     </div>

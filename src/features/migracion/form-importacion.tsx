@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { analizarFilas, modoDeProducto } from "@/domain/importacion";
+import { analizarFilas, baseCobroImportacion, modoDeProducto } from "@/domain/importacion";
 import { importarAction, type EstadoImportacion } from "./actions";
 
 const CAMPO =
@@ -13,6 +13,13 @@ export type OpcionProducto = {
   etiqueta: string;
   capacidad: number;
   modalidades: { id: string; nombre: string }[];
+};
+
+export type VendedorImportador = {
+  nombre: string;
+  alias: string | null;
+  tipo: "revendedor" | "intermediario";
+  cobraEnParalela: boolean;
 };
 
 // Ejemplo de cuenta completa CON la fila de títulos (así se reconocen las
@@ -29,14 +36,17 @@ export function FormImportacion({
   productos,
   vendedoresExistentes,
   bcv,
+  paralela,
 }: {
   productos: OpcionProducto[];
-  /** Nombres de vendedores ya registrados, para avisar cuáles se crearán. */
-  vendedoresExistentes: string[];
-  /** BCV vigente para previsualizar la conversión de dólares a bolívares. */
+  /** Configuración vigente: completa filas viejas que solo traen «Vendió». */
+  vendedoresExistentes: VendedorImportador[];
+  /** Tasas vigentes para previsualizar la base que corresponde a cada venta. */
   bcv: number | null;
+  paralela: number | null;
 }) {
   const [productoId, setProductoId] = useState(productos[0]?.id ?? "");
+  const [modalidadId, setModalidadId] = useState(productos[0]?.modalidades[0]?.id ?? "");
   const [moneda, setMoneda] = useState<"usd" | "ves">("usd");
   const [texto, setTexto] = useState("");
   const [estado, action, pendiente] = useActionState<EstadoImportacion, FormData>(
@@ -47,8 +57,8 @@ export function FormImportacion({
   const producto = productos.find((p) => p.id === productoId) ?? productos[0];
   const capacidad = producto?.capacidad ?? 1;
 
-  const vendedoresConocidos = useMemo(
-    () => new Set(vendedoresExistentes.map((v) => v.trim().toLowerCase())),
+  const vendedoresPorNombre = useMemo(
+    () => new Map(vendedoresExistentes.map((v) => [v.nombre.trim().toLowerCase(), v])),
     [vendedoresExistentes],
   );
 
@@ -62,7 +72,18 @@ export function FormImportacion({
   );
 
   const nuevosVendedores = (analisis?.vendedores ?? []).filter(
-    (v) => !vendedoresConocidos.has(v.trim().toLowerCase()),
+    (v) => !vendedoresPorNombre.has(v.trim().toLowerCase()),
+  );
+
+  const configImportada = useMemo(
+    () =>
+      new Map(
+        (analisis?.configuracionesVendedores ?? []).map((v) => [
+          v.nombre.trim().toLowerCase(),
+          v,
+        ]),
+      ),
+    [analisis],
   );
 
   // Alerta anti-error: las columnas «Correo Cliente» / «Clave Cliente» son
@@ -76,8 +97,17 @@ export function FormImportacion({
     ((analisis.columnasSpotify && !esFamiliar) ||
       (esFamiliar && !analisis.columnasSpotify));
 
-  const aBs = (monto: number | null) =>
-    monto == null ? null : moneda === "usd" && bcv ? monto * bcv : monto;
+  const baseDeVendedor = (nombre: string | null) => {
+    if (!nombre) return "bcv" as const;
+    const clave = nombre.trim().toLowerCase();
+    const importada = configImportada.get(clave);
+    return baseCobroImportacion(importada, vendedoresPorNombre.get(clave));
+  };
+  const aBs = (monto: number | null, vendedor: string | null) => {
+    if (monto == null || moneda === "ves") return monto;
+    const tasa = baseDeVendedor(vendedor) === "paralela" ? paralela : bcv;
+    return tasa ? monto * tasa : null;
+  };
 
   return (
     <form action={action} className="space-y-5">
@@ -92,7 +122,11 @@ export function FormImportacion({
           <span className="mb-1 block text-neutral-600 dark:text-neutral-400">Producto</span>
           <select
             value={productoId}
-            onChange={(e) => setProductoId(e.target.value)}
+            onChange={(e) => {
+              const siguiente = productos.find((p) => p.id === e.target.value);
+              setProductoId(e.target.value);
+              setModalidadId(siguiente?.modalidades[0]?.id ?? "");
+            }}
             className={CAMPO}
           >
             {productos.map((p) => (
@@ -105,7 +139,12 @@ export function FormImportacion({
 
         <label className="block text-sm">
           <span className="mb-1 block text-neutral-600 dark:text-neutral-400">Modalidad</span>
-          <select name="modalidad_id" className={CAMPO} defaultValue="">
+          <select
+            name="modalidad_id"
+            className={CAMPO}
+            value={modalidadId}
+            onChange={(e) => setModalidadId(e.target.value)}
+          >
             {(producto?.modalidades ?? []).map((m) => (
               <option key={m.id} value={m.id}>
                 {m.nombre}
@@ -128,7 +167,8 @@ export function FormImportacion({
           Dólares{" "}
           {bcv ? (
             <span className="text-xs text-neutral-500">
-              (se convierten a {bcv.toLocaleString("es-VE")} Bs/USD)
+              (BCV {bcv.toLocaleString("es-VE")}
+              {paralela ? ` · paralela ${paralela.toLocaleString("es-VE")}` : ""} Bs/USD)
             </span>
           ) : (
             <span className="text-xs text-amber-600">(falta BCV para convertir)</span>
@@ -175,8 +215,15 @@ export function FormImportacion({
             Alerta, Aviso). No necesitas borrar ni reordenar nada.
           </p>
           <p>
-            Reconoce: <strong>correo (o usuario), contraseña, perfil, pin, ingresos/monto, inicio,
-            vence, cliente, celular, vendió, inversión, proveedor, renovar</strong>.
+            Mantiene las columnas de siempre: <strong>correo (o usuario), contraseña, perfil,
+            pin, ingresos/monto, inicio, vence, cliente, celular, vendió, inversión, proveedor y
+            renovar</strong>.
+          </p>
+          <p>
+            Ahora también reconoce, si existen: <strong>alias cuenta, notas cuenta, estado cuenta,
+            notas cliente, nota renovación, alias vendedor, tipo vendedor, tasa vendedor, tipo
+            proveedor, teléfono proveedor y notas proveedor</strong>. Son opcionales: tu Excel
+            anterior sigue funcionando igual.
           </p>
           <p>
             <strong>Por perfiles</strong> (una cuenta compartida entre varios clientes):
@@ -286,7 +333,7 @@ export function FormImportacion({
 
           {nuevosVendedores.length > 0 && (
             <p className="rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-800 dark:bg-sky-950/40 dark:text-sky-300">
-              Se crearán {nuevosVendedores.length} revendedores nuevos:{" "}
+              Se crearán {nuevosVendedores.length} vendedores/intermediarios nuevos:{" "}
               <strong>{nuevosVendedores.join(", ")}</strong>.
             </p>
           )}
@@ -306,10 +353,11 @@ export function FormImportacion({
               </thead>
               <tbody>
                 {analisis.filas.map((f) => {
-                  const bs = aBs(f.datos.monto);
+                  const bs = aBs(f.datos.monto, f.datos.vendio);
                   const vendedorNuevo =
                     f.datos.vendio &&
-                    !vendedoresConocidos.has(f.datos.vendio.trim().toLowerCase());
+                    !vendedoresPorNombre.has(f.datos.vendio.trim().toLowerCase());
+                  const base = baseDeVendedor(f.datos.vendio);
                   return (
                     <tr
                       key={f.numero}
@@ -354,6 +402,10 @@ export function FormImportacion({
                         {f.datos.vendio ? (
                           <>
                             {f.datos.vendio}
+                            <span className="ml-1 text-[10px] text-neutral-400">
+                              · {f.datos.tipoVendedor ?? vendedoresPorNombre.get(f.datos.vendio.trim().toLowerCase())?.tipo ?? "intermediario"}
+                              {" · "}{base === "paralela" ? "paralela" : "BCV"}
+                            </span>
                             {vendedorNuevo && (
                               <span className="ml-1 rounded bg-sky-100 px-1 text-[10px] text-sky-700 dark:bg-sky-950 dark:text-sky-300">
                                 nuevo

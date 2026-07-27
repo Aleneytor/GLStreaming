@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   analizarFilas,
+  baseCobroImportacion,
   enmascararTarjeta,
   normalizarFecha,
   normalizarMonto,
@@ -8,6 +9,29 @@ import {
   restarUnMes,
   separarPagador,
 } from "@/domain/importacion";
+
+describe("baseCobroImportacion", () => {
+  it("conserva la base guardada cuando la hoja vieja solo trae el nombre", () => {
+    expect(baseCobroImportacion(null, { tipo: "revendedor", cobraEnParalela: true })).toBe(
+      "paralela",
+    );
+    expect(baseCobroImportacion(null, { tipo: "intermediario", cobraEnParalela: false })).toBe(
+      "bcv",
+    );
+  });
+
+  it("la configuración explícita de la hoja manda sobre la guardada", () => {
+    expect(
+      baseCobroImportacion(
+        { tipo: "revendedor", tasa: "bcv" },
+        { tipo: "revendedor", cobraEnParalela: true },
+      ),
+    ).toBe("bcv");
+    expect(baseCobroImportacion({ tipo: "revendedor", tasa: "paralela" }, null)).toBe(
+      "paralela",
+    );
+  });
+});
 
 describe("normalizarFecha", () => {
   it("entiende el orden venezolano día/mes/año", () => {
@@ -393,5 +417,65 @@ describe("analizarFilas", () => {
     );
     expect(r.conError).toBe(1);
     expect(r.filas[0].errores[0]).toContain("vencimiento no entendida");
+  });
+
+  it("lee los metadatos operativos nuevos sin cambiar las columnas anteriores", () => {
+    const texto = [
+      fila(
+        "Correo", "Contraseña", "Perfil", "Ingresos", "Vence", "Cliente", "Vendió",
+        "Alias Cuenta", "Notas Cuenta", "Estado Cuenta", "Notas Cliente", "Nota Renovación",
+        "Alias Vendedor", "Tipo Vendedor", "Tasa Vendedor", "Tipo Proveedor",
+        "Teléfono Proveedor", "Notas Proveedor",
+      ),
+      fila(
+        "meta@gls.org", "clave", "Perfil 1", "5", "29/8/2026", "Ana", "Gabriel Nadales",
+        "Netflix sala", "Cuenta de respaldo", "Suspendida", "Prefiere WhatsApp",
+        "Confirmar dos días antes", "Joker", "Revendedor", "Paralela", "Tienda",
+        "+58 412-0000000", "Paga por Binance",
+      ),
+    ].join("\n");
+
+    const r = analizarFilas(texto, 5);
+    expect(r.conError).toBe(0);
+    expect(r.filas[0].datos).toMatchObject({
+      correo: "meta@gls.org",
+      monto: 5,
+      aliasCuenta: "Netflix sala",
+      notasCuenta: "Cuenta de respaldo",
+      estadoCuenta: "suspendida",
+      notasCliente: "Prefiere WhatsApp",
+      notaRenovacion: "Confirmar dos días antes",
+      aliasVendedor: "Joker",
+      tipoVendedor: "revendedor",
+      tasaVendedor: "paralela",
+      tipoProveedor: "tercero",
+      telefonoProveedor: "+58 412-0000000",
+      notasProveedor: "Paga por Binance",
+    });
+    expect(r.configuracionesVendedores).toEqual([
+      { nombre: "Gabriel Nadales", alias: "Joker", tipo: "revendedor", tasa: "paralela" },
+    ]);
+  });
+
+  it("la tasa paralela infiere revendedor, pero rechaza un intermediario paralelo", () => {
+    const inferido = analizarFilas(
+      [
+        fila("Correo", "Contraseña", "Perfil", "Ingresos", "Cliente", "Vendió", "Tasa Vendedor"),
+        fila("a@gls.org", "c", "P1", "5", "Ana", "Gabriel", "Paralela"),
+      ].join("\n"),
+      1,
+    );
+    expect(inferido.conError).toBe(0);
+    expect(inferido.filas[0].datos.tipoVendedor).toBe("revendedor");
+
+    const invalido = analizarFilas(
+      [
+        fila("Correo", "Contraseña", "Perfil", "Ingresos", "Cliente", "Vendió", "Tipo Vendedor", "Tasa Vendedor"),
+        fila("b@gls.org", "c", "P1", "5", "Beto", "Edgar", "Intermediario", "Paralela"),
+      ].join("\n"),
+      1,
+    );
+    expect(invalido.conError).toBe(1);
+    expect(invalido.filas[0].errores.join(" ")).toContain("intermediario no puede");
   });
 });

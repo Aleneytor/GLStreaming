@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { cifrarSecreto, huellaSecreto } from "@/lib/crypto";
-import { analizarFilas, modoDeProducto, restarUnMes } from "@/domain/importacion";
+import {
+  analizarFilas,
+  baseCobroImportacion,
+  modoDeProducto,
+  restarUnMes,
+  type ConfiguracionVendedorImportacion,
+} from "@/domain/importacion";
 // `restarUnMes` recorta al último día válido del mes destino.
 import { obtenerTasasVigentes } from "@/features/tasas/actions";
 import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
@@ -17,9 +23,9 @@ import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
  * es atómica por su cuenta (lo garantiza `importar_servicio_existente`).
  *
  * MONEDA: el Excel del negocio lleva todo en divisas. Por eso el importador
- * convierte el monto a bolívares con la BCV del momento (`round(usd * bcv, 2)`),
- * la MISMA que la base congela después. El precio en USD se deriva de vuelta,
- * de modo que queda idéntico al del Excel.
+ * convierte el monto a bolívares con la base comercial vigente: BCV para venta
+ * directa/intermediario y paralela para el revendedor que tenga esa marca. La
+ * base congela ambas tasas y deriva el precio USD sin deformar el Excel.
  */
 
 export type ResultadoFila = {
@@ -63,28 +69,70 @@ function sumarUnMes(iso: string): string {
   return new Date(Date.UTC(anio, mes - 1, Math.min(d, ultimo))).toISOString().slice(0, 10);
 }
 
-/** Resuelve los nombres de la columna «Vendió» a ids, creando los que falten. */
+type VendedorExistente = {
+  id: string;
+  nombre: string;
+  alias: string | null;
+  tipo: string;
+  cobra_en_paralela: boolean;
+};
+
+type VendedorResuelto = {
+  id: string;
+  tipo: "revendedor" | "intermediario";
+  cobraEnParalela: boolean;
+};
+
+/** Resuelve «Vendió» y aplica solo la configuración que vino explícita. */
 async function resolverVendedores(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  nombres: string[],
-): Promise<Map<string, string>> {
-  const mapa = new Map<string, string>();
-  if (nombres.length === 0) return mapa;
+  configuraciones: ConfiguracionVendedorImportacion[],
+  existentes: VendedorExistente[],
+): Promise<Map<string, VendedorResuelto>> {
+  const mapa = new Map<string, VendedorResuelto>();
+  const existentesPorNombre = new Map(
+    existentes.map((v) => [v.nombre.trim().toLowerCase(), v]),
+  );
 
-  const { data: existentes } = await supabase.from("vendedores").select("id, nombre");
-  for (const v of existentes ?? []) {
-    mapa.set(v.nombre.trim().toLowerCase(), v.id);
-  }
+  for (const config of configuraciones) {
+    const clave = config.nombre.trim().toLowerCase();
+    const existente = existentesPorNombre.get(clave);
+    if (existente) {
+      const tipo = (config.tipo ?? existente.tipo) as "revendedor" | "intermediario";
+      const cobraEnParalela =
+        tipo === "revendedor"
+          ? config.tasa
+            ? config.tasa === "paralela"
+            : existente.cobra_en_paralela
+          : false;
+      const patch: { alias?: string; tipo?: string; cobra_en_paralela?: boolean } = {};
+      if (config.alias) patch.alias = config.alias;
+      if (config.tipo) patch.tipo = tipo;
+      if (config.tasa || tipo === "intermediario") patch.cobra_en_paralela = cobraEnParalela;
+      if (Object.keys(patch).length > 0) {
+        const { error } = await supabase.from("vendedores").update(patch).eq("id", existente.id);
+        if (error) throw new Error(`No se pudo actualizar a ${config.nombre}: ${error.message}`);
+      }
+      mapa.set(clave, { id: existente.id, tipo, cobraEnParalela });
+      continue;
+    }
 
-  for (const nombre of nombres) {
-    const clave = nombre.trim().toLowerCase();
-    if (mapa.has(clave)) continue;
+    const tipo = config.tipo ?? (config.tasa === "paralela" ? "revendedor" : "intermediario");
+    const cobraEnParalela = tipo === "revendedor" && config.tasa === "paralela";
     const { data, error } = await supabase
       .from("vendedores")
-      .insert({ nombre: nombre.trim() })
+      .insert({
+        nombre: config.nombre.trim(),
+        alias: config.alias,
+        tipo,
+        cobra_en_paralela: cobraEnParalela,
+      })
       .select("id")
       .single();
-    if (!error && data) mapa.set(clave, data.id);
+    if (error || !data) {
+      throw new Error(`No se pudo crear a ${config.nombre}: ${error?.message ?? "sin respuesta"}`);
+    }
+    mapa.set(clave, { id: data.id, tipo, cobraEnParalela });
   }
 
   return mapa;
@@ -139,22 +187,64 @@ export async function importarAction(
     return { error: "Ninguna fila es válida. Corrige los errores marcados." };
   }
 
-  // Si hay montos y vienen en dólares, hace falta una BCV utilizable.
+  const supabase = await createClient();
+  const { data: vendedoresExistentes, error: errorVendedores } = await supabase
+    .from("vendedores")
+    .select("id, nombre, alias, tipo, cobra_en_paralela");
+  if (errorVendedores) return { error: `No se pudieron leer los vendedores: ${errorVendedores.message}` };
+
+  const existentes = (vendedoresExistentes ?? []) as VendedorExistente[];
+  const existentesPorNombre = new Map(existentes.map((v) => [v.nombre.trim().toLowerCase(), v]));
+  const vendedoresValidos = new Set(
+    validas.flatMap((f) => (f.datos.vendio ? [f.datos.vendio.trim().toLowerCase()] : [])),
+  );
+  const configuracionesValidas = analisis.configuracionesVendedores.filter((v) =>
+    vendedoresValidos.has(v.nombre.trim().toLowerCase()),
+  );
+  const configPorNombre = new Map(
+    configuracionesValidas.map((v) => [v.nombre.trim().toLowerCase(), v]),
+  );
+
+  // Si hay cobros en dólares, la conversión respeta la base del vendedor.
   const hayMontos = validas.some((f) => f.datos.cliente && f.datos.monto != null);
   let bcv: number | null = null;
+  let paralela: number | null = null;
   if (hayMontos && moneda === "usd") {
-    const { bcv: tasa } = await obtenerTasasVigentes();
-    const usable = tasa && evaluarFrescura(confirmadaAt(tasa)).nivel !== "inservible";
-    if (!usable) {
+    const { bcv: tasaBcv, paralela: tasaParalela } = await obtenerTasasVigentes();
+    const bcvUsable = tasaBcv && evaluarFrescura(confirmadaAt(tasaBcv)).nivel !== "inservible";
+    if (!bcvUsable) {
       return {
         error:
           "Los montos están en dólares pero no hay una tasa BCV utilizable para convertirlos. Actualízala en «Tasas».",
       };
     }
-    bcv = tasa.bs_por_usd;
-  }
+    bcv = tasaBcv.bs_por_usd;
 
-  const supabase = await createClient();
+    const usaParalela = validas.some((fila) => {
+      if (!fila.datos.vendio || fila.datos.monto == null) return false;
+      const clave = fila.datos.vendio.toLowerCase();
+      const config = configPorNombre.get(clave);
+      const existente = existentesPorNombre.get(clave);
+      return (
+        baseCobroImportacion(
+          config,
+          existente
+            ? { tipo: existente.tipo, cobraEnParalela: existente.cobra_en_paralela }
+            : null,
+        ) === "paralela"
+      );
+    });
+    if (usaParalela) {
+      const usable = tasaParalela && evaluarFrescura(confirmadaAt(tasaParalela)).nivel !== "inservible";
+      if (!usable) {
+        return {
+          error:
+            "Hay cobros de revendedores a tasa paralela, pero no existe una paralela utilizable. Actualízala en «Tasas».",
+        };
+      }
+      paralela = tasaParalela.bs_por_usd;
+    }
+  }
 
   const { data: sesionId, error: errorSesion } = await supabase.rpc("abrir_sesion_carga", {
     p_producto_id: productoId,
@@ -162,25 +252,58 @@ export async function importarAction(
   });
   if (errorSesion) return { error: `No se pudo abrir la sesión de carga: ${errorSesion.message}` };
 
-  const vendedores = await resolverVendedores(supabase, analisis.vendedores);
+  let vendedores: Map<string, VendedorResuelto>;
+  try {
+    vendedores = await resolverVendedores(
+      supabase,
+      configuracionesValidas,
+      existentes,
+    );
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "No se pudieron preparar los vendedores." };
+  }
 
   const hoy = hoyCaracas();
   const resultados: ResultadoFila[] = [];
+  const ultimaFilaPorCuenta = new Map<string, number>();
+  const metadatosPorCuenta = new Map<string, (typeof validas)[number]["datos"]>();
+  for (const fila of validas) {
+    const clave = fila.datos.correo.toLowerCase();
+    ultimaFilaPorCuenta.set(clave, fila.numero);
+    const anterior = metadatosPorCuenta.get(clave);
+    if (!anterior) metadatosPorCuenta.set(clave, fila.datos);
+    else {
+      metadatosPorCuenta.set(clave, {
+        ...anterior,
+        aliasCuenta: anterior.aliasCuenta ?? fila.datos.aliasCuenta,
+        notasCuenta: anterior.notasCuenta ?? fila.datos.notasCuenta,
+        estadoCuenta: anterior.estadoCuenta ?? fila.datos.estadoCuenta,
+        tipoProveedor: anterior.tipoProveedor ?? fila.datos.tipoProveedor,
+        telefonoProveedor: anterior.telefonoProveedor ?? fila.datos.telefonoProveedor,
+        notasProveedor: anterior.notasProveedor ?? fila.datos.notasProveedor,
+      });
+    }
+  }
 
   for (const fila of validas) {
     const d = fila.datos;
+    const cuentaMeta = metadatosPorCuenta.get(d.correo.toLowerCase()) ?? d;
+    const advertenciasMeta: string[] = [];
 
     // Fechas: se toman explícitas del Excel; si faltan, se derivan.
     const inicio = d.inicio ?? (d.vence ? restarUnMes(d.vence) : hoy);
     const vence = d.vence ?? sumarUnMes(inicio);
 
-    // Monto → bolívares. En USD se convierte con la BCV del momento.
+    const vendedor = d.vendio ? (vendedores.get(d.vendio.toLowerCase()) ?? null) : null;
+    // Monto → bolívares. En USD usa BCV en directa/intermediario y paralela
+    // únicamente para el revendedor que tenga guardada esa base.
     let montoVes: number | null = null;
     if (d.cliente && d.monto != null) {
-      montoVes = moneda === "usd" && bcv ? Math.round(d.monto * bcv * 100) / 100 : d.monto;
+      const tasa = vendedor?.cobraEnParalela ? paralela : bcv;
+      montoVes = moneda === "usd" && tasa ? Math.round(d.monto * tasa * 100) / 100 : d.monto;
     }
 
-    const vendedorId = d.vendio ? (vendedores.get(d.vendio.toLowerCase()) ?? null) : null;
+    const vendedorId = vendedor?.id ?? null;
     // El ciclo del proveedor empieza un mes antes de renovar, así su próxima
     // renovación cae exactamente en la fecha del Excel.
     const provInicio = d.renovarProveedor ? restarUnMes(d.renovarProveedor) : null;
@@ -261,7 +384,7 @@ export async function importarAction(
         p_login_cifrado: cifrarSecreto(d.correo),
         p_login_fingerprint: huellaSecreto(d.correo),
         p_contrasena_cifrada: cifrarSecreto(d.contrasena),
-        p_alias: null,
+        p_alias: cuentaMeta.aliasCuenta,
         p_numero_slot: fila.slot,
         p_nombre_perfil: d.perfil ?? d.cliente ?? null,
         p_pin_cifrado: d.pin ? cifrarSecreto(d.pin) : null,
@@ -280,6 +403,82 @@ export async function importarAction(
 
     // Cortesía (monto 0): el servicio queda resuelto, no pendiente de cobro.
     const periodoId = (data as { periodo_id?: string } | null)?.periodo_id;
+    const ids = data as {
+      cuenta_id?: string;
+      suscripcion_id?: string;
+    } | null;
+    if (!error && ids?.cuenta_id) {
+      const patchCuenta: { alias?: string; notas?: string; estado?: string; archived_at?: string } = {};
+      if (cuentaMeta.aliasCuenta) patchCuenta.alias = cuentaMeta.aliasCuenta;
+      if (cuentaMeta.notasCuenta) patchCuenta.notas = cuentaMeta.notasCuenta;
+      if (cuentaMeta.estadoCuenta) {
+        // Archivar se difiere hasta la última fila de la cuenta: las RPC buscan
+        // cuentas no archivadas y, si se hiciera antes, duplicarían la madre.
+        if (
+          cuentaMeta.estadoCuenta !== "archivada" ||
+          ultimaFilaPorCuenta.get(d.correo.toLowerCase()) === fila.numero
+        ) {
+          patchCuenta.estado = cuentaMeta.estadoCuenta;
+          if (cuentaMeta.estadoCuenta === "archivada") patchCuenta.archived_at = new Date().toISOString();
+        }
+      }
+      if (Object.keys(patchCuenta).length > 0) {
+        const meta = await supabase.from("cuentas").update(patchCuenta).eq("id", ids.cuenta_id);
+        if (meta.error) advertenciasMeta.push(`datos de cuenta: ${meta.error.message}`);
+      }
+    }
+    if (!error && ids?.suscripcion_id) {
+      const { data: suscripcion } = await supabase
+        .from("suscripciones")
+        .select("cliente_id")
+        .eq("id", ids.suscripcion_id)
+        .single();
+      if (d.notaRenovacion) {
+        const meta = await supabase
+          .from("suscripciones")
+          .update({ nota_renovacion: d.notaRenovacion })
+          .eq("id", ids.suscripcion_id);
+        if (meta.error) advertenciasMeta.push(`nota de renovación: ${meta.error.message}`);
+      }
+      if (d.notasCliente && suscripcion?.cliente_id) {
+        const meta = await supabase
+          .from("clientes")
+          .update({ notas: d.notasCliente })
+          .eq("id", suscripcion.cliente_id);
+        if (meta.error) advertenciasMeta.push(`notas del cliente: ${meta.error.message}`);
+      }
+    }
+    if (
+      !error &&
+      ids?.cuenta_id &&
+      (cuentaMeta.tipoProveedor || cuentaMeta.telefonoProveedor || cuentaMeta.notasProveedor)
+    ) {
+      const { data: cuenta } = await supabase
+        .from("cuentas")
+        .select("proveedor_operativo_id")
+        .eq("id", ids.cuenta_id)
+        .single();
+      if (cuenta?.proveedor_operativo_id) {
+        const patchProveedor: {
+          tipo?: string;
+          telefono_original?: string;
+          telefono_normalizado?: string | null;
+          notas?: string;
+        } = {};
+        if (cuentaMeta.tipoProveedor) patchProveedor.tipo = cuentaMeta.tipoProveedor;
+        if (cuentaMeta.telefonoProveedor) {
+          patchProveedor.telefono_original = cuentaMeta.telefonoProveedor;
+          patchProveedor.telefono_normalizado =
+            cuentaMeta.telefonoProveedor.replace(/[^0-9+]/g, "") || null;
+        }
+        if (cuentaMeta.notasProveedor) patchProveedor.notas = cuentaMeta.notasProveedor;
+        const meta = await supabase
+          .from("proveedores")
+          .update(patchProveedor)
+          .eq("id", cuenta.proveedor_operativo_id);
+        if (meta.error) advertenciasMeta.push(`datos del proveedor: ${meta.error.message}`);
+      }
+    }
     if (!error && d.cliente && d.monto === 0 && periodoId) {
       await supabase.rpc("marcar_periodo_cortesia", { p_periodo_id: periodoId });
     }
@@ -296,8 +495,12 @@ export async function importarAction(
       mensaje: error
         ? error.message
         : d.cliente
-          ? `${d.cliente} · vence ${vence}${etiquetaCobro}${etiquetaVendedor}`
-          : `Perfil ${fila.slot} cargado libre`,
+          ? `${d.cliente} · vence ${vence}${etiquetaCobro}${etiquetaVendedor}${
+              advertenciasMeta.length ? ` · aviso: ${advertenciasMeta.join("; ")}` : ""
+            }`
+          : `Perfil ${fila.slot} cargado libre${
+              advertenciasMeta.length ? ` · aviso: ${advertenciasMeta.join("; ")}` : ""
+            }`,
     });
   }
 

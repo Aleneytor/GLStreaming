@@ -59,7 +59,36 @@ export type FilaImportacion = {
   claveCliente: string | null;
   /** Spotify: Gmail que paga la individual por GPay (solo referencia). */
   gmailPagador: string | null;
+  /** Datos operativos opcionales que ya existen en la app. */
+  aliasCuenta: string | null;
+  notasCuenta: string | null;
+  estadoCuenta: "activa" | "mantenimiento" | "suspendida" | "archivada" | null;
+  notasCliente: string | null;
+  notaRenovacion: string | null;
+  aliasVendedor: string | null;
+  tipoVendedor: "revendedor" | "intermediario" | null;
+  tasaVendedor: "bcv" | "paralela" | null;
+  tipoProveedor: "propio" | "tercero" | null;
+  telefonoProveedor: string | null;
+  notasProveedor: string | null;
 };
+
+export type ConfiguracionVendedorImportacion = {
+  nombre: string;
+  alias: string | null;
+  tipo: "revendedor" | "intermediario" | null;
+  tasa: "bcv" | "paralela" | null;
+};
+
+/** Misma decisión de base para la vista previa y la acción de servidor. */
+export function baseCobroImportacion(
+  importada: Pick<ConfiguracionVendedorImportacion, "tipo" | "tasa"> | null | undefined,
+  existente: { tipo: string; cobraEnParalela: boolean } | null | undefined,
+): "bcv" | "paralela" {
+  if (importada?.tipo === "intermediario" || importada?.tasa === "bcv") return "bcv";
+  if (importada?.tasa === "paralela") return "paralela";
+  return existente?.tipo === "revendedor" && existente.cobraEnParalela ? "paralela" : "bcv";
+}
 
 export type FilaAnalizada = {
   /** Número de línea tal como lo ve el usuario (empieza en 1). */
@@ -81,6 +110,8 @@ export type ResultadoAnalisis = {
   conError: number;
   /** Nombres distintos de la columna «Vendió» que aparecen. */
   vendedores: string[];
+  /** Configuración explícita leída de las columnas nuevas, sin inventar datos. */
+  configuracionesVendedores: ConfiguracionVendedorImportacion[];
   /**
    * `false` si no se pegó la fila de títulos y hubo que adivinar las columnas
    * por su posición. Es la causa más común de un desastre silencioso: basta una
@@ -231,7 +262,18 @@ type Campo =
   // individual de GPay lleva anotado el Gmail que lo paga.
   | "correoCliente"
   | "claveCliente"
-  | "gmailPagador";
+  | "gmailPagador"
+  | "aliasCuenta"
+  | "notasCuenta"
+  | "estadoCuenta"
+  | "notasCliente"
+  | "notaRenovacion"
+  | "aliasVendedor"
+  | "tipoVendedor"
+  | "tasaVendedor"
+  | "tipoProveedor"
+  | "telefonoProveedor"
+  | "notasProveedor";
 
 /**
  * Cómo está organizada la hoja.
@@ -284,6 +326,19 @@ function campoDeCabecera(titulo: string): Campo | null {
   const h = norm(titulo);
   if (!h) return null;
   if (/(dias|alerta|aviso)/.test(h)) return null; // columnas calculadas
+  // Metadatos nuevos. Se resuelven antes de los nombres genéricos porque
+  // contienen palabras como cliente, vendedor, proveedor o renovación.
+  if (/alias/.test(h) && /(cuenta|servicio)/.test(h)) return "aliasCuenta";
+  if (/nota/.test(h) && /(cuenta|servicio)/.test(h) && !/renov/.test(h)) return "notasCuenta";
+  if (/estado/.test(h) && /(cuenta|inventario)/.test(h)) return "estadoCuenta";
+  if (/nota/.test(h) && /cliente/.test(h)) return "notasCliente";
+  if (/nota/.test(h) && /renov/.test(h)) return "notaRenovacion";
+  if (/alias/.test(h) && /(vendedor|vendio|revendedor)/.test(h)) return "aliasVendedor";
+  if (/tipo/.test(h) && /(vendedor|vendio|revendedor)/.test(h)) return "tipoVendedor";
+  if (/(tasa|base)/.test(h) && /(vendedor|vendio|revendedor|cobro)/.test(h)) return "tasaVendedor";
+  if (/tipo/.test(h) && /proveedor/.test(h)) return "tipoProveedor";
+  if (/(telefono|celular|whatsapp|movil)/.test(h) && /proveedor/.test(h)) return "telefonoProveedor";
+  if (/nota/.test(h) && /proveedor/.test(h)) return "notasProveedor";
   // OJO al orden: «Correo Cliente» y «Clave Cliente» (Spotify) contienen las
   // palabras «correo», «clave» y «cliente», así que se resuelven ANTES que las
   // columnas genéricas para que no se las lleve la que no es.
@@ -304,6 +359,44 @@ function campoDeCabecera(titulo: string): Campo | null {
   if (h.includes("proveedor")) return "proveedor";
   if (h.includes("renov")) return "renovar"; // fecha de pago al proveedor
   return null;
+}
+
+function normalizarTipoVendedor(valor: string): "revendedor" | "intermediario" | null | "invalido" {
+  const v = norm(valor);
+  if (!v) return null;
+  if (/^(revendedor|rev|afiliado)$/.test(v)) return "revendedor";
+  if (/^(intermediario|inter|informal)$/.test(v)) return "intermediario";
+  return "invalido";
+}
+
+function normalizarTasaVendedor(valor: string): "bcv" | "paralela" | null | "invalido" {
+  const v = norm(valor);
+  if (!v) return null;
+  if (/bcv|oficial/.test(v)) return "bcv";
+  if (/paralela|parallel/.test(v)) return "paralela";
+  return "invalido";
+}
+
+function normalizarEstadoCuenta(
+  valor: string,
+): FilaImportacion["estadoCuenta"] | "invalido" {
+  const v = norm(valor);
+  if (!v) return null;
+  if (/^(activa|activo)$/.test(v)) return "activa";
+  if (/^(mantenimiento|en mantenimiento)$/.test(v)) return "mantenimiento";
+  if (/^(suspendida|suspendido)$/.test(v)) return "suspendida";
+  if (/^(archivada|archivado)$/.test(v)) return "archivada";
+  return "invalido";
+}
+
+function normalizarTipoProveedor(
+  valor: string,
+): FilaImportacion["tipoProveedor"] | "invalido" {
+  const v = norm(valor);
+  if (!v) return null;
+  if (/^(propio|yo|interno)$/.test(v)) return "propio";
+  if (/^(tercero|externo|persona|tienda|plataforma|otro)$/.test(v)) return "tercero";
+  return "invalido";
 }
 
 /**
@@ -445,6 +538,7 @@ export function analizarFilas(
 
   const slotsPorCuenta = new Map<string, number>();
   const vendedores = new Map<string, string>(); // clave en minúsculas → nombre visible
+  const configuracionesVendedores = new Map<string, ConfiguracionVendedorImportacion>();
   const filas: FilaAnalizada[] = [];
 
   // Cuenta madre "en curso": el correo/contraseña se arrastran a las filas que
@@ -498,6 +592,46 @@ export function analizarFilas(
     // dentro de la celda de proveedor (hoja de familias).
     const gmailPagador =
       leer(c, "gmailPagador").replace(/[()]/g, "").trim() || provSeparado.pagador || null;
+    const aliasCuenta = limpiarMarca(leer(c, "aliasCuenta")) || null;
+    const notasCuenta = limpiarMarca(leer(c, "notasCuenta")) || null;
+    const notasCliente = limpiarMarca(leer(c, "notasCliente")) || null;
+    const notaRenovacion = limpiarMarca(leer(c, "notaRenovacion")) || null;
+    const aliasVendedor = limpiarMarca(leer(c, "aliasVendedor")) || null;
+    const telefonoProveedor = limpiarMarca(leer(c, "telefonoProveedor")) || null;
+    const notasProveedor = limpiarMarca(leer(c, "notasProveedor")) || null;
+
+    const estadoCuentaLeido = normalizarEstadoCuenta(leer(c, "estadoCuenta"));
+    const estadoCuenta = estadoCuentaLeido === "invalido" ? null : estadoCuentaLeido;
+    if (estadoCuentaLeido === "invalido") {
+      errores.push(`Estado de cuenta no entendido: «${leer(c, "estadoCuenta")}».`);
+    }
+
+    const tipoVendedorLeido = normalizarTipoVendedor(leer(c, "tipoVendedor"));
+    let tipoVendedor = tipoVendedorLeido === "invalido" ? null : tipoVendedorLeido;
+    if (tipoVendedorLeido === "invalido") {
+      errores.push(`Tipo de vendedor no entendido: «${leer(c, "tipoVendedor")}».`);
+    }
+
+    const tasaVendedorLeida = normalizarTasaVendedor(leer(c, "tasaVendedor"));
+    const tasaVendedor = tasaVendedorLeida === "invalido" ? null : tasaVendedorLeida;
+    if (tasaVendedorLeida === "invalido") {
+      errores.push(`Tasa del vendedor no entendida: «${leer(c, "tasaVendedor")}».`);
+    }
+    // Paralela solo existe para un revendedor afiliado. Si la hoja no incluyó
+    // el tipo, esta señal es suficiente y evita pedir una columna redundante.
+    if (tasaVendedor === "paralela" && tipoVendedor === null) tipoVendedor = "revendedor";
+    if (tipoVendedor === "intermediario" && tasaVendedor === "paralela") {
+      errores.push("Un intermediario no puede cobrar a tasa paralela.");
+    }
+    if (!vendio && (aliasVendedor || tipoVendedor || tasaVendedor)) {
+      errores.push("Hay datos del vendedor, pero la columna «Vendió» está vacía.");
+    }
+
+    const tipoProveedorLeido = normalizarTipoProveedor(leer(c, "tipoProveedor"));
+    const tipoProveedor = tipoProveedorLeido === "invalido" ? null : tipoProveedorLeido;
+    if (tipoProveedorLeido === "invalido") {
+      errores.push(`Tipo de proveedor no entendido: «${leer(c, "tipoProveedor")}».`);
+    }
 
     // --- Arrastre de la cuenta madre (celda combinada del Excel) -------------
     let heredaCuenta = false;
@@ -575,6 +709,23 @@ export function analizarFilas(
     if (vendio) {
       const clave = vendio.toLowerCase();
       if (!vendedores.has(clave)) vendedores.set(clave, vendio);
+      const anterior = configuracionesVendedores.get(clave);
+      const actual: ConfiguracionVendedorImportacion = {
+        nombre: anterior?.nombre ?? vendio,
+        alias: aliasVendedor ?? anterior?.alias ?? null,
+        tipo: tipoVendedor ?? anterior?.tipo ?? null,
+        tasa: tasaVendedor ?? anterior?.tasa ?? null,
+      };
+      if (
+        anterior &&
+        ((aliasVendedor && anterior.alias && aliasVendedor !== anterior.alias) ||
+          (tipoVendedor && anterior.tipo && tipoVendedor !== anterior.tipo) ||
+          (tasaVendedor && anterior.tasa && tasaVendedor !== anterior.tasa))
+      ) {
+        errores.push(`El vendedor «${vendio}» tiene configuraciones distintas entre filas.`);
+      } else {
+        configuracionesVendedores.set(clave, actual);
+      }
     }
 
     // El slot se asigna por orden de aparición dentro de cada cuenta madre.
@@ -615,6 +766,17 @@ export function analizarFilas(
         correoCliente,
         claveCliente,
         gmailPagador,
+        aliasCuenta,
+        notasCuenta,
+        estadoCuenta,
+        notasCliente,
+        notaRenovacion,
+        aliasVendedor,
+        tipoVendedor,
+        tasaVendedor,
+        tipoProveedor,
+        telefonoProveedor,
+        notasProveedor,
       },
       errores,
       avisos,
@@ -627,6 +789,7 @@ export function analizarFilas(
     validas: filas.filter((f) => f.errores.length === 0).length,
     conError: filas.filter((f) => f.errores.length > 0).length,
     vendedores: [...vendedores.values()],
+    configuracionesVendedores: [...configuracionesVendedores.values()],
     hayCabecera,
     // La hoja es de Spotify si mapeó alguna de sus columnas propias.
     columnasSpotify: mapa.correoCliente !== undefined || mapa.claveCliente !== undefined,
