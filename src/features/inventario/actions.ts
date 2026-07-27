@@ -388,6 +388,52 @@ export async function venderUnidadRapidaAction(
   return { ok: "Venta registrada con éxito." };
 }
 
+export async function editarVentaDirectaAction(
+  _prev: { error?: string; ok?: string } | null,
+  formData: FormData,
+): Promise<{ error?: string; ok?: string }> {
+  const usuario = await obtenerUsuarioActual();
+  if (!esAdmin(usuario)) return { error: "No autorizado." };
+
+  const unidadId = String(formData.get("unidad_id") ?? "");
+  const clienteId = String(formData.get("cliente_id") ?? "");
+  const clienteNombre = String(formData.get("cliente_nombre") ?? "").trim();
+  const clienteWhatsapp = String(formData.get("cliente_whatsapp") ?? "").trim();
+  const nombrePerfil = String(formData.get("nombre_perfil") ?? "").trim();
+  const pinPerfil = String(formData.get("pin_perfil") ?? "").trim();
+  const slug = String(formData.get("slug") ?? "");
+
+  const supabase = await createClient();
+
+  if (clienteId && clienteNombre) {
+    await supabase.from("clientes").update({
+      nombre: clienteNombre,
+      whatsapp_original: clienteWhatsapp || null,
+    }).eq("id", clienteId);
+  }
+
+  if (unidadId) {
+    await supabase.from("unidades_inventario").update({
+      nombre_visible: nombrePerfil || null,
+    }).eq("id", unidadId);
+
+    if (pinPerfil) {
+      const pinCifrado = cifrarSecreto(pinPerfil);
+      await supabase.from("secretos_unidad").upsert({
+        unidad_id: unidadId,
+        pin_cifrado: pinCifrado,
+        rotada_at: new Date().toISOString(),
+      });
+    }
+  }
+
+  revalidatePath(slug ? `/inventario/${slug}` : "/inventario");
+  revalidatePath("/vencimientos");
+  revalidatePath("/clientes");
+
+  return { ok: "Datos de la venta actualizados." };
+}
+
 export async function cancelarVentaConLimpiezaAction(
   formData: FormData,
 ): Promise<void> {
@@ -395,6 +441,7 @@ export async function cancelarVentaConLimpiezaAction(
   if (!esAdmin(usuario)) return;
 
   const suscripcionId = String(formData.get("suscripcion_id") ?? "");
+  const unidadId = String(formData.get("unidad_id") ?? "");
   const clienteId = String(formData.get("cliente_id") ?? "");
   const slug = String(formData.get("slug") ?? "");
 
@@ -402,12 +449,22 @@ export async function cancelarVentaConLimpiezaAction(
 
   const supabase = await createClient();
 
+  // 1. Cancelar suscripción y liberar asignación
   const { error: e1 } = await supabase.rpc("cancelar_y_liberar", {
     p_suscripcion_id: suscripcionId,
     p_motivo: "cancelacion_manual_inventario",
   });
   if (e1) return;
 
+  // 2. Restablecer el nombre del perfil a nulo para que vuelva a decir Perfil X
+  if (unidadId) {
+    await supabase
+      .from("unidades_inventario")
+      .update({ nombre_visible: null })
+      .eq("id", unidadId);
+  }
+
+  // 3. Verificar si al cliente le quedan otros servicios activos
   if (clienteId) {
     const { count } = await supabase
       .from("suscripciones")

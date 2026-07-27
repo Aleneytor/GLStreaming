@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import type { BadgeVencimiento } from "@/domain/fechas";
 import { PanelLateralCuenta } from "./panel-lateral-cuenta";
 import {
@@ -10,6 +10,7 @@ import {
 } from "./actions";
 import { ModalVentaRapida } from "./modal-venta-rapida";
 import { ModalRenovarProveedorRapido } from "./modal-renovar-proveedor";
+import { ModalGestionVenta } from "./modal-gestion-venta";
 
 export type CupoFila = {
   slotNumber: number;
@@ -100,12 +101,19 @@ export function TablaInventario({ cuentas, slug }: { cuentas: BloqueCuenta[]; sl
   const [targetIndex, setTargetIndex] = useState<number | null>(null);
   const [, startTransition] = useTransition();
 
-  // Estados para modals interactivos en celdas
+  // Sincronizar estado local inmediatamente al recibir nuevas cuentas del servidor
+  useEffect(() => {
+    setCuentasState(cuentas);
+  }, [cuentas]);
+
+  // Modals interactivos
   const [ventaTarget, setVentaTarget] = useState<{
     cuentaId: string;
     unidadId: string | null;
     nombrePerfil: string;
   } | null>(null);
+
+  const [gestionVentaTarget, setGestionVentaTarget] = useState<CupoFila | null>(null);
 
   const [renovarProvTarget, setRenovarProvTarget] = useState<{
     cuentaId: string;
@@ -217,6 +225,7 @@ export function TablaInventario({ cuentas, slug }: { cuentas: BloqueCuenta[]; sl
                 onIniciarVenta={(unidadId, nombrePerfil) =>
                   setVentaTarget({ cuentaId: cta.cuentaId, unidadId, nombrePerfil })
                 }
+                onGestionarVenta={(fila) => setGestionVentaTarget(fila)}
                 onRenovarProveedor={() =>
                   setRenovarProvTarget({
                     cuentaId: cta.cuentaId,
@@ -258,6 +267,23 @@ export function TablaInventario({ cuentas, slug }: { cuentas: BloqueCuenta[]; sl
         />
       )}
 
+      {/* Modal de gestión de venta al hacer clic en un cliente */}
+      {gestionVentaTarget && gestionVentaTarget.suscripcionId && (
+        <ModalGestionVenta
+          suscripcionId={gestionVentaTarget.suscripcionId}
+          unidadId={gestionVentaTarget.unidadId}
+          clienteId={gestionVentaTarget.clienteId}
+          clienteNombre={gestionVentaTarget.cliente ?? "Cliente"}
+          clienteCelular={gestionVentaTarget.celular}
+          nombrePerfil={gestionVentaTarget.cupo}
+          pinPerfil={gestionVentaTarget.pin}
+          vence={formatearFecha(gestionVentaTarget.vence)}
+          precioUsd={gestionVentaTarget.ingreso}
+          slug={slug}
+          onCerrar={() => setGestionVentaTarget(null)}
+        />
+      )}
+
       {/* Modal de renovación directa con proveedor */}
       {renovarProvTarget && (
         <ModalRenovarProveedorRapido
@@ -281,6 +307,7 @@ function BloqueCuentaExcel({
   isTarget,
   onEditar,
   onIniciarVenta,
+  onGestionarVenta,
   onRenovarProveedor,
   onDragStart,
   onDragOver,
@@ -294,6 +321,7 @@ function BloqueCuentaExcel({
   isTarget: boolean;
   onEditar: () => void;
   onIniciarVenta: (unidadId: string | null, nombrePerfil: string) => void;
+  onGestionarVenta: (fila: CupoFila) => void;
   onRenovarProveedor: () => void;
   onDragStart: () => void;
   onDragOver: (e: React.DragEvent) => void;
@@ -318,19 +346,19 @@ function BloqueCuentaExcel({
           claseAlerta = "bg-neutral-200 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-300";
           textoAlerta = "Sin fecha";
         } else if (f.dias > 0) {
-          claseAlerta = "bg-[#16a34a] text-white font-semibold";
-          textoAlerta = `Falta ${f.dias} días`;
+          claseAlerta = "bg-[#16a34a] text-white font-semibold cursor-pointer hover:bg-[#15803d]";
+          textoAlerta = `Falta ${f.dias} días ⚙️`;
         } else if (f.dias === 0) {
-          claseAlerta = "bg-[#dc2626] text-white font-bold";
-          textoAlerta = "Vence hoy";
+          claseAlerta = "bg-[#dc2626] text-white font-bold cursor-pointer hover:bg-[#b91c1c]";
+          textoAlerta = "Vence hoy ⚙️";
         } else {
           const transcurridos = Math.abs(f.dias);
           if (transcurridos <= 2) {
-            claseAlerta = "bg-[#eab308] text-black font-bold";
-            textoAlerta = `Tienes ${transcurridos} ${transcurridos === 1 ? "día" : "días"}`;
+            claseAlerta = "bg-[#eab308] text-black font-bold cursor-pointer hover:bg-[#ca8a04]";
+            textoAlerta = `Tienes ${transcurridos} ${transcurridos === 1 ? "día" : "días"} ⚙️`;
           } else {
-            claseAlerta = "bg-[#991b1b] text-white font-bold";
-            textoAlerta = `Vendido hace ${transcurridos} días`;
+            claseAlerta = "bg-[#991b1b] text-white font-bold cursor-pointer hover:bg-[#7f1d1d]";
+            textoAlerta = `Vendido hace ${transcurridos} días ⚙️`;
           }
         }
 
@@ -428,34 +456,45 @@ function BloqueCuentaExcel({
               {formatearFecha(f.vence)}
             </td>
 
-            {/* 10. Alerta (Celda interactiva para Venta Directa si está Vacío) */}
+            {/* 10. Alerta (Celda interactiva para Venta Directa si está Vacío o Gestionar Venta si está vendida) */}
             <td
               onClick={() => {
-                if (esLibre) onIniciarVenta(f.unidadId, f.cupo);
+                if (esLibre) {
+                  onIniciarVenta(f.unidadId, f.cupo);
+                } else {
+                  onGestionarVenta(f);
+                }
               }}
               className={`border border-neutral-300 px-2 py-0.5 text-center ${claseAlerta}`}
-              title={esLibre ? "Haz clic para vender este perfil" : ""}
+              title={esLibre ? "Haz clic para vender este perfil" : "Haz clic para gestionar esta venta"}
             >
               {textoAlerta}
             </td>
 
-            {/* 11. Cliente */}
-            <td className="border border-neutral-300 px-2 py-0.5 font-medium text-neutral-900 dark:border-neutral-700 dark:text-white">
+            {/* 11. Cliente (Clic para abrir el menú de gestionar venta) */}
+            <td
+              onClick={() => {
+                if (!esLibre) onGestionarVenta(f);
+              }}
+              className={`border border-neutral-300 px-2 py-0.5 font-medium text-neutral-900 dark:border-neutral-700 dark:text-white ${
+                !esLibre ? "cursor-pointer hover:bg-neutral-100 hover:underline dark:hover:bg-neutral-800" : ""
+              }`}
+              title={!esLibre ? "Haz clic para renovar, editar o eliminar esta venta" : ""}
+            >
               <div className="flex items-center justify-between gap-1">
                 <span>{f.cliente ?? ""}</span>
                 {f.suscripcionId && (
-                  <form action={cancelarVentaConLimpiezaAction} className="inline">
-                    <input type="hidden" name="suscripcion_id" value={f.suscripcionId} />
-                    <input type="hidden" name="cliente_id" value={f.clienteId ?? ""} />
-                    <input type="hidden" name="slug" value={slug} />
-                    <button
-                      type="submit"
-                      title="Cancelar venta y liberar cupo (limpia cliente si no tiene otros servicios)"
-                      className="text-[10px] text-neutral-400 opacity-60 hover:opacity-100 hover:text-red-600"
-                    >
-                      🗑️
-                    </button>
-                  </form>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onGestionarVenta(f);
+                    }}
+                    title="Gestionar venta (renovar, editar o borrar)"
+                    className="text-[10px] text-neutral-400 opacity-60 hover:opacity-100 hover:text-neutral-900 dark:hover:text-white"
+                  >
+                    ⚙️
+                  </button>
                 )}
               </div>
             </td>
