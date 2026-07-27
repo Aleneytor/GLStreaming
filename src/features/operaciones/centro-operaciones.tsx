@@ -1,0 +1,236 @@
+"use client";
+
+import { useState } from "react";
+import type { DatosOperaciones, SuscripcionOperativa } from "./obtener-operaciones";
+import { BotonCopiarWhatsapp } from "./boton-copiar-whatsapp";
+import { ModalRenovacion } from "./modal-renovacion";
+import { BotonLimpieza } from "@/features/ventas/boton-limpieza";
+
+type TabTipo = "urgente" | "proximos" | "todos" | "limpieza";
+
+export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
+  const [busqueda, setBusqueda] = useState("");
+  const [tab, setTab] = useState<TabTipo>("urgente");
+  const [renovandoItem, setRenovandoItem] = useState<SuscripcionOperativa | null>(null);
+
+  const urgenteItems = [...datos.vencidos, ...datos.hoy];
+  const totalLimpiezas = datos.limpiezas.length;
+
+  // Filtrado dinámico por búsqueda
+  const q = busqueda.toLowerCase().trim();
+  const filtrar = (items: SuscripcionOperativa[]) => {
+    if (!q) return items;
+    return items.filter(
+      (item) =>
+        item.clienteNombre.toLowerCase().includes(q) ||
+        (item.clienteWhatsapp && item.clienteWhatsapp.includes(q)) ||
+        item.plataformaNombre.toLowerCase().includes(q) ||
+        item.productoNombre.toLowerCase().includes(q) ||
+        (item.perfilNombre && item.perfilNombre.toLowerCase().includes(q)),
+    );
+  };
+
+  const itemsTab =
+    tab === "urgente"
+      ? filtrar(urgenteItems)
+      : tab === "proximos"
+        ? filtrar(datos.proximos)
+        : tab === "todos"
+          ? filtrar(datos.todas)
+          : [];
+
+  return (
+    <div className="space-y-6">
+      {/* Buscador Universal e Indicadores Rápidos */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="🔍 Buscar cliente, teléfono, plataforma..."
+            className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm shadow-sm transition focus:border-neutral-900 focus:outline-none dark:border-neutral-800 dark:bg-neutral-900 dark:focus:border-white"
+          />
+          {busqueda && (
+            <button
+              type="button"
+              onClick={() => setBusqueda("")}
+              className="absolute right-3 top-3 text-xs text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+            >
+              Limpiar
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Pestañas / Filtros Rápidos */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 pb-3 dark:border-neutral-800">
+        <button
+          type="button"
+          onClick={() => setTab("urgente")}
+          className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition ${
+            tab === "urgente"
+              ? "bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-200"
+              : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
+          }`}
+        >
+          <span>🔴 Atención Urgente</span>
+          <span className="rounded-full bg-red-200 px-2 py-0.5 text-[11px] font-semibold dark:bg-red-900">
+            {urgenteItems.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setTab("proximos")}
+          className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition ${
+            tab === "proximos"
+              ? "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+              : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
+          }`}
+        >
+          <span>🟡 Próximos 5 Días</span>
+          <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[11px] font-semibold dark:bg-amber-900">
+            {datos.proximos.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setTab("todos")}
+          className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition ${
+            tab === "todos"
+              ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+              : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
+          }`}
+        >
+          <span>👥 Todos ({datos.todas.length})</span>
+        </button>
+
+        {totalLimpiezas > 0 && (
+          <button
+            type="button"
+            onClick={() => setTab("limpieza")}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition ${
+              tab === "limpieza"
+                ? "bg-amber-500 text-white"
+                : "bg-amber-50 text-amber-800 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300"
+            }`}
+          >
+            <span>🧹 Limpieza Pendiente</span>
+            <span className="rounded-full bg-amber-600 px-2 py-0.5 text-[11px] font-semibold text-white">
+              {totalLimpiezas}
+            </span>
+          </button>
+        )}
+      </div>
+
+      {/* Lista de suscripciones / tareas */}
+      {tab === "limpieza" ? (
+        <div className="space-y-3">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            Perfiles cancelados que deben limpiarse en la plataforma antes de volver al stock:
+          </p>
+          {datos.limpiezas.map((o) => (
+            <div
+              key={o.id}
+              className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/20"
+            >
+              <div>
+                <span className="font-semibold text-neutral-900 dark:text-white">
+                  {o.plataformaNombre}
+                </span>{" "}
+                <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                  · {o.cuentaAlias} · {o.unidadNombre}
+                </span>
+              </div>
+              <BotonLimpieza operacionId={o.id} />
+            </div>
+          ))}
+        </div>
+      ) : itemsTab.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
+          {busqueda ? `No hay resultados para "${busqueda}".` : "No hay clientes en este grupo."}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {itemsTab.map((item) => (
+            <div
+              key={item.id}
+              className="group flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm transition hover:border-neutral-300 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700"
+            >
+              {/* Info principal */}
+              <div className="min-w-0 flex-1 space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-neutral-900 dark:text-white">
+                    {item.clienteNombre}
+                  </span>
+                  {item.badge && (
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                        item.badge.color === "rojo"
+                          ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                          : item.badge.color === "amarillo"
+                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                            : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                      }`}
+                    >
+                      {item.badge.etiqueta}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                  <span className="font-medium text-neutral-700 dark:text-neutral-300">
+                    {item.plataformaNombre}
+                  </span>
+                  <span>·</span>
+                  <span>{item.productoNombre}</span>
+                  {item.perfilNombre && (
+                    <>
+                      <span>·</span>
+                      <span className="text-neutral-800 dark:text-neutral-200">
+                        {item.perfilNombre}
+                      </span>
+                    </>
+                  )}
+                  {item.renovacion && (
+                    <>
+                      <span>·</span>
+                      <span>Vence {item.renovacion}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Botones de acción rápida */}
+              <div className="flex items-center gap-2 pt-2 sm:pt-0">
+                <button
+                  type="button"
+                  onClick={() => setRenovandoItem(item)}
+                  className="rounded-xl bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100"
+                >
+                  💳 Renovar y Cobrar
+                </button>
+
+                <BotonCopiarWhatsapp suscripcionId={item.id} whatsapp={item.clienteWhatsapp} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal de Renovación si está activo */}
+      {renovandoItem && (
+        <ModalRenovacion
+          suscripcionId={renovandoItem.id}
+          clienteNombre={renovandoItem.clienteNombre}
+          productoNombre={renovandoItem.productoNombre}
+          renovacionActual={renovandoItem.renovacion}
+          bcv={datos.bcv}
+          onCerrar={() => setRenovandoItem(null)}
+        />
+      )}
+    </div>
+  );
+}

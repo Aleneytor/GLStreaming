@@ -1,0 +1,169 @@
+"use client";
+
+import { useActionState, useState } from "react";
+import { renovarAction, type EstadoAccion } from "@/features/ventas/acciones-suscripcion";
+
+function hoyCaracas(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Caracas",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+export function ModalRenovacion({
+  suscripcionId,
+  clienteNombre,
+  productoNombre,
+  renovacionActual,
+  bcv,
+  onCerrar,
+}: {
+  suscripcionId: string;
+  clienteNombre: string;
+  productoNombre: string;
+  renovacionActual: string | null;
+  bcv: number | null;
+  onCerrar: () => void;
+}) {
+  const [estado, accionRenovar, pendiente] = useActionState<EstadoAccion, FormData>(
+    renovarAction,
+    null,
+  );
+  const [moneda, setMoneda] = useState<"ves" | "usd">("ves");
+  const [monto, setMonto] = useState("");
+  const hoy = hoyCaracas();
+  const fechaDefecto = renovacionActual ?? hoy;
+
+  // Calculador de conversión orientativo mientras se escribe
+  const numMonto = Number(monto.replace(/\./g, "").replace(",", "."));
+  const esNumValido = Number.isFinite(numMonto) && numMonto > 0;
+  const equivalencia =
+    esNumValido && bcv
+      ? moneda === "ves"
+        ? `≈ $${(numMonto / bcv).toFixed(2)} USD`
+        : `≈ ${(numMonto * bcv).toFixed(2)} Bs (BCV)`
+      : null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold tracking-tight">Renovar y Cobrar</h3>
+            <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+              {clienteNombre} · {productoNombre}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onCerrar}
+            className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+          >
+            ✕
+          </button>
+        </div>
+
+        {estado?.error && (
+          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+            {estado.error}
+          </div>
+        )}
+
+        {estado?.ok ? (
+          <div className="mt-4 space-y-4 text-center">
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
+              ✓ {estado.ok}
+            </div>
+            <button
+              type="button"
+              onClick={onCerrar}
+              className="w-full rounded-xl bg-neutral-900 py-2.5 text-sm font-medium text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100"
+            >
+              Listo
+            </button>
+          </div>
+        ) : (
+          <form action={accionRenovar} className="mt-4 space-y-4">
+            <input type="hidden" name="suscripcion_id" value={suscripcionId} />
+
+            <div>
+              <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                Inicio del nuevo período
+              </label>
+              <input
+                type="date"
+                name="inicio"
+                defaultValue={fechaDefecto}
+                required
+                className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                Monto cobrado
+              </label>
+
+              <div className="mt-1 flex gap-2">
+                <input
+                  type="text"
+                  name="monto"
+                  value={monto}
+                  onChange={(e) => setMonto(e.target.value)}
+                  placeholder={moneda === "ves" ? "Ej: 250,00" : "Ej: 5,00"}
+                  className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
+                />
+                <select
+                  name="moneda"
+                  value={moneda}
+                  onChange={(e) => setMoneda(e.target.value as "ves" | "usd")}
+                  className="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm font-medium dark:border-neutral-700 dark:bg-neutral-800"
+                >
+                  <option value="ves">Bs (BCV)</option>
+                  <option value="usd">$ USD</option>
+                </select>
+              </div>
+
+              {equivalencia && (
+                <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+                  {equivalencia}
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                id="tardia"
+                name="tardia"
+                className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
+              />
+              <label htmlFor="tardia" className="text-xs text-neutral-600 dark:text-neutral-400">
+                Renovación tardía (arranca hoy aunque estuviera vencido)
+              </label>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={onCerrar}
+                className="rounded-xl px-4 py-2 text-xs font-medium text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={pendiente}
+                className="rounded-xl bg-neutral-900 px-4 py-2 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100"
+              >
+                {pendiente ? "Registrando…" : monto ? "Renovar y Cobrar" : "Renovar sin Cobro"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}

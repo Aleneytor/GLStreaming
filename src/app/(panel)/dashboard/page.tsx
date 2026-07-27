@@ -1,40 +1,9 @@
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
 import { MisVentasRevendedor } from "@/features/revendedor/mis-ventas";
+import { obtenerDatosOperaciones } from "@/features/operaciones/obtener-operaciones";
+import { CentroOperaciones } from "@/features/operaciones/centro-operaciones";
 
 export const dynamic = "force-dynamic";
-
-function Tarjeta({ titulo, valor }: { titulo: string; valor: string | number }) {
-  return (
-    <div className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-      <p className="text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-        {titulo}
-      </p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">{valor}</p>
-    </div>
-  );
-}
-
-async function VistaAdmin() {
-  const supabase = await createClient();
-
-  // Cada consulta pasa por RLS con la identidad del admin.
-  const [plataformas, productos, cuentas, clientes] = await Promise.all([
-    supabase.from("plataformas").select("*", { count: "exact", head: true }),
-    supabase.from("productos_plataforma").select("*", { count: "exact", head: true }),
-    supabase.from("cuentas").select("*", { count: "exact", head: true }),
-    supabase.from("clientes").select("*", { count: "exact", head: true }),
-  ]);
-
-  return (
-    <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <Tarjeta titulo="Plataformas" valor={plataformas.count ?? 0} />
-      <Tarjeta titulo="Productos" valor={productos.count ?? 0} />
-      <Tarjeta titulo="Cuentas" valor={cuentas.count ?? 0} />
-      <Tarjeta titulo="Clientes" valor={clientes.count ?? 0} />
-    </section>
-  );
-}
 
 export default async function DashboardPage({
   searchParams,
@@ -45,18 +14,32 @@ export default async function DashboardPage({
   const admin = esAdmin(usuario);
   const { q } = await searchParams;
 
+  const datosOperaciones = admin ? await obtenerDatosOperaciones() : null;
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">
-          {admin ? "Resumen" : "Mis ventas"}
-        </h1>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Hola, {usuario?.nombre}.
-        </p>
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">
+            {admin ? "Centro de Operaciones" : "Mis ventas"}
+          </h1>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            Hola, {usuario?.nombre}. {admin && "Gestión rápida de clientes y renovaciones."}
+          </p>
+        </div>
+
+        {admin && datosOperaciones?.bcv && (
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400">
+            Tasa BCV: <strong className="font-semibold text-neutral-900 dark:text-white">{datosOperaciones.bcv.toFixed(2)} Bs/$</strong>
+          </div>
+        )}
       </div>
 
-      {admin ? <VistaAdmin /> : <MisVentasRevendedor q={q} />}
+      {admin && datosOperaciones ? (
+        <CentroOperaciones datos={datosOperaciones} />
+      ) : (
+        <MisVentasRevendedor q={q} />
+      )}
     </div>
   );
 }

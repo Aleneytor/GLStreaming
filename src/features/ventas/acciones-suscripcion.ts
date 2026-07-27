@@ -23,7 +23,8 @@ const esquemaRenovar = z.object({
   suscripcion_id: z.string().uuid(),
   inicio: z.string().min(1, "Indica la fecha de inicio."),
   meses: z.coerce.number().int().min(1).max(12).default(1),
-  monto_ves: z.string().trim().optional().or(z.literal("")),
+  monto: z.string().trim().optional().or(z.literal("")),
+  moneda: z.enum(["ves", "usd"]).default("ves"),
   tardia: z.string().optional(),
 });
 
@@ -51,26 +52,29 @@ export async function renovarAction(
     suscripcion_id: formData.get("suscripcion_id"),
     inicio: formData.get("inicio"),
     meses: formData.get("meses") ?? 1,
-    monto_ves: formData.get("monto_ves") ?? "",
+    monto: formData.get("monto") ?? formData.get("monto_ves") ?? "",
+    moneda: formData.get("moneda") ?? "ves",
     tardia: formData.get("tardia") ?? undefined,
   });
   if (!parsed.success) return { error: parsed.error.issues[0]!.message };
 
   let monto: number | null = null;
-  if (parsed.data.monto_ves) {
+  if (parsed.data.monto) {
     // El usuario escribe "2.500,00" o "2500.00": ambas formas valen.
-    monto = Number(parsed.data.monto_ves.replace(/\./g, "").replace(",", "."));
+    monto = Number(parsed.data.monto.replace(/\./g, "").replace(",", "."));
     if (!Number.isFinite(monto) || monto <= 0) {
-      return { error: "El monto en bolívares debe ser un número mayor que cero." };
+      return { error: "El monto debe ser un número mayor que cero." };
     }
   }
+  const enDolares = parsed.data.moneda === "usd";
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("renovar_y_cobrar", {
     p_suscripcion_id: parsed.data.suscripcion_id,
     p_inicio: parsed.data.inicio,
     p_meses: parsed.data.meses,
-    p_monto_ves: monto,
+    p_monto_ves: enDolares ? undefined : monto ?? undefined,
+    p_monto_usd: enDolares ? monto ?? undefined : undefined,
     p_tardia: parsed.data.tardia === "on",
   });
   if (error) return { error: error.message };

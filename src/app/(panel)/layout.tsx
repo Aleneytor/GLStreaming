@@ -10,8 +10,6 @@ export default async function PanelLayout({
 }) {
   const usuario = await obtenerUsuarioActual();
 
-  // El middleware ya redirige sin sesión; esto cubre el caso de sesión válida
-  // sin fila en `usuarios` (o desactivada).
   if (!usuario) redirect("/login");
   if (!usuario.activo) {
     return (
@@ -25,19 +23,17 @@ export default async function PanelLayout({
 
   const items: ItemNav[] = esAdmin(usuario)
     ? [
-        { href: "/dashboard", etiqueta: "Inicio", icono: "🏠" },
-        { href: "/vencimientos", etiqueta: "Vencen", icono: "🔔" },
+        { href: "/dashboard", etiqueta: "Operaciones", icono: "⚡" },
         { href: "/inventario", etiqueta: "Inventario", icono: "📦" },
+        { href: "/vencimientos", etiqueta: "Vencimientos", icono: "🔔" },
         { href: "/clientes", etiqueta: "Clientes", icono: "👥" },
         {
           href: "/caja",
-          etiqueta: "Caja",
+          etiqueta: "Finanzas",
           icono: "💵",
-          // Todo el bloque financiero cuelga de aquí (ver el grupo (finanzas)).
           incluye: ["/cobros", "/egresos", "/cierre", "/tasas"],
         },
         { href: "/catalogo", etiqueta: "Catálogo", icono: "⚙️" },
-        // Migración masiva: tarea de escritorio (copiar/pegar del Excel).
         { href: "/migracion", etiqueta: "Importar", icono: "📥", soloEscritorio: true },
       ]
     : [{ href: "/dashboard", etiqueta: "Mis ventas", icono: "🧾" }];
@@ -69,7 +65,6 @@ export default async function PanelLayout({
 
       <div className="flex flex-1">
         <NavPanel items={items} />
-        {/* pb-20 deja aire para la barra inferior en móvil */}
         <main className="min-w-0 flex-1 px-4 pb-20 pt-5 md:pb-8">{children}</main>
       </div>
     </div>

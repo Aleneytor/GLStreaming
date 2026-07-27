@@ -15,7 +15,8 @@ const esquema = z.object({
   cuenta_id: z.string().uuid(),
   modalidad_id: z.string().uuid("Elige la modalidad."),
   unidad_id: z.string().uuid().optional().or(z.literal("")),
-  monto_ves: z.string().trim().optional().or(z.literal("")),
+  monto: z.string().trim().optional().or(z.literal("")),
+  moneda: z.enum(["ves", "usd"]).default("ves"),
   vendedor_id: z.string().uuid().optional().or(z.literal("")),
   inicio: z.string().min(1, "Indica la fecha de inicio."),
   cantidad_periodos: z.coerce.number().int().min(1).max(12).default(1),
@@ -41,7 +42,8 @@ export async function venderAction(
     cuenta_id: formData.get("cuenta_id"),
     modalidad_id: formData.get("modalidad_id"),
     unidad_id: formData.get("unidad_id") ?? "",
-    monto_ves: formData.get("monto_ves") ?? "",
+    monto: formData.get("monto") ?? formData.get("monto_ves") ?? "",
+    moneda: formData.get("moneda") ?? "ves",
     vendedor_id: formData.get("vendedor_id") ?? "",
     inicio: formData.get("inicio"),
     cantidad_periodos: formData.get("cantidad_periodos") ?? 1,
@@ -52,16 +54,18 @@ export async function venderAction(
   }
   const d = parsed.data;
 
-  // El hecho fuente es el dinero recibido en bolívares; el USD lo deriva la
-  // base con la BCV que congela. Dejarlo en blanco es válido: la venta queda
-  // registrada y el cobro pendiente.
+  // El hecho fuente es el dinero recibido; se guarda en bolívares. El usuario
+  // puede indicarlo en Bs o en USD (la base traduce a Bs con la BCV que
+  // congela). Dejarlo en blanco es válido: la venta queda registrada y el cobro
+  // pendiente.
   let monto: number | null = null;
-  if (d.monto_ves) {
-    monto = Number(d.monto_ves.replace(/\./g, "").replace(",", "."));
+  if (d.monto) {
+    monto = Number(d.monto.replace(/\./g, "").replace(",", "."));
     if (!Number.isFinite(monto) || monto <= 0) {
-      return { error: "El monto en bolívares debe ser un número mayor que cero." };
+      return { error: "El monto debe ser un número mayor que cero." };
     }
   }
+  const enDolares = d.moneda === "usd";
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("vender_unidad", {
@@ -72,7 +76,8 @@ export async function venderAction(
     p_cliente_nombre: d.cliente_nombre,
     p_cliente_whatsapp: d.cliente_whatsapp || null,
     p_nombre_perfil: d.nombre_perfil || null,
-    p_monto_ves: monto,
+    p_monto_ves: enDolares ? undefined : monto ?? undefined,
+    p_monto_usd: enDolares ? monto ?? undefined : undefined,
     p_inicio: d.inicio,
     p_cantidad_periodos: d.cantidad_periodos,
     p_vendedor_id: d.vendedor_id || null,

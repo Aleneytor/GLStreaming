@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { cobrarAction, type EstadoCobro } from "./cobros";
+import { CampoMonto, type Moneda } from "./campo-monto";
 
 /**
  * Registrar el cobro de un período que quedó pendiente.
@@ -28,6 +29,7 @@ export function BotonCobrar({
     null,
   );
   const [monto, setMonto] = useState(sugerencia ? sugerencia.toFixed(2) : "");
+  const [moneda, setMoneda] = useState<Moneda>("ves");
 
   if (bloqueado) {
     return (
@@ -37,24 +39,19 @@ export function BotonCobrar({
     );
   }
 
-  const numero = Number(monto.replace(/\./g, "").replace(",", "."));
-  const usdAprox =
-    bcv && bcv > 0 && Number.isFinite(numero) && numero > 0 ? numero / bcv : null;
-
   return (
     <form action={action} className="space-y-2">
       <input type="hidden" name="periodo_id" value={periodoId} />
       <input type="hidden" name="volver_a" value={volverA} />
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          name="monto_ves"
-          inputMode="decimal"
+      <div className="flex flex-wrap items-start gap-2">
+        <CampoMonto
+          monto={monto}
+          setMonto={setMonto}
+          moneda={moneda}
+          setMoneda={setMoneda}
+          bcv={bcv}
           required
-          value={monto}
-          onChange={(e) => setMonto(e.target.value)}
-          placeholder="Bs recibidos"
-          aria-label="Bolívares recibidos"
-          className="w-36 rounded-lg border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+          className="w-full sm:w-auto sm:min-w-[16rem]"
         />
         <input
           name="referencia"
@@ -69,11 +66,6 @@ export function BotonCobrar({
           {pendiente ? "Registrando…" : "Registrar cobro"}
         </button>
       </div>
-      {usdAprox !== null && (
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          ≈ {usdAprox.toFixed(2)} USD a {bcv?.toLocaleString("es-VE")} Bs/USD
-        </p>
-      )}
       {estado?.error && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {estado.error}

@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
+import { CampoMonto, type Moneda } from "@/features/finanzas/campo-monto";
 import { venderAction, type EstadoVenta } from "./actions";
 
 const campo =
@@ -33,12 +34,8 @@ export function FormVenta({
   /** BCV vigente: solo para mostrar el equivalente mientras se escribe. */
   bcv?: number | null;
 }) {
-  const [montoVes, setMontoVes] = useState("");
-  const montoNumero = Number(montoVes.replace(/\./g, "").replace(",", "."));
-  const usdAprox =
-    bcv && bcv > 0 && Number.isFinite(montoNumero) && montoNumero > 0
-      ? montoNumero / bcv
-      : null;
+  const [monto, setMonto] = useState("");
+  const [moneda, setMoneda] = useState<Moneda>("ves");
 
   const [estado, action, pendiente] = useActionState<EstadoVenta, FormData>(
     venderAction,
@@ -138,19 +135,14 @@ export function FormVenta({
       )}
 
       {/* --- Precio, meses, inicio --- */}
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <label htmlFor="monto_ves" className="mb-1.5 block text-sm font-medium">
-            Bs recibidos
-          </label>
-          <input
-            id="monto_ves"
-            name="monto_ves"
-            inputMode="decimal"
-            placeholder="2.500,00"
-            value={montoVes}
-            onChange={(e) => setMontoVes(e.target.value)}
-            className={campo}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="sm:col-span-1">
+          <CampoMonto
+            monto={monto}
+            setMonto={setMonto}
+            moneda={moneda}
+            setMoneda={setMoneda}
+            bcv={bcv}
           />
         </div>
         <div>
@@ -211,15 +203,10 @@ export function FormVenta({
       </div>
 
       <p className="rounded-lg bg-neutral-100 px-3 py-2 text-xs text-neutral-600 dark:bg-neutral-900 dark:text-neutral-400">
-        {usdAprox !== null && (
-          <>
-            ≈ {usdAprox.toFixed(2)} USD a {bcv?.toLocaleString("es-VE")} Bs/USD.{" "}
-          </>
-        )}
-        Si dejas los bolívares en blanco, la venta queda registrada y el cobro
+        Si dejas el monto en blanco, la venta queda registrada y el cobro
         pendiente en «Por cobrar». La fecha de renovación se calcula por mes
         calendario. Al confirmar se congelan la BCV y la paralela de este
-        momento: ninguna publicación posterior las recalcula.
+        momento.
       </p>
 
       {estado?.error && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { CampoMonto, type Moneda } from "@/features/finanzas/campo-monto";
 import {
   cambiarEstadoAction,
   cancelarAction,
@@ -61,17 +62,10 @@ export function PanelSuscripcion({
   );
 
   const [confirmarCancelar, setConfirmarCancelar] = useState(false);
-  const [montoVes, setMontoVes] = useState("");
+  const [monto, setMonto] = useState("");
+  const [moneda, setMoneda] = useState<Moneda>("ves");
   const cerrada = estado === "cancelada" || estado === "finalizada";
   const hoy = new Date().toISOString().slice(0, 10);
-
-  // Equivalente en USD del monto que se está escribiendo. Es solo una ayuda
-  // visual: el valor que se congela lo calcula la base con su propia tasa.
-  const montoNumero = Number(montoVes.replace(/\./g, "").replace(",", "."));
-  const usdAprox =
-    bcv && bcv > 0 && Number.isFinite(montoNumero) && montoNumero > 0
-      ? montoNumero / bcv
-      : null;
 
   if (cerrada) {
     return (
@@ -87,7 +81,7 @@ export function PanelSuscripcion({
       <form action={accionRenovar} className="space-y-2">
         <input type="hidden" name="suscripcion_id" value={suscripcionId} />
         <p className="text-sm font-medium">Renovar y cobrar</p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <input
             name="inicio"
             type="date"
@@ -103,27 +97,20 @@ export function PanelSuscripcion({
               </option>
             ))}
           </select>
-          <input
-            name="monto_ves"
-            inputMode="decimal"
-            placeholder="Bs recibidos"
-            aria-label="Bolívares recibidos"
-            value={montoVes}
-            onChange={(e) => setMontoVes(e.target.value)}
-            className={campo}
-          />
         </div>
-        {usdAprox !== null && (
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            ≈ {usdAprox.toFixed(2)} USD a {bcv?.toLocaleString("es-VE")} Bs/USD
-          </p>
-        )}
+        <CampoMonto
+          monto={monto}
+          setMonto={setMonto}
+          moneda={moneda}
+          setMoneda={setMoneda}
+          bcv={bcv}
+        />
         <label className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
           <input type="checkbox" name="tardia" />
           Pagó tarde: empezar en la fecha real del pago
         </label>
         <button type="submit" disabled={renovando} className={btnPrimario}>
-          {renovando ? "…" : montoVes ? "Renovar y cobrar" : "Renovar sin cobro"}
+          {renovando ? "…" : monto ? "Renovar y cobrar" : "Renovar sin cobro"}
         </button>
         <p className="text-xs text-neutral-500 dark:text-neutral-400">
           Si dejas los bolívares en blanco, la renovación queda registrada y el
