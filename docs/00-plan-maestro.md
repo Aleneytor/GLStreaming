@@ -300,6 +300,20 @@ muestra métricas claras, tabla densa en escritorio y tarjetas por fila en móvi
 la acción final queda visible en una barra sticky con el producto, modalidad y
 cantidad exacta que se importará.
 
+El bloque financiero también se reorganizó alrededor de preguntas reales del
+negocio. La navegación dejó los rótulos contables ambiguos y ahora separa:
+`Resumen diario` (dinero que entró/salió), `Pagos pendientes` (servicios ya
+entregados cuyo cobro no se registró), `Pagos y gastos` (salidas), `Resumen
+mensual` (ganancia estimada) y `Tasas de cambio`. Cada vista tiene una cabecera
+propia, métricas principales y explicaciones breves antes del detalle técnico.
+
+El antiguo “Cierre mensual” se presenta como `Resumen mensual`. Las cifras en
+vivo cambian con la operación; guardar un borrador conserva una revisión
+provisional; confirmar el mes congela una versión oficial, pero **no mueve
+dinero, no cambia ventas y no recalcula tasas**. Si después falta un dato, se
+crea una versión corregida y la anterior se conserva. La lógica SQL y las reglas
+de auditoría no cambiaron: solo se tradujeron y jerarquizaron en la interfaz.
+
 Validación acumulada: **148 pruebas unitarias**, **15 suites SQL** y typecheck en verde; el último
 build de producción también pasó. PostgreSQL real contiene controles con Gmail para ambas
 variantes de Spotify. Queda pendiente una revisión visual manual completa en
