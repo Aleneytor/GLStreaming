@@ -313,6 +313,12 @@ export default async function PlataformaPage({
     })
     .filter((g) => g.cuentas.length > 0);
 
+  const { data: usuarios } = await supabase
+    .from("usuarios")
+    .select("id, nombre, rol")
+    .eq("activo", true)
+    .order("nombre");
+
   return (
     <div className="w-full space-y-4">
       <div>
@@ -360,7 +366,7 @@ export default async function PlataformaPage({
             <h2 className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
               {g.nombre} ({g.cuentas.length} {g.cuentas.length === 1 ? "cuenta" : "cuentas"})
             </h2>
-            <TablaInventario cuentas={g.cuentas} slug={slug} />
+            <TablaInventario cuentas={g.cuentas} slug={slug} vendedores={usuarios ?? []} />
           </section>
         ))
       )}

@@ -3,20 +3,32 @@
 import { useActionState } from "react";
 import { venderUnidadRapidaAction } from "./actions";
 
+export type VendedorOp = { id: string; nombre: string; rol: string };
+
 export function ModalVentaRapida({
   cuentaId,
   unidadId,
   nombrePerfil,
   slug,
+  vendedores = [],
   onCerrar,
 }: {
   cuentaId: string;
   unidadId: string | null;
   nombrePerfil: string;
   slug: string;
+  vendedores?: VendedorOp[];
   onCerrar: () => void;
 }) {
   const [estado, action, pendiente] = useActionState(venderUnidadRapidaAction, null);
+
+  const hoyIso = new Date().toISOString().split("T")[0];
+  const esNombreGenerico =
+    !nombrePerfil ||
+    nombrePerfil.toLowerCase().startsWith("perfil ") ||
+    nombrePerfil === "Vacío (+ Vender)" ||
+    nombrePerfil === "Cuenta Completa";
+  const clienteInicial = esNombreGenerico ? "" : nombrePerfil;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
@@ -24,7 +36,7 @@ export function ModalVentaRapida({
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
-              ⚡ Registrar Venta Directa
+              ⚡ Registrar Venta Directa / Revendedor
             </h3>
             <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400">
               {nombrePerfil}
@@ -51,14 +63,15 @@ export function ModalVentaRapida({
             <input
               name="cliente_nombre"
               required
-              placeholder="Ej. Juan Pérez"
+              defaultValue={clienteInicial}
+              placeholder="Ej. Luis Martínez"
               className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
             />
           </div>
 
           <div>
             <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-              WhatsApp / Teléfono
+              WhatsApp / Teléfono (Opcional)
             </label>
             <input
               name="cliente_whatsapp"
@@ -67,20 +80,52 @@ export function ModalVentaRapida({
             />
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                Fecha de Inicio / Venta *
+              </label>
+              <input
+                type="date"
+                name="fecha_inicio"
+                required
+                defaultValue={hoyIso}
+                className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                Precio Comercial ($ USD) *
+              </label>
+              <input
+                name="precio_usd"
+                required
+                inputMode="decimal"
+                placeholder="2.50"
+                defaultValue="2.50"
+                className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-mono text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+              />
+            </div>
+          </div>
+
           <div>
             <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-              Precio Comercial ($ USD) *
+              Revendedor / Vendedor
             </label>
-            <input
-              name="precio_usd"
-              required
-              inputMode="decimal"
-              placeholder="2.50"
-              defaultValue="2.50"
-              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-mono text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-            />
+            <select
+              name="vendedor_id"
+              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+            >
+              <option value="">Yo (Administrador)</option>
+              {vendedores.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.nombre} ({v.rol})
+                </option>
+              ))}
+            </select>
             <p className="mt-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-              El equivalente en Bs se calcula automáticamente a tasa BCV y se suma a la Caja.
+              Indica si la venta la realizó un revendedor (ej. Gabriel Nadales) para registrar sus comisiones.
             </p>
           </div>
 

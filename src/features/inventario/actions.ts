@@ -366,6 +366,8 @@ export async function venderUnidadRapidaAction(
   const clienteNombre = String(formData.get("cliente_nombre") ?? "").trim();
   const clienteWhatsapp = String(formData.get("cliente_whatsapp") ?? "").trim();
   const precioUsdTxt = String(formData.get("precio_usd") ?? "").trim();
+  const fechaInicioTxt = String(formData.get("fecha_inicio") ?? "").trim();
+  const vendedorId = String(formData.get("vendedor_id") ?? "").trim() || null;
   const slug = String(formData.get("slug") ?? "");
 
   if (!cuentaId || !clienteNombre || !precioUsdTxt) {
@@ -386,6 +388,8 @@ export async function venderUnidadRapidaAction(
     p_cliente_whatsapp: clienteWhatsapp || null,
     p_precio_usd: precioUsd,
     p_monto_usd: precioUsd,
+    p_inicio: fechaInicioTxt || null,
+    p_vendedor_id: vendedorId,
   });
 
   if (error) return { error: error.message };
@@ -405,12 +409,14 @@ export async function editarVentaDirectaAction(
   const usuario = await obtenerUsuarioActual();
   if (!esAdmin(usuario)) return { error: "No autorizado." };
 
+  const suscripcionId = String(formData.get("suscripcion_id") ?? "");
   const unidadId = String(formData.get("unidad_id") ?? "");
   const clienteId = String(formData.get("cliente_id") ?? "");
   const clienteNombre = String(formData.get("cliente_nombre") ?? "").trim();
   const clienteWhatsapp = String(formData.get("cliente_whatsapp") ?? "").trim();
   const nombrePerfil = String(formData.get("nombre_perfil") ?? "").trim();
   const pinPerfil = String(formData.get("pin_perfil") ?? "").trim();
+  const vendedorId = String(formData.get("vendedor_id") ?? "").trim() || null;
   const slug = String(formData.get("slug") ?? "");
 
   const supabase = await createClient();
@@ -420,6 +426,12 @@ export async function editarVentaDirectaAction(
       nombre: clienteNombre,
       whatsapp_original: clienteWhatsapp || null,
     }).eq("id", clienteId);
+  }
+
+  if (suscripcionId && vendedorId) {
+    await supabase.from("suscripciones").update({
+      vendedor_id: vendedorId,
+    }).eq("id", suscripcionId);
   }
 
   if (unidadId) {

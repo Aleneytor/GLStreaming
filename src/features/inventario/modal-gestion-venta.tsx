@@ -15,6 +15,7 @@ export function ModalGestionVenta({
   vence,
   precioUsd,
   slug,
+  vendedores = [],
   onCerrar,
 }: {
   suscripcionId: string;
@@ -27,6 +28,7 @@ export function ModalGestionVenta({
   vence: string | null;
   precioUsd: number | null;
   slug: string;
+  vendedores?: { id: string; nombre: string; rol: string }[];
   onCerrar: () => void;
 }) {
   const [modo, setModo] = useState<"ver" | "renovar" | "eliminar">("ver");
@@ -125,6 +127,23 @@ export function ModalGestionVenta({
                   className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-mono text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                Revendedor / Vendedor
+              </label>
+              <select
+                name="vendedor_id"
+                className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+              >
+                <option value="">Mantener actual / Administrador</option>
+                {vendedores.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.nombre} ({v.rol})
+                  </option>
+                ))}
+              </select>
             </div>
 
             {estadoEdicion?.error && (

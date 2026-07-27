@@ -95,7 +95,15 @@ function formatearFecha(fecha: string | null): string {
   return `${Number(partes[2])}/${Number(partes[1])}/${partes[0]}`;
 }
 
-export function TablaInventario({ cuentas, slug }: { cuentas: BloqueCuenta[]; slug: string }) {
+export function TablaInventario({
+  cuentas,
+  slug,
+  vendedores = [],
+}: {
+  cuentas: BloqueCuenta[];
+  slug: string;
+  vendedores?: { id: string; nombre: string; rol: string }[];
+}) {
   const [cuentasState, setCuentasState] = useState<BloqueCuenta[]>(cuentas);
   const [cuentaEditando, setCuentaEditando] = useState<BloqueCuenta | null>(null);
   const [arrastrandoIndex, setArrastrandoIndex] = useState<number | null>(null);
@@ -264,6 +272,7 @@ export function TablaInventario({ cuentas, slug }: { cuentas: BloqueCuenta[]; sl
           unidadId={ventaTarget.unidadId}
           nombrePerfil={ventaTarget.nombrePerfil}
           slug={slug}
+          vendedores={vendedores}
           onCerrar={() => setVentaTarget(null)}
         />
       )}
@@ -281,6 +290,7 @@ export function TablaInventario({ cuentas, slug }: { cuentas: BloqueCuenta[]; sl
           vence={formatearFecha(gestionVentaTarget.vence)}
           precioUsd={gestionVentaTarget.ingreso}
           slug={slug}
+          vendedores={vendedores}
           onCerrar={() => setGestionVentaTarget(null)}
         />
       )}
