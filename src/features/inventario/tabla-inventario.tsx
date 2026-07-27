@@ -11,6 +11,7 @@ import {
 import { ModalVentaRapida } from "./modal-venta-rapida";
 import type { VendedorOp } from "./modal-venta-rapida";
 import { ModalRenovarProveedorRapido } from "./modal-renovar-proveedor";
+import { ModalRenovarProveedorLote } from "./modal-renovar-proveedor-lote";
 import { ModalGestionVenta } from "./modal-gestion-venta";
 
 export type CupoFila = {
@@ -47,6 +48,7 @@ export type BloqueCuenta = {
   alias: string | null;
   notas: string | null;
   cuentaEstado: string;
+  proveedorId: string | null;
   proveedor: string | null;
   costo: number | null;
   renovarProveedor: string | null;
@@ -170,7 +172,56 @@ export function TablaInventario({
     cuentaId: string;
     correoCuenta: string;
     costoActual: number | null;
+    renovarProveedor: string | null;
   } | null>(null);
+
+  const [modoSeleccionPagos, setModoSeleccionPagos] = useState(false);
+  const [cuentasPagoSeleccionadas, setCuentasPagoSeleccionadas] = useState<string[]>([]);
+  const [mostrarPagoLote, setMostrarPagoLote] = useState(false);
+
+  const cuentasRenovables = cuentasState.filter(
+    (cuenta) => Boolean(cuenta.proveedorId && cuenta.renovarProveedor),
+  );
+  const proveedoresRenovables = Array.from(
+    cuentasRenovables.reduce((mapa, cuenta) => {
+      if (!cuenta.proveedorId) return mapa;
+      const actual = mapa.get(cuenta.proveedorId);
+      mapa.set(cuenta.proveedorId, {
+        id: cuenta.proveedorId,
+        nombre: cuenta.proveedor ?? "Sin nombre",
+        cantidad: (actual?.cantidad ?? 0) + 1,
+      });
+      return mapa;
+    }, new Map<string, { id: string; nombre: string; cantidad: number }>()),
+  ).map(([, proveedor]) => proveedor);
+  const cuentasSeleccionadas = cuentasState.filter((cuenta) =>
+    cuentasPagoSeleccionadas.includes(cuenta.cuentaId),
+  );
+  const proveedorSeleccionadoId = cuentasSeleccionadas[0]?.proveedorId ?? null;
+
+  const puedeSeleccionarse = (cuenta: BloqueCuenta) =>
+    Boolean(
+      cuenta.proveedorId &&
+        cuenta.renovarProveedor &&
+        (!proveedorSeleccionadoId || cuenta.proveedorId === proveedorSeleccionadoId),
+    );
+
+  const alternarCuentaPago = (cuenta: BloqueCuenta) => {
+    if (!puedeSeleccionarse(cuenta)) return;
+    setCuentasPagoSeleccionadas((actuales) =>
+      actuales.includes(cuenta.cuentaId)
+        ? actuales.filter((id) => id !== cuenta.cuentaId)
+        : [...actuales, cuenta.cuentaId],
+    );
+  };
+
+  const seleccionarProveedorCompleto = (proveedorId: string) => {
+    setCuentasPagoSeleccionadas(
+      cuentasRenovables
+        .filter((cuenta) => cuenta.proveedorId === proveedorId)
+        .map((cuenta) => cuenta.cuentaId),
+    );
+  };
 
   const tienePagador = cuentasState.some((c) => Boolean(c.pagador)) || slug.includes("spotify");
 
@@ -194,6 +245,64 @@ export function TablaInventario({
 
   return (
     <div className="space-y-4">
+      {cuentasRenovables.length > 0 && (
+        <div className="rounded-xl border border-purple-200 bg-purple-50 p-3 dark:border-purple-900 dark:bg-purple-950/30">
+          {!modoSeleccionPagos ? (
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold text-purple-950 dark:text-purple-100">Pago a proveedor por lote</p>
+                <p className="text-[11px] text-purple-700 dark:text-purple-300">Selecciona varias cuentas y registra una sola fecha de pago.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModoSeleccionPagos(true)}
+                className="shrink-0 rounded-lg bg-purple-600 px-3 py-2 text-xs font-semibold text-white"
+              >
+                Seleccionar cuentas
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={proveedorSeleccionadoId ?? ""}
+                  onChange={(event) => seleccionarProveedorCompleto(event.target.value)}
+                  className="min-w-0 flex-1 rounded-lg border border-purple-300 bg-white px-3 py-2 text-xs dark:border-purple-800 dark:bg-neutral-900"
+                >
+                  <option value="" disabled>Seleccionar todas por proveedor…</option>
+                  {proveedoresRenovables.map((proveedor) => (
+                    <option key={proveedor.id} value={proveedor.id}>
+                      {proveedor.nombre} ({proveedor.cantidad})
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={cuentasSeleccionadas.length === 0}
+                  onClick={() => setMostrarPagoLote(true)}
+                  className="rounded-lg bg-purple-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"
+                >
+                  Continuar ({cuentasSeleccionadas.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModoSeleccionPagos(false);
+                    setCuentasPagoSeleccionadas([]);
+                  }}
+                  className="rounded-lg border border-purple-300 px-3 py-2 text-xs dark:border-purple-800"
+                >
+                  Cancelar
+                </button>
+              </div>
+              <p className="text-[11px] text-purple-700 dark:text-purple-300">
+                Puedes desmarcar cuentas después de seleccionar el proveedor completo.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* VISTA MÓVIL (Tarjetas apiladas por cuenta) */}
       <div className="block space-y-4 md:hidden">
         {cuentasState.map((cta, index) => (
@@ -202,6 +311,10 @@ export function TablaInventario({
             cta={cta}
             numCuenta={index + 1}
             mostrarPagador={slug === "spotify"}
+            modoSeleccionPago={modoSeleccionPagos}
+            seleccionada={cuentasPagoSeleccionadas.includes(cta.cuentaId)}
+            seleccionHabilitada={puedeSeleccionarse(cta)}
+            onSeleccionarPago={() => alternarCuentaPago(cta)}
             onEditar={() => setCuentaEditando(cta)}
             onIniciarVenta={(unidadId, nombrePerfil) =>
               setVentaTarget({ cuentaId: cta.cuentaId, unidadId, nombrePerfil })
@@ -212,6 +325,7 @@ export function TablaInventario({
                 cuentaId: cta.cuentaId,
                 correoCuenta: cta.correo,
                 costoActual: cta.costo,
+                renovarProveedor: cta.renovarProveedor,
               })
             }
           />
@@ -296,6 +410,10 @@ export function TablaInventario({
                 index={index}
                 numCuenta={index + 1}
                 tienePagador={tienePagador}
+                modoSeleccionPago={modoSeleccionPagos}
+                seleccionada={cuentasPagoSeleccionadas.includes(cta.cuentaId)}
+                seleccionHabilitada={puedeSeleccionarse(cta)}
+                onSeleccionarPago={() => alternarCuentaPago(cta)}
                 isTarget={targetIndex === index}
                 onEditar={() => setCuentaEditando(cta)}
                 onIniciarVenta={(unidadId, nombrePerfil) =>
@@ -307,6 +425,7 @@ export function TablaInventario({
                     cuentaId: cta.cuentaId,
                     correoCuenta: cta.correo,
                     costoActual: cta.costo,
+                    renovarProveedor: cta.renovarProveedor,
                   })
                 }
                 onDragStart={() => setArrastrandoIndex(index)}
@@ -371,8 +490,27 @@ export function TablaInventario({
           cuentaId={renovarProvTarget.cuentaId}
           correoCuenta={renovarProvTarget.correoCuenta}
           costoActual={renovarProvTarget.costoActual}
+          renovarProveedor={renovarProvTarget.renovarProveedor}
           slug={slug}
           onCerrar={() => setRenovarProvTarget(null)}
+        />
+      )}
+
+      {mostrarPagoLote && cuentasSeleccionadas.length > 0 && (
+        <ModalRenovarProveedorLote
+          cuentas={cuentasSeleccionadas.map((cuenta) => ({
+            cuentaId: cuenta.cuentaId,
+            correo: cuenta.correo,
+            proveedor: cuenta.proveedor,
+            costo: cuenta.costo,
+            renovarProveedor: cuenta.renovarProveedor!,
+          }))}
+          slug={slug}
+          onCerrar={() => {
+            setMostrarPagoLote(false);
+            setModoSeleccionPagos(false);
+            setCuentasPagoSeleccionadas([]);
+          }}
         />
       )}
     </div>
@@ -385,6 +523,10 @@ function BloqueCuentaExcel({
   index,
   numCuenta,
   tienePagador,
+  modoSeleccionPago,
+  seleccionada,
+  seleccionHabilitada,
+  onSeleccionarPago,
   isTarget,
   onEditar,
   onIniciarVenta,
@@ -399,6 +541,10 @@ function BloqueCuentaExcel({
   index: number;
   numCuenta: number;
   tienePagador: boolean;
+  modoSeleccionPago: boolean;
+  seleccionada: boolean;
+  seleccionHabilitada: boolean;
+  onSeleccionarPago: () => void;
   isTarget: boolean;
   onEditar: () => void;
   onIniciarVenta: (unidadId: string | null, nombrePerfil: string) => void;
@@ -491,7 +637,19 @@ function BloqueCuentaExcel({
 
             {/* 1. N° */}
             <td className="border border-neutral-300 bg-neutral-100 px-1.5 py-0.5 text-center font-bold text-neutral-700 align-middle dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
-              {f.slotNumber}
+              <span className="inline-flex items-center gap-1">
+                {modoSeleccionPago && esPrimera && (
+                  <input
+                    type="checkbox"
+                    checked={seleccionada}
+                    disabled={!seleccionHabilitada && !seleccionada}
+                    onChange={onSeleccionarPago}
+                    aria-label={`Seleccionar pago de ${cta.correo}`}
+                    className="size-3 accent-purple-600"
+                  />
+                )}
+                {f.slotNumber}
+              </span>
             </td>
 
             {/* 2. Correo (Fusionado) */}
@@ -728,6 +886,10 @@ function TarjetaCuentaMovil({
   cta,
   numCuenta,
   mostrarPagador,
+  modoSeleccionPago,
+  seleccionada,
+  seleccionHabilitada,
+  onSeleccionarPago,
   onEditar,
   onIniciarVenta,
   onGestionarVenta,
@@ -736,6 +898,10 @@ function TarjetaCuentaMovil({
   cta: BloqueCuenta;
   numCuenta: number;
   mostrarPagador: boolean;
+  modoSeleccionPago: boolean;
+  seleccionada: boolean;
+  seleccionHabilitada: boolean;
+  onSeleccionarPago: () => void;
   onEditar: () => void;
   onIniciarVenta: (unidadId: string | null, nombrePerfil: string) => void;
   onGestionarVenta: (fila: CupoFila) => void;
@@ -751,6 +917,16 @@ function TarjetaCuentaMovil({
       {/* Encabezado de la cuenta */}
       <div className="flex items-center justify-between border-b border-neutral-200 pb-2 dark:border-neutral-800">
         <div className="flex items-center gap-2">
+          {modoSeleccionPago && (
+            <input
+              type="checkbox"
+              checked={seleccionada}
+              disabled={!seleccionHabilitada && !seleccionada}
+              onChange={onSeleccionarPago}
+              aria-label={`Seleccionar pago de ${cta.correo}`}
+              className="size-5 accent-purple-600"
+            />
+          )}
           <span className="rounded bg-indigo-100 px-2 py-0.5 font-mono text-xs font-bold text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200">
             #{numCuenta}
           </span>
@@ -786,6 +962,17 @@ function TarjetaCuentaMovil({
           {mostrarCredenciales ? "Ocultar clave" : "Ver clave"}
         </button>
       </div>
+
+      {cta.renovarProveedor && (
+        <button
+          type="button"
+          onClick={onRenovarProveedor}
+          className="mt-2 flex min-h-10 w-full items-center justify-between rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-left text-xs font-semibold text-purple-900 dark:border-purple-900 dark:bg-purple-950/30 dark:text-purple-200"
+        >
+          <span>Pago al proveedor</span>
+          <span className="font-mono">{formatearFecha(cta.renovarProveedor)}</span>
+        </button>
+      )}
 
       {mostrarPagador && (
         <div className="mt-2 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-2 text-xs dark:border-violet-900 dark:bg-violet-950/30">

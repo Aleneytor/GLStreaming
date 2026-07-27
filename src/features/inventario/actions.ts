@@ -667,10 +667,14 @@ export async function registrarPagoProveedorRapidoAction(
 
   const cuentaId = String(formData.get("cuenta_id") ?? "");
   const costoUsdtTxt = String(formData.get("costo_usdt") ?? "").trim();
-  const fechaInicio = String(formData.get("fecha_inicio") ?? "").trim();
+  const inicioCiclo = String(formData.get("inicio_ciclo") ?? "").trim();
+  const fechaPago = String(formData.get("fecha_pago") ?? "").trim();
+  const referencia = String(formData.get("referencia") ?? "").trim();
   const slug = String(formData.get("slug") ?? "");
 
   if (!cuentaId || !costoUsdtTxt) return { error: "Indica el monto pagado al proveedor." };
+  if (!inicioCiclo) return { error: "La cuenta no tiene una fecha de renovación válida." };
+  if (!fechaPago) return { error: "Indica la fecha real del pago." };
 
   const costoUsdt = Number(costoUsdtTxt.replace(",", "."));
   if (!Number.isFinite(costoUsdt) || costoUsdt < 0) {
@@ -679,18 +683,77 @@ export async function registrarPagoProveedorRapidoAction(
 
   const supabase = await createClient();
 
-  const { error } = await supabase.rpc("registrar_ciclo_proveedor", {
+  const { error } = await supabase.rpc("registrar_renovacion_y_pago", {
     p_cuenta_id: cuentaId,
     p_costo_usdt: costoUsdt,
-    p_inicio: fechaInicio || new Date().toISOString().slice(0, 10),
+    p_inicio: inicioCiclo,
     p_dia_ancla: null,
-    p_referencia: "pago_rapido_inventario",
+    p_referencia: referencia || "pago_rapido_inventario",
+    p_pagar: true,
+    p_fecha_pago: fechaPago,
   });
 
   if (error) return { error: error.message };
 
   revalidatePath(slug ? `/inventario/${slug}` : "/inventario");
   revalidatePath("/finanzas");
+  revalidatePath("/egresos");
+  revalidatePath("/caja");
 
-  return { ok: "Pago a proveedor registrado (renovado 1 mes)." };
+  return { ok: "Renovación y egreso registrados correctamente." };
+}
+
+const esquemaItemPagoProveedor = z.object({
+  cuenta_id: z.string().uuid(),
+  costo_usdt: z.number().finite().nonnegative(),
+});
+
+const esquemaPagoProveedorLote = z.object({
+  items: z.array(esquemaItemPagoProveedor).min(1).max(500),
+  fecha_pago: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  referencia: z.string().trim().max(120),
+  slug: z.string().trim(),
+});
+
+export async function registrarPagosProveedorLoteAction(
+  _prev: { error?: string; ok?: string } | null,
+  formData: FormData,
+): Promise<{ error?: string; ok?: string }> {
+  const usuario = await obtenerUsuarioActual();
+  if (!esAdmin(usuario)) return { error: "No autorizado." };
+
+  let items: unknown;
+  try {
+    items = JSON.parse(String(formData.get("items") ?? "[]"));
+  } catch {
+    return { error: "No se pudo leer la selección de cuentas." };
+  }
+
+  const parsed = esquemaPagoProveedorLote.safeParse({
+    items,
+    fecha_pago: String(formData.get("fecha_pago") ?? ""),
+    referencia: String(formData.get("referencia") ?? ""),
+    slug: String(formData.get("slug") ?? ""),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos del lote inválidos." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("registrar_renovaciones_proveedor_lote", {
+    p_items: parsed.data.items,
+    p_fecha_pago: parsed.data.fecha_pago,
+    p_referencia: parsed.data.referencia || undefined,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(parsed.data.slug ? `/inventario/${parsed.data.slug}` : "/inventario");
+  revalidatePath("/finanzas");
+  revalidatePath("/egresos");
+  revalidatePath("/caja");
+
+  const total = parsed.data.items.reduce((suma, item) => suma + item.costo_usdt, 0);
+  return {
+    ok: `${parsed.data.items.length} cuentas renovadas. Pago total: $${total.toFixed(2)} USDT.`,
+  };
 }

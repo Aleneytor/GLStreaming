@@ -1462,6 +1462,54 @@ export type Database = {
           },
         ]
       }
+      lotes_pago_proveedor: {
+        Row: {
+          cantidad_cuentas: number
+          created_at: string
+          created_by: string | null
+          fecha_pago: string
+          id: string
+          monto_total_usdt: number
+          proveedor_id: string
+          referencia_no_sensible: string | null
+        }
+        Insert: {
+          cantidad_cuentas: number
+          created_at?: string
+          created_by?: string | null
+          fecha_pago: string
+          id?: string
+          monto_total_usdt: number
+          proveedor_id: string
+          referencia_no_sensible?: string | null
+        }
+        Update: {
+          cantidad_cuentas?: number
+          created_at?: string
+          created_by?: string | null
+          fecha_pago?: string
+          id?: string
+          monto_total_usdt?: number
+          proveedor_id?: string
+          referencia_no_sensible?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lotes_pago_proveedor_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lotes_pago_proveedor_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "proveedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mecanismos_entrega: {
         Row: {
           activo: boolean
@@ -1733,6 +1781,7 @@ export type Database = {
           estado: string
           fecha_pago: string
           id: string
+          lote_pago_id: string | null
           monto_usdt: number
           monto_ves_snapshot: number | null
           pago_original_id: string | null
@@ -1748,6 +1797,7 @@ export type Database = {
           estado?: string
           fecha_pago: string
           id?: string
+          lote_pago_id?: string | null
           monto_usdt: number
           monto_ves_snapshot?: number | null
           pago_original_id?: string | null
@@ -1763,6 +1813,7 @@ export type Database = {
           estado?: string
           fecha_pago?: string
           id?: string
+          lote_pago_id?: string | null
           monto_usdt?: number
           monto_ves_snapshot?: number | null
           pago_original_id?: string | null
@@ -1790,6 +1841,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_proveedor_lote_pago_id_fkey"
+            columns: ["lote_pago_id"]
+            isOneToOne: false
+            referencedRelation: "lotes_pago_proveedor"
             referencedColumns: ["id"]
           },
           {
@@ -3084,6 +3142,10 @@ export type Database = {
           p_referencia?: string
         }
         Returns: string
+      }
+      registrar_renovaciones_proveedor_lote: {
+        Args: { p_fecha_pago: string; p_items: Json; p_referencia?: string }
+        Returns: Json
       }
       renovar_suscripcion: {
         Args: {

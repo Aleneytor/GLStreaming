@@ -68,7 +68,7 @@ export default async function PlataformaPage({
     .select(
       `id, alias, capacidad, capacidad_vendible_habilitada, estado, created_at, notas,
        productos_plataforma!inner ( id, nombre, codigo, tipo_inventario, plataforma_id ),
-       proveedores ( nombre_o_alias ),
+       proveedores ( id, nombre_o_alias ),
        ciclos_proveedor ( costo_usdt, estado, proxima_renovacion ),
        credenciales_cuenta ( login_cifrado, contrasena_cifrada, eliminada_at ),
        unidades_inventario ( id, numero_slot, nombre_visible, secretos_unidad ( pin_cifrado ) ),
@@ -335,6 +335,7 @@ export default async function PlataformaPage({
       alias: c.alias ?? null,
       notas: c.notas ?? null,
       cuentaEstado: c.estado as string,
+      proveedorId: uno(c.proveedores)?.id ?? null,
       proveedor: uno(c.proveedores)?.nombre_o_alias ?? null,
       costo: cicloVigente ? Number(cicloVigente.costo_usdt) : null,
       renovarProveedor: renovarProv,
