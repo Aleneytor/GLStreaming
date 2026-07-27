@@ -265,6 +265,18 @@ individual que ya tenía guardada; por eso cuentas pagadas juntas pueden seguir
 venciendo en días distintos. La migración `0036` agrupa las asignaciones bajo un
 lote auditable y ejecuta todo en una transacción.
 
+`/catalogo` dejó de ser una pila de formularios genéricos: ahora es el centro de
+configuración operativo, con resumen, navegación por Productos/Plataformas/
+Vendedores/Proveedores y edición bajo demanda. La ficha del vendedor incluye la
+clasificación revendedor/intermediario y su base BCV/paralela real.
+
+`/clientes` se reorganizó como cartera activa mobile-first. Cada tarjeta resume
+contacto, cantidad de servicios y el vencimiento más próximo; al gestionarla se
+ven todos sus servicios con estado, fecha, vendedor y enlace al inventario. La
+búsqueda cubre nombre, teléfono, plataforma y vendedor, y existen filtros para
+próximos cinco días, vencidos y clientes sin WhatsApp. El alta manual queda
+secundaria porque el flujo normal crea al cliente al vender.
+
 Validación acumulada: **144 pruebas unitarias**, **15 suites SQL** y typecheck en verde; el último
 build de producción también pasó. PostgreSQL real contiene controles con Gmail para ambas
 variantes de Spotify. Queda pendiente una revisión visual manual completa en
