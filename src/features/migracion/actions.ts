@@ -246,12 +246,6 @@ export async function importarAction(
     }
   }
 
-  const { data: sesionId, error: errorSesion } = await supabase.rpc("abrir_sesion_carga", {
-    p_producto_id: productoId,
-    p_motivo: "Migración desde el Excel del negocio",
-  });
-  if (errorSesion) return { error: `No se pudo abrir la sesión de carga: ${errorSesion.message}` };
-
   let vendedores: Map<string, VendedorResuelto>;
   try {
     vendedores = await resolverVendedores(
@@ -262,6 +256,14 @@ export async function importarAction(
   } catch (error) {
     return { error: error instanceof Error ? error.message : "No se pudieron preparar los vendedores." };
   }
+
+  // La sesión se abre después de validar tasas y vendedores para no dejar una
+  // carga huérfana si la preparación del catálogo falla.
+  const { data: sesionId, error: errorSesion } = await supabase.rpc("abrir_sesion_carga", {
+    p_producto_id: productoId,
+    p_motivo: "Migración desde el Excel del negocio",
+  });
+  if (errorSesion) return { error: `No se pudo abrir la sesión de carga: ${errorSesion.message}` };
 
   const hoy = hoyCaracas();
   const resultados: ResultadoFila[] = [];
