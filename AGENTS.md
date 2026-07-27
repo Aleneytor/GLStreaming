@@ -113,10 +113,10 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 
 ## Estado actual
 
-**Rediseño UX/UI — Centro de Operaciones (COMPLETO 2026-07-27).**
-- **Dashboard de Operaciones (`/dashboard`)**: buscador en tiempo real, banderas de vencimiento, renovaciones/cobros en 1 solo clic y copiado inmediato de accesos para WhatsApp (`BotonCopiarWhatsapp`).
-- **Tabla de Inventario Limpia**: simplificada visualmente, integrando un **panel lateral flotante (Slide-Over)** `PanelLateralCuenta` para ver contraseñas, notas y editar la cuenta sin sobrecargar la vista principal.
+**Rediseño UX/UI — Formato Denso Excel 1:1 (COMPLETO 2026-07-27).**
+- **Dashboard de Operaciones (`/dashboard`)**: buscador en tiempo real, banderas de vencimiento, renovaciones/cobros en 1 solo clic, modal de gestión rápida y copiado inmediato de datos.
+- **Tabla de Inventario Estilo Excel (1:1)**: replicación exacta de las 18 columnas del Excel original con cabeceras en azul/morado, celdas de alerta sólidas (verde, amarillo, rojo), fuente monoespaciada compacta y densidad de datos idéntica a la hoja de cálculo.
 - **129 pruebas unitarias** pasando en verde y chequeo de tipos TypeScript sin errores.
 
 ---
-*Última actualización: 2026-07-27 (Rediseño UX/UI completado). Actualiza este archivo al terminar cada sesión.*
+*Última actualización: 2026-07-27 (Formato Denso 1:1 Excel completado). Actualiza este archivo al terminar cada sesión.*
