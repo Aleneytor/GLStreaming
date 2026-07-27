@@ -416,9 +416,33 @@ export async function venderUnidadRapidaAction(
   const supabase = await createClient();
   const vendedorId = await resolverVendedorId(supabase, vendedorIdInput, vendedorNombreCustom);
 
-  const modalidadId = unidadId
+  // Obtener producto_plataforma_id de la cuenta
+  const { data: cuentaData } = await supabase
+    .from("cuentas")
+    .select("producto_plataforma_id")
+    .eq("id", cuentaId)
+    .maybeSingle();
+
+  let modalidadId = unidadId
     ? "11111111-1111-4111-a111-111111111101"
     : "11111111-1111-4111-a111-111111111102";
+
+  if (cuentaData?.producto_plataforma_id) {
+    const alcanceBuscado = unidadId ? "unidad" : "cuenta";
+    const { data: permitidas } = await supabase
+      .from("producto_modalidades")
+      .select("modalidad_id, modalidades!inner ( alcance_asignacion )")
+      .eq("producto_plataforma_id", cuentaData.producto_plataforma_id)
+      .eq("activa", true);
+
+    const modCoincidente = permitidas?.find(
+      (p: any) => p.modalidades?.alcance_asignacion === alcanceBuscado,
+    );
+
+    if (modCoincidente?.modalidad_id) {
+      modalidadId = modCoincidente.modalidad_id;
+    }
+  }
 
   const { error } = await supabase.rpc("vender_unidad", {
     p_cuenta_id: cuentaId,

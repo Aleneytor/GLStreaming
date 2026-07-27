@@ -114,6 +114,7 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 ## Estado actual
 
 **Gestión Directa, Registro Flexible y Revendedores en Inventario (COMPLETO 2026-07-27).**
+- **Resolución Dinámica de Modalidad por Producto**: `venderUnidadRapidaAction` detecta automáticamente la `modalidad_id` activa registrada en `public.producto_modalidades` para cada plataforma (Canva, Netflix, Disney+, Spotify, etc.), evitando errores de modalidad no permitida.
 - **Vendedores e Intermediarios (`public.vendedores`)**: Se consulta directamente la tabla `public.vendedores` (donde viven los revendedores/intermediarios con o sin usuario web), permitiendo asociar cualquier revendedor (ej. Gabriel Nadales, Edgar Esperanza) o registrar uno nuevo al vuelo (`+ Registrar nuevo revendedor...`).
 - **Venta Flexible con Fecha de Inicio & Revendedor**: `ModalVentaRapida` y `ModalGestionVenta` permiten elegir fecha de inicio de venta (útil para pagos de días anteriores) y asignar el revendedor/vendedor para comisiones y registros.
 - **Pre-llenado de Cliente**: Si el perfil ya tiene un nombre visible (ej. `Luis Martínez`), el formulario lo auto-completa sin forzar a volverlo a escribir.
@@ -122,4 +123,4 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **129 pruebas unitarias** pasando en verde y chequeo de tipos TypeScript sin errores.
 
 ---
-*Última actualización: 2026-07-27 (Gestión de ventas flexibles, soporte completo a public.vendedores e intermediarios sin login completados).*
+*Última actualización: 2026-07-27 (Resolución dinámica de modalidad por producto e intermediarios completada).*
