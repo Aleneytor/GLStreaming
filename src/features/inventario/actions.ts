@@ -110,7 +110,7 @@ export async function eliminarCuentaAction(
   if (!cuentaId) return { error: "Falta la cuenta." };
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("borrar_cuenta_admin", {
+  const { error } = await supabase.rpc("eliminar_cuenta", {
     p_cuenta_id: cuentaId,
   });
   if (error) {
@@ -488,16 +488,26 @@ export async function editarVentaDirectaAction(
   const vendedorId = await resolverVendedorId(supabase, vendedorIdInput, vendedorNombreCustom);
 
   if (clienteId && clienteNombre) {
-    await supabase.from("clientes").update({
+    // Solo se toca el WhatsApp si el formulario trae uno: si llega vacío se
+    // conserva el guardado (antes lo machacaba con null y borraba el teléfono).
+    const patch: { nombre: string; whatsapp_original?: string; whatsapp_normalizado?: string } = {
       nombre: clienteNombre,
-      whatsapp_original: clienteWhatsapp || null,
-    }).eq("id", clienteId);
+    };
+    if (clienteWhatsapp) {
+      patch.whatsapp_original = clienteWhatsapp;
+      patch.whatsapp_normalizado = clienteWhatsapp.replace(/[^0-9+]/g, "") || undefined;
+    }
+    await supabase.from("clientes").update(patch).eq("id", clienteId);
   }
 
   if (suscripcionId && vendedorId) {
-    await supabase.from("suscripciones").update({
-      vendedor_id: vendedorId,
-    }).eq("id", suscripcionId);
+    // En `suscripciones` el vendedor es `vendedor_origen_id` (no `vendedor_id`,
+    // que no existe en esa tabla y hacía que el cambio se descartara en silencio).
+    const { error: eVend } = await supabase
+      .from("suscripciones")
+      .update({ vendedor_origen_id: vendedorId })
+      .eq("id", suscripcionId);
+    if (eVend) return { error: eVend.message };
   }
 
   if (unidadId) {
@@ -562,7 +572,17 @@ export async function cancelarVentaConLimpiezaAction(
       .neq("estado", "cancelada");
 
     if (count === 0) {
-      await supabase.rpc("borrar_cliente", { p_cliente_id: clienteId });
+      const { error: eDel } = await supabase.rpc("eliminar_cliente", {
+        p_cliente_id: clienteId,
+      });
+      // No es fatal: la cancelación ya quedó hecha. Pero si falla el borrado
+      // del cliente, se avisa en vez de mentir con un "ok" (el bug anterior
+      // llamaba a `borrar_cliente`, que no existe, y tragaba el error).
+      if (eDel) {
+        return {
+          ok: "Venta eliminada y cupo liberado. (El cliente no se pudo borrar: " + eDel.message + ")",
+        };
+      }
     }
   }
 

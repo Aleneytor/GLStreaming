@@ -73,7 +73,7 @@ src/components/     Piezas compartidas (nav-panel)
 src/lib/            crypto.ts (cifrado), auth.ts, env.ts (Zod), supabase/ (clientes + types)
 src/domain/         Lógica pura con pruebas: fechas.ts, dinero.ts
 src/middleware.ts   Sesión + protección de rutas
-supabase/migrations Migraciones numeradas 0001..0032 (fuente de verdad del esquema)
+supabase/migrations Migraciones numeradas 0001..0033 (fuente de verdad del esquema)
 supabase/seed.sql   Catálogo sintético (sin secretos)
 supabase/tests/     Suites SQL: rls, alta_cuenta, editar_cuenta, editar_unidades,
                     ciclo_proveedor, criterios_fase2, venta_unidad, ciclo_vida,
@@ -126,5 +126,55 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **Clic en Celda de Cliente / Alerta**: Abre `ModalGestionVenta` para renovar/cobrar 1 mes de mes a mes, editar cliente/perfil/PIN/revendedor o eliminar la venta con reseteo de perfil y limpieza de clientes huérfanos.
 - **129 pruebas unitarias** pasando en verde y chequeo de tipos TypeScript sin errores.
 
+### Correcciones de una revisión posterior (2026-07-27)
+
+Una revisión contra la base Postgres real (typecheck + suites + inspección de
+`pg_proc`/`information_schema`) encontró que varias acciones nuevas del inventario
+llamaban a funciones/columnas **que no existen**. Como el error de Supabase no se
+comprobaba, fallaban **en silencio** (el typecheck no las atrapa: los nombres de
+RPC son strings). Corregidas en `src/features/inventario/actions.ts`:
+
+1. **`eliminarCuentaAction`** llamaba al RPC `borrar_cuenta_admin` (inexistente).
+   Correcto: **`eliminar_cuenta`** (`p_cuenta_id`). Antes borrar una cuenta desde
+   el inventario daba error.
+2. **`cancelarVentaConLimpiezaAction`** llamaba a `borrar_cliente` (inexistente).
+   Correcto: **`eliminar_cliente`** (`p_cliente_id`). Ahora además **comprueba el
+   error** y lo reporta en el mensaje en vez de fingir un "ok".
+3. **`editarVentaDirectaAction`** actualizaba `suscripciones.vendedor_id` — esa
+   columna **no existe**: el vendedor de una suscripción es
+   **`vendedor_origen_id`** (el `vendedor_id` vive en `periodos_servicio`). Cambiar
+   el "Vendió" de una venta no hacía nada. Ahora también se comprueba el error.
+4. **`editarVentaDirectaAction`** machacaba `whatsapp_original` con `null` cuando
+   el campo llegaba vacío, **borrando el teléfono** del cliente. Ahora el WhatsApp
+   solo se toca si el formulario trae uno (y se actualiza también
+   `whatsapp_normalizado`).
+
+También: la **migración 0033 no estaba registrada** en
+`supabase_migrations.schema_migrations` (se había aplicado a mano). Se insertó la
+fila `('0033', …)` para que el historial cuadre con la función viva.
+
+### ⚠️ Pendiente crítico para el próximo agente
+
+- **Suites SQL de dinero en ROJO.** La 0033 cambió la firma de `vender_unidad`
+  (ahora **19 argumentos**, otro orden: `p_cuenta_id, p_unidad_id, p_modalidad_id,
+  …`; ver la migración). La app la llama **por nombre**, así que funciona, pero las
+  suites `venta_unidad`, `finanzas` y `ciclo_vida` la llaman por la **firma vieja**
+  y fallan enteras — **perdimos la validación del camino venta→cobro→caja**. Hay
+  que reescribir esas tres suites a la firma nueva antes de confiar en cambios de
+  dinero. (`rls`, `importacion`, `spotify`, `portal_revendedor` siguen verdes.)
+- **Decisiones de diseño a confirmar con el usuario** (no tocadas):
+  - `cancelarVentaConLimpiezaAction` **auto-borra el cliente** si se queda sin
+    servicios activos. Es destructivo (se pierde su contacto para revender). Está
+    hecho a propósito, pero conviene confirmarlo.
+  - `venderUnidadRapidaAction` **exige precio > 0 y cobra siempre** al instante
+    (`p_monto_usd = precio`): la venta rápida en celda no permite "vender y dejar
+    pendiente" como sí hace el formulario grande.
+- **Convención:** `vender_unidad` (0033) quedó como `security definer` con
+  `search_path = public`, apartándose del resto del proyecto (`search_path = ''` +
+  nombres calificados, invoker). Funciona porque valida `es_admin()` de primero,
+  pero conviene reconciliarlo en una migración futura.
+
 ---
-*Última actualización: 2026-07-27 (Remoción del menú Vencimientos y unificación en Operaciones).*
+*Última actualización: 2026-07-27 (revisión: corregidos 4 bugs silenciosos de
+inventario, registrada 0033; suites de dinero pendientes de actualizar a la nueva
+firma de `vender_unidad`).*
