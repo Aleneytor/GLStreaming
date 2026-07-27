@@ -136,9 +136,8 @@ export default async function PlataformaPage({
       const asig1 = abiertas.find((a) => a.unidad_id === u1.id);
       if (
         asig1 &&
-        (u1.nombre_visible?.toLowerCase().includes("completa") ||
-          u1.nombre_visible?.toLowerCase().includes("cuenta completa") ||
-          (abiertas.length === 1 && c.capacidad > 1))
+        (u1.nombre_visible?.toLowerCase().includes("cuenta completa") ||
+          u1.nombre_visible?.toLowerCase().trim() === "completa")
       ) {
         asignacionCompleta = asig1;
       }
@@ -277,6 +276,7 @@ export default async function PlataformaPage({
       costo: cicloVigente ? Number(cicloVigente.costo_usdt) : null,
       renovarProveedor: renovarProv,
       diasProveedor: diasProv,
+      esCuentaCompleta: Boolean(asignacionCompleta),
       filas,
     });
     grupos.set(prod.id, grupo);

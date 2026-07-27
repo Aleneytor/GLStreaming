@@ -46,6 +46,7 @@ export type BloqueCuenta = {
   costo: number | null;
   renovarProveedor: string | null;
   diasProveedor: number | null;
+  esCuentaCompleta?: boolean;
   filas: CupoFila[];
 };
 
@@ -436,78 +437,107 @@ function BloqueCuentaExcel({
               {f.pin ?? ""}
             </td>
 
-            {/* 6. Ingresos */}
-            <td className="border border-neutral-300 px-2 py-0.5 text-right font-medium tabular-nums text-neutral-900 dark:border-neutral-700 dark:text-white">
-              {f.ingreso != null ? `$ ${f.ingreso.toFixed(2)}` : ""}
-            </td>
+            {/* Columnas de Venta (Fusionadas visualmente si es Cuenta Completa) */}
+            {(!cta.esCuentaCompleta || esPrimera) && (
+              <>
+                {/* 6. Ingresos */}
+                <td
+                  rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
+                  className="border border-neutral-300 px-2 py-0.5 text-right font-medium tabular-nums text-neutral-900 align-middle dark:border-neutral-700 dark:text-white"
+                >
+                  {f.ingreso != null
+                    ? `$ ${f.ingreso.toFixed(2)}`
+                    : cta.esCuentaCompleta && cta.filas[0]?.ingreso != null
+                    ? `$ ${cta.filas[0].ingreso.toFixed(2)}`
+                    : ""}
+                </td>
 
-            {/* 7. Inicio */}
-            <td className="border border-neutral-300 px-1.5 py-0.5 text-center text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
-              {formatearFecha(f.inicio)}
-            </td>
+                {/* 7. Inicio */}
+                <td
+                  rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
+                  className="border border-neutral-300 px-1.5 py-0.5 text-center align-middle text-neutral-700 dark:border-neutral-700 dark:text-neutral-300"
+                >
+                  {formatearFecha(f.inicio)}
+                </td>
 
-            {/* 8. Días */}
-            <td className="border border-neutral-300 px-1.5 py-0.5 text-center text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
-              {f.cliente ? 30 : ""}
-            </td>
+                {/* 8. Días */}
+                <td
+                  rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
+                  className="border border-neutral-300 px-1.5 py-0.5 text-center align-middle text-neutral-700 dark:border-neutral-700 dark:text-neutral-300"
+                >
+                  {f.cliente ? 30 : ""}
+                </td>
 
-            {/* 9. Vence */}
-            <td className="border border-neutral-300 px-1.5 py-0.5 text-center font-semibold text-neutral-900 dark:border-neutral-700 dark:text-white">
-              {formatearFecha(f.vence)}
-            </td>
+                {/* 9. Vence */}
+                <td
+                  rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
+                  className="border border-neutral-300 px-1.5 py-0.5 text-center font-semibold text-neutral-900 align-middle dark:border-neutral-700 dark:text-white"
+                >
+                  {formatearFecha(f.vence)}
+                </td>
 
-            {/* 10. Alerta (Celda interactiva para Venta Directa si está Vacío o Gestionar Venta si está vendida) */}
-            <td
-              onClick={() => {
-                if (esLibre) {
-                  onIniciarVenta(f.unidadId, f.cupo);
-                } else {
-                  onGestionarVenta(f);
-                }
-              }}
-              className={`border border-neutral-300 px-2 py-0.5 text-center ${claseAlerta}`}
-              title={esLibre ? "Haz clic para vender este perfil" : "Haz clic para gestionar esta venta"}
-            >
-              {textoAlerta}
-            </td>
-
-            {/* 11. Cliente (Clic para abrir el menú de gestionar venta) */}
-            <td
-              onClick={() => {
-                if (!esLibre) onGestionarVenta(f);
-              }}
-              className={`border border-neutral-300 px-2 py-0.5 font-medium text-neutral-900 dark:border-neutral-700 dark:text-white ${
-                !esLibre ? "cursor-pointer hover:bg-neutral-100 hover:underline dark:hover:bg-neutral-800" : ""
-              }`}
-              title={!esLibre ? "Haz clic para renovar, editar o eliminar esta venta" : ""}
-            >
-              <div className="flex items-center justify-between gap-1">
-                <span>{f.cliente ?? ""}</span>
-                {f.suscripcionId && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                {/* 10. Alerta */}
+                <td
+                  rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
+                  onClick={() => {
+                    if (esLibre) {
+                      onIniciarVenta(f.unidadId, f.cupo);
+                    } else {
                       onGestionarVenta(f);
-                    }}
-                    title="Gestionar venta (renovar, editar o borrar)"
-                    className="text-[10px] text-neutral-400 opacity-60 hover:opacity-100 hover:text-neutral-900 dark:hover:text-white"
-                  >
-                    ⚙️
-                  </button>
-                )}
-              </div>
-            </td>
+                    }
+                  }}
+                  className={`border border-neutral-300 px-2 py-0.5 text-center align-middle ${claseAlerta}`}
+                  title={esLibre ? "Haz clic para vender este perfil" : "Haz clic para gestionar esta venta"}
+                >
+                  {textoAlerta}
+                </td>
 
-            {/* 12. N° Celular */}
-            <td className="border border-neutral-300 px-2 py-0.5 font-mono text-neutral-800 dark:border-neutral-700 dark:text-neutral-200">
-              {f.celular ?? ""}
-            </td>
+                {/* 11. Cliente */}
+                <td
+                  rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
+                  onClick={() => {
+                    if (!esLibre) onGestionarVenta(f);
+                  }}
+                  className={`border border-neutral-300 px-2 py-0.5 font-medium text-neutral-900 align-middle dark:border-neutral-700 dark:text-white ${
+                    !esLibre ? "cursor-pointer hover:bg-neutral-100 hover:underline dark:hover:bg-neutral-800" : ""
+                  }`}
+                  title={!esLibre ? "Haz clic para renovar, editar o eliminar esta venta" : ""}
+                >
+                  <div className="flex items-center justify-between gap-1">
+                    <span>{f.cliente ?? ""}</span>
+                    {f.suscripcionId && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onGestionarVenta(f);
+                        }}
+                        title="Gestionar venta (renovar, editar o borrar)"
+                        className="text-[10px] text-neutral-400 opacity-60 hover:opacity-100 hover:text-neutral-900 dark:hover:text-white"
+                      >
+                        ⚙️
+                      </button>
+                    )}
+                  </div>
+                </td>
 
-            {/* 13. Vendió */}
-            <td className="border border-neutral-300 px-2 py-0.5 text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
-              {f.vendio ?? ""}
-            </td>
+                {/* 12. N° Celular */}
+                <td
+                  rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
+                  className="border border-neutral-300 px-2 py-0.5 font-mono text-neutral-800 align-middle dark:border-neutral-700 dark:text-neutral-200"
+                >
+                  {f.celular ?? ""}
+                </td>
+
+                {/* 13. Vendió */}
+                <td
+                  rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
+                  className="border border-neutral-300 px-2 py-0.5 text-neutral-700 align-middle dark:border-neutral-700 dark:text-neutral-300"
+                >
+                  {f.vendio ?? ""}
+                </td>
+              </>
+            )}
 
             {/* 14. Inversión (Fusionada) */}
             {esPrimera && (
