@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
 import { cancelarVentaConLimpiezaAction, editarVentaDirectaAction } from "./actions";
 import { renovarAction } from "@/features/ventas/acciones-suscripcion";
 
@@ -32,8 +32,21 @@ export function ModalGestionVenta({
   const [modo, setModo] = useState<"ver" | "renovar" | "eliminar">("ver");
   const [estadoEdicion, actionEditar, pendienteEditar] = useActionState(editarVentaDirectaAction, null);
   const [estadoRenovar, actionRenovar, pendienteRenovar] = useActionState(renovarAction, null);
+  const [estadoEliminar, actionEliminar, pendienteEliminar] = useActionState(
+    cancelarVentaConLimpiezaAction,
+    null,
+  );
 
   const hoyFormato = new Date().toISOString().slice(0, 10);
+
+  useEffect(() => {
+    if (estadoEliminar?.ok) {
+      const timer = setTimeout(() => {
+        onCerrar();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [estadoEliminar, onCerrar]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
@@ -220,7 +233,7 @@ export function ModalGestionVenta({
 
         {/* MODO ELIMINAR VENTA */}
         {modo === "eliminar" && (
-          <form action={cancelarVentaConLimpiezaAction} className="space-y-4">
+          <form action={actionEliminar} className="space-y-4">
             <input type="hidden" name="suscripcion_id" value={suscripcionId} />
             <input type="hidden" name="unidad_id" value={unidadId ?? ""} />
             <input type="hidden" name="cliente_id" value={clienteId ?? ""} />
@@ -238,6 +251,18 @@ export function ModalGestionVenta({
               </p>
             </div>
 
+            {estadoEliminar?.error && (
+              <p className="rounded-md bg-red-50 p-2 text-xs font-medium text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                ⚠️ {estadoEliminar.error}
+              </p>
+            )}
+
+            {estadoEliminar?.ok && (
+              <p className="rounded-md bg-emerald-50 p-2 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                ✅ {estadoEliminar.ok}
+              </p>
+            )}
+
             <div className="flex items-center justify-end gap-2 border-t border-neutral-200 pt-3 dark:border-neutral-800">
               <button
                 type="button"
@@ -248,10 +273,10 @@ export function ModalGestionVenta({
               </button>
               <button
                 type="submit"
-                onClick={onCerrar}
-                className="rounded-lg bg-red-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
+                disabled={pendienteEliminar}
+                className="rounded-lg bg-red-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
               >
-                Sí, Eliminar Venta y Liberar Cupo
+                {pendienteEliminar ? "Eliminando..." : "Sí, Eliminar Venta y Liberar Cupo"}
               </button>
             </div>
           </form>

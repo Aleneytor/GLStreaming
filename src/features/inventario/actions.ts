@@ -445,17 +445,18 @@ export async function editarVentaDirectaAction(
 }
 
 export async function cancelarVentaConLimpiezaAction(
+  _prev: { error?: string; ok?: string } | null,
   formData: FormData,
-): Promise<void> {
+): Promise<{ error?: string; ok?: string }> {
   const usuario = await obtenerUsuarioActual();
-  if (!esAdmin(usuario)) return;
+  if (!esAdmin(usuario)) return { error: "No autorizado." };
 
   const suscripcionId = String(formData.get("suscripcion_id") ?? "");
   const unidadId = String(formData.get("unidad_id") ?? "");
   const clienteId = String(formData.get("cliente_id") ?? "");
   const slug = String(formData.get("slug") ?? "");
 
-  if (!suscripcionId) return;
+  if (!suscripcionId) return { error: "Falta la suscripción." };
 
   const supabase = await createClient();
 
@@ -464,7 +465,7 @@ export async function cancelarVentaConLimpiezaAction(
     p_suscripcion_id: suscripcionId,
     p_motivo: "cancelacion_manual_inventario",
   });
-  if (e1) return;
+  if (e1) return { error: e1.message };
 
   // 2. Restablecer el nombre del perfil a nulo para que vuelva a decir Perfil X
   if (unidadId) {
@@ -490,6 +491,8 @@ export async function cancelarVentaConLimpiezaAction(
   revalidatePath(slug ? `/inventario/${slug}` : "/inventario");
   revalidatePath("/vencimientos");
   revalidatePath("/clientes");
+
+  return { ok: "Venta eliminada y cupo liberado." };
 }
 
 export async function registrarPagoProveedorRapidoAction(
