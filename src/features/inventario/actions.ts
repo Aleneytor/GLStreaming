@@ -608,6 +608,7 @@ export async function editarVentaDirectaAction(
   if (!esAdmin(usuario)) return { error: "No autorizado." };
 
   const suscripcionId = String(formData.get("suscripcion_id") ?? "");
+  const periodoId = String(formData.get("periodo_id") ?? "");
   const unidadId = String(formData.get("unidad_id") ?? "");
   const clienteId = String(formData.get("cliente_id") ?? "");
   const clienteNombre = String(formData.get("cliente_nombre") ?? "").trim();
@@ -620,8 +621,30 @@ export async function editarVentaDirectaAction(
     formData.get("vendedor_tipo") === "revendedor" ? "revendedor" : "intermediario";
   const vendedorCobraParalela = formData.get("vendedor_cobra_paralela") === "on";
   const slug = String(formData.get("slug") ?? "");
+  const ingresoUsdTexto = String(formData.get("ingreso_usd") ?? "").trim();
+  const ingresoUsdActualTexto = String(formData.get("ingreso_usd_actual") ?? "").trim();
 
   const supabase = await createClient();
+  let ingresoCorregido = false;
+  if (periodoId && ingresoUsdTexto) {
+    const ingresoUsd = Number(ingresoUsdTexto.replace(",", "."));
+    const ingresoUsdActual = Number(ingresoUsdActualTexto.replace(",", "."));
+    if (!Number.isFinite(ingresoUsd) || ingresoUsd <= 0) {
+      return { error: "El ingreso debe ser un número mayor que cero." };
+    }
+    if (!Number.isFinite(ingresoUsdActual) || ingresoUsdActual <= 0) {
+      return { error: "No se pudo comprobar el ingreso anterior." };
+    }
+    if (Math.abs(ingresoUsd - ingresoUsdActual) >= 0.005) {
+      const { error: errorCorreccion } = await supabase.rpc("corregir_cobro_cliente", {
+        p_periodo_id: periodoId,
+        p_nuevo_monto_usd: ingresoUsd,
+        p_motivo: `Corrección desde Inventario: $${ingresoUsdActual.toFixed(2)} → $${ingresoUsd.toFixed(2)}`,
+      });
+      if (errorCorreccion) return { error: errorCorreccion.message };
+      ingresoCorregido = true;
+    }
+  }
   if (vendedorIdInput === "__nuevo__" && !vendedorNombreCustom) {
     return { error: "Escribe el nombre del nuevo vendedor." };
   }
@@ -678,8 +701,14 @@ export async function editarVentaDirectaAction(
   revalidatePath("/vencimientos");
   revalidatePath("/dashboard");
   revalidatePath("/clientes");
+  revalidatePath("/caja");
+  revalidatePath("/cobros");
 
-  return { ok: "Datos de la venta actualizados." };
+  return {
+    ok: ingresoCorregido
+      ? "Datos e ingreso del período actualizados."
+      : "Datos de la venta actualizados.",
+  };
 }
 
 export async function cancelarVentaConLimpiezaAction(

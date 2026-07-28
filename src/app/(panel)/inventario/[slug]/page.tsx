@@ -77,7 +77,7 @@ export default async function PlataformaPage({
          suscripciones ( id, estado,
            clientes ( id, nombre, whatsapp_original ),
            vendedores ( id, nombre, tipo, cobra_en_paralela ),
-           periodos_servicio ( inicio, fecha_renovacion, precio_comercial_usd ),
+           periodos_servicio ( id, inicio, fecha_renovacion, precio_comercial_usd ),
            vinculos_identidad_spotify ( fin,
              identidades_spotify ( login_cifrado, contrasena_cifrada ) ) ) )`,
     )
@@ -171,6 +171,7 @@ export default async function PlataformaPage({
 
     return {
       suscripcionId: susc.id as string,
+      periodoId: ult?.id ?? null,
       cliente: cli?.nombre ?? null,
       celular: cli?.whatsapp_original ?? null,
       vendio: vend?.nombre ?? null,
@@ -255,6 +256,7 @@ export default async function PlataformaPage({
           unidadId: u.id as string,
           nombreUnidad: u.nombre_visible ?? null,
           suscripcionId: v?.suscripcionId ?? null,
+          periodoId: v?.periodoId ?? null,
           clienteId: v?.clienteId ?? null,
           cliente: v?.cliente ?? null,
           celular: v?.celular ?? null,
@@ -285,6 +287,7 @@ export default async function PlataformaPage({
           unidadId: null,
           nombreUnidad: null,
           suscripcionId: v?.suscripcionId ?? null,
+          periodoId: v?.periodoId ?? null,
           clienteId: v?.clienteId ?? null,
           cliente: v?.cliente ?? null,
           celular: v?.celular ?? null,
@@ -323,6 +326,7 @@ export default async function PlataformaPage({
           unidadId: null,
           nombreUnidad: null,
           suscripcionId: v?.suscripcionId ?? null,
+          periodoId: v?.periodoId ?? null,
           clienteId: v?.clienteId ?? null,
           cliente: v?.cliente ?? null,
           celular: v?.celular ?? null,
@@ -349,6 +353,7 @@ export default async function PlataformaPage({
         unidadId: null,
         nombreUnidad: null,
         suscripcionId: null,
+        periodoId: null,
         clienteId: null,
         cliente: null,
         celular: null,

@@ -27,6 +27,7 @@ function formatearFecha(fecha: string | null): string {
 
 export function ModalGestionVenta({
   suscripcionId,
+  periodoId,
   unidadId,
   clienteId,
   clienteNombre,
@@ -46,6 +47,7 @@ export function ModalGestionVenta({
   onCerrar,
 }: {
   suscripcionId: string;
+  periodoId: string | null;
   unidadId: string | null;
   clienteId: string | null;
   clienteNombre: string;
@@ -164,6 +166,7 @@ export function ModalGestionVenta({
         {modo === "ver" && (
           <form action={actionEditar} className="space-y-4">
             <input type="hidden" name="suscripcion_id" value={suscripcionId} />
+            {periodoId && <input type="hidden" name="periodo_id" value={periodoId} />}
             {unidadId && <input type="hidden" name="unidad_id" value={unidadId} />}
             {clienteId && <input type="hidden" name="cliente_id" value={clienteId} />}
             <input type="hidden" name="slug" value={slug} />
@@ -239,6 +242,26 @@ export function ModalGestionVenta({
                 </>
               )}
             </div>
+
+            {periodoId && precioUsd != null && (
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/30">
+                <label className="mb-1 block text-xs font-semibold text-blue-950 dark:text-blue-100">
+                  Ingreso de este período (USD)
+                </label>
+                <input type="hidden" name="ingreso_usd_actual" value={precioUsd.toFixed(2)} />
+                <input
+                  name="ingreso_usd"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  defaultValue={precioUsd.toFixed(2)}
+                  className="w-full rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-900 focus:outline-none dark:border-blue-800 dark:bg-neutral-800 dark:text-white"
+                />
+                <p className="mt-1.5 text-[11px] leading-relaxed text-blue-800 dark:text-blue-200">
+                  Si corriges el monto, el sistema conserva el cobro anterior, registra su reverso y crea el valor sustituto con la misma fecha y tasa.
+                </p>
+              </div>
+            )}
 
             <div>
               <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">

@@ -39,6 +39,7 @@ export type CupoFila = {
   badge: BadgeVencimiento | null;
   suscEstado: string | null;
   suscripcionId?: string | null;
+  periodoId?: string | null;
 };
 
 export type BloqueCuenta = {
@@ -560,6 +561,7 @@ export function TablaInventario({
       {gestionVentaTarget && gestionVentaTarget.suscripcionId && (
         <ModalGestionVenta
           suscripcionId={gestionVentaTarget.suscripcionId}
+          periodoId={gestionVentaTarget.periodoId ?? null}
           unidadId={gestionVentaTarget.unidadId}
           clienteId={gestionVentaTarget.clienteId}
           clienteNombre={gestionVentaTarget.cliente ?? "Cliente"}

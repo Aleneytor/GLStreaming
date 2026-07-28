@@ -352,6 +352,12 @@ de fechas tanto en móvil como en escritorio: una fecha pasada siempre se muestr
 en rojo como `Venció hace N días`; ya no existe la etiqueta amarilla ambigua
 `Tienes N días` para los dos primeros días vencidos.
 
+“Gestionar venta” permite corregir un ingreso ya registrado sin borrar ni
+sobrescribir historia. La migración `0042` inserta, en una sola transacción, el
+reverso del cobro equivocado y su cobro sustituto usando la misma fecha y base
+efectiva; actualiza el valor comercial del período y deja auditoría. Esto sirve
+para corregir errores del Excel después de importar sin rehacer la venta.
+
 Spotify familiar ya no se presenta como perfiles con PIN. Cada posición muestra
 el correo y la contraseña de la identidad del miembro, separados del correo de
 la madre y del Gmail pagador. La migración `0041` permite que una identidad de
@@ -368,7 +374,7 @@ cupo, una venta completa consume todas sus unidades y un uso principal que no
 consume capacidad no reduce los cupos familiares. Esto corrige el falso 100 %
 de Spotify producido al sumar individuales y familiares en la misma tarjeta.
 
-Validación acumulada: **154 pruebas unitarias**, **18 suites SQL** y typecheck en
+Validación acumulada: **154 pruebas unitarias**, **19 suites SQL** y typecheck en
 verde. La suite de traslado comprueba el cambio de asignación, preservación del
 período, mantenimiento, entrega, auditoría, cuenta completa y rechazo a
 revendedores. El usuario confirmó la recuperación de la app y la reimportación;

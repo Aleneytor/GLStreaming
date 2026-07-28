@@ -127,6 +127,10 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **Filtros operativos de inventario**: el desplegable de `/inventario/[slug]` ya no usa los estados técnicos poco útiles de la cuenta. Filtra cupos `Disponibles para vender` (libres y con cuenta activa), `Próximos 5 días`, `Vencen hoy`, `Vencidos` y conserva `Cuentas suspendidas`. La lógica pura vive en `src/domain/filtros-inventario.ts`.
 - **Renovación anticipada encadenada**: `ModalGestionVenta` no usa «hoy» ciegamente. Si el servicio sigue vigente, el período nuevo comienza en `fecha_renovacion` (ej. 29/07 → 29/08); si ya venció, comienza hoy y envía `tardia=on`. La regla pura es `planificarRenovacionCliente`.
 - **Confirmación visible de renovación**: tras el éxito, `ModalGestionVenta` muestra un aviso verde con el período creado y reemplaza las acciones por `Listo`; el botón de confirmar desaparece para impedir una renovación duplicada.
+- **Corrección auditable de ingresos (migración `0042`)**: “Gestionar venta”
+  permite editar el ingreso USD del período actual. No sobrescribe el cobro:
+  `corregir_cobro_cliente` agrega un reverso y un cobro sustituto atómicamente,
+  con la misma fecha y base efectiva del original, y registra auditoría.
 - **Cuentas completas compatibles y fusionadas en todas las plataformas**: la detección prioriza `alcance='cuenta'`, pero conserva compatibilidad estricta con 24 ventas importadas antiguas de Netflix, Disney+, HBO, Prime Video y Crunchyroll cuya primera unidad tiene exactamente `Cuenta Completa`/`Completa`. En escritorio mantiene sus filas numeradas de 23px (cinco filas = 115px) y fusiona los datos con `rowSpan`; en móvil muestra una sola tarjeta. Spotify individual queda excluido porque es `recurso_indivisible`.
 - **Pagos de proveedor por lote (migración `0036`)**: el inventario permite seleccionar todas las cuentas visibles de un mismo proveedor, desmarcar excepciones y editar el costo de cada ciclo. Comparten una sola `fecha_pago` y un `lote_pago_id`, pero cada ciclo nuevo comienza en la `proxima_renovacion` individual ya guardada. La operación es atómica y rechaza mezclar proveedores. El pago individual también usa `registrar_renovacion_y_pago`, por lo que ahora sí crea el egreso en Caja.
 - **Importador ampliado sin romper el Excel anterior**: `/migracion` conserva todas las columnas y reglas históricas (encabezados libres, celdas combinadas, Canva, Spotify, cuentas completas, costos y renovaciones) y ahora también puede leer `Alias Cuenta`, `Notas Cuenta`, `Estado Cuenta`, `Notas Cliente`, `Nota Renovación`, `Alias/Tipo/Tasa Vendedor` y `Tipo/Teléfono/Notas Proveedor`. Son columnas opcionales. La vista previa y el guardado comparten la decisión de tasa: directa/intermediario usa BCV y un revendedor marcado usa paralela. Los vendedores existentes conservan su configuración si la hoja vieja solo trae `Vendió`; una configuración explícita sí la actualiza. El selector de modalidad se reinicia al cambiar de producto para no enviar un UUID de la variante anterior.
@@ -346,4 +350,5 @@ el panel de revendedor.*
 
 *Última actualización: 2026-07-28 (Spotify familiar modelado como identidad por
 miembro, credenciales preparadas en cupos libres y ocupación corregida; traslado
-por falla transaccional; 154 unitarias y suites SQL en verde).*
+por falla transaccional; corrección auditable de cobros; 154 unitarias y suites
+SQL en verde).*

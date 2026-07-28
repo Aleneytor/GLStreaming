@@ -3001,6 +3001,14 @@ export type Database = {
         Args: { p_evidencia?: string; p_operacion_id: string }
         Returns: undefined
       }
+      corregir_cobro_cliente: {
+        Args: {
+          p_motivo?: string
+          p_nuevo_monto_usd: number
+          p_periodo_id: string
+        }
+        Returns: Json
+      }
       crear_cuenta_con_unidades: {
         Args: {
           p_alias?: string
