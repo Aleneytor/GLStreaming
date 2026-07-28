@@ -132,6 +132,13 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **Renovaciones multimes generales**: Netflix, Disney+ y las demás plataformas
   permiten elegir cualquier duración de 1 a 12 meses. No se infiere una tarifa:
   el administrador escribe el total realmente cobrado por todo el período.
+- **Traslado visual por falla (migración `0043`)**: además de la lista avanzada,
+  “Mover por falla” permite volver al inventario y tocar directamente un cupo
+  vacío compatible. Los destinos válidos se resaltan en verde en escritorio y
+  móvil y la barra muestra tarjetas clicables de todos los destinos aunque un
+  filtro o búsqueda los oculte; se confirma mostrando correo/cupo. Al cerrar la
+  asignación se limpia `nombre_visible` del origen y se conserva en el destino;
+  la migración sanea también nombres residuales de traslados anteriores.
 - **Tarifas sugeridas de Spotify, siempre editables**: correo GL usa
   1/3/6/12 meses = $4/$10/$18/$32; correo del cliente usa
   $5/$13/$22/$40. Al cambiar duración o titularidad, el modal propone el total

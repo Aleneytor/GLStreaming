@@ -4,6 +4,7 @@ import { useActionState, useState, useEffect, useRef } from "react";
 import { cancelarVentaConLimpiezaAction, editarVentaDirectaAction } from "./actions";
 import { renovarAction } from "@/features/ventas/acciones-suscripcion";
 import { PanelTrasladoServicio } from "./panel-traslado-servicio";
+import type { DestinoTraslado } from "./acciones-traslado";
 import type { VendedorOp } from "./modal-venta-rapida";
 import {
   calcularFechaRenovacion,
@@ -51,6 +52,7 @@ export function ModalGestionVenta({
   slug,
   vendedores = [],
   onCerrar,
+  onSeleccionarTraslado,
 }: {
   suscripcionId: string;
   periodoId: string | null;
@@ -72,6 +74,7 @@ export function ModalGestionVenta({
   slug: string;
   vendedores?: VendedorOp[];
   onCerrar: () => void;
+  onSeleccionarTraslado?: (destinos: DestinoTraslado[]) => void;
 }) {
   const tipoCorreoTarifaInicial = tipoTarifaSpotifyDesdeCorreo(
     clienteLogin,
@@ -622,6 +625,7 @@ export function ModalGestionVenta({
             slug={slug}
             onVolver={() => setModo("ver")}
             onTerminado={onCerrar}
+            onSeleccionarEnInventario={onSeleccionarTraslado}
           />
         )}
 

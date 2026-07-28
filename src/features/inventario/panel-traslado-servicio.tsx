@@ -13,12 +13,14 @@ export function PanelTrasladoServicio({
   slug,
   onVolver,
   onTerminado,
+  onSeleccionarEnInventario,
 }: {
   suscripcionId: string;
   clienteNombre: string;
   slug: string;
   onVolver: () => void;
   onTerminado: () => void;
+  onSeleccionarEnInventario?: (destinos: DestinoTraslado[]) => void;
 }) {
   const [destinos, setDestinos] = useState<DestinoTraslado[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -76,17 +78,33 @@ export function PanelTrasladoServicio({
             cuenta de la misma modalidad antes de mover este servicio.
           </p>
         ) : (
-          <select
-            value={seleccion}
-            onChange={(evento) => setSeleccion(evento.target.value)}
-            className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-          >
-            {destinos.map((item, indice) => (
-              <option key={`${item.cuentaId}:${item.unidadId ?? "cuenta"}`} value={indice}>
-                {item.etiqueta}
-              </option>
-            ))}
-          </select>
+          <div className="space-y-2">
+            {onSeleccionarEnInventario && (
+              <button
+                type="button"
+                onClick={() => onSeleccionarEnInventario(destinos)}
+                className="w-full rounded-lg bg-amber-600 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-amber-700"
+              >
+                Ver inventario y tocar un cupo vacío
+              </button>
+            )}
+            <details className="rounded-lg border border-neutral-200 p-2 dark:border-neutral-700">
+              <summary className="cursor-pointer text-xs font-semibold text-neutral-600 dark:text-neutral-300">
+                O elegir desde la lista
+              </summary>
+              <select
+                value={seleccion}
+                onChange={(evento) => setSeleccion(evento.target.value)}
+                className="mt-2 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+              >
+                {destinos.map((item, indice) => (
+                  <option key={`${item.cuentaId}:${item.unidadId ?? "cuenta"}`} value={indice}>
+                    {item.etiqueta}
+                  </option>
+                ))}
+              </select>
+            </details>
+          </div>
         )}
       </div>
 
@@ -123,4 +141,3 @@ export function PanelTrasladoServicio({
     </form>
   );
 }
-

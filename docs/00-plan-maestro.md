@@ -365,6 +365,14 @@ por `$13` crea un solo período de tres meses con ingreso total `$13`.
 Netflix, Disney+ y el resto de productos permiten igualmente renovar cualquier
 duración entre 1 y 12 meses. En ellos no hay tarifa sugerida: se escribe el monto
 total acordado y el período se encadena desde el vencimiento vigente.
+
+El traslado por falla puede seleccionarse sobre el inventario visible. Los
+cupos vacíos compatibles se resaltan y el administrador toca el destino que
+reconoce por cuenta/correo antes de confirmar. La barra incluye todos los
+destinos como tarjetas clicables aunque la búsqueda actual oculte su cuenta; el
+desplegable queda como opción secundaria. La migración `0043` limpia el nombre
+operativo del cupo origen al cerrar su asignación y sanea los nombres residuales
+de traslados anteriores sin alterar la asignación histórica.
 Los formularios sugieren la tabla vigente según titularidad del correo:
 dominio GL = `$4/$10/$18/$32` y correo del cliente = `$5/$13/$22/$40` para
 `1/3/6/12` meses. El total continúa editable para registrar excepciones reales.

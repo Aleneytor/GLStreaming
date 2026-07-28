@@ -107,6 +107,9 @@ union all select 'Marca la cuenta origen en mantenimiento',
 union all select 'Conserva el nombre visible en el nuevo cupo',
        (select nombre_visible = 'Perfil Cliente QA' from public.unidades_inventario
         where id = :'unidad_destino')
+union all select 'Limpia el nombre visible del cupo anterior',
+       (select nombre_visible is null from public.unidades_inventario
+        where id = :'unidad_origen')
 union all select 'Revoca el acceso ligado al recurso fallido',
        (select estado = 'revocada' from public.entregas_acceso
         where asignacion_inventario_id = :'asignacion_origen')

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useActionState } from "react";
 import type { BadgeVencimiento } from "@/domain/fechas";
 import { PanelLateralCuenta } from "./panel-lateral-cuenta";
 import {
@@ -15,6 +15,10 @@ import { ModalRenovarProveedorRapido } from "./modal-renovar-proveedor";
 import { ModalRenovarProveedorLote } from "./modal-renovar-proveedor-lote";
 import { ModalGestionVenta } from "./modal-gestion-venta";
 import { BotonTarjetaProveedor } from "./credenciales";
+import {
+  trasladarServicioPorFallaAction,
+  type DestinoTraslado,
+} from "./acciones-traslado";
 
 export type CupoFila = {
   slotNumber: number;
@@ -62,6 +66,99 @@ export type BloqueCuenta = {
   esSpotifyFamiliar?: boolean;
   filas: CupoFila[];
 };
+
+type SeleccionTraslado = {
+  suscripcionId: string;
+  clienteNombre: string;
+  destinos: DestinoTraslado[];
+  seleccionado: DestinoTraslado | null;
+};
+
+function BarraSeleccionTraslado({
+  seleccion,
+  slug,
+  onCancelar,
+  onSeleccionar,
+}: {
+  seleccion: SeleccionTraslado;
+  slug: string;
+  onCancelar: () => void;
+  onSeleccionar: (destino: DestinoTraslado) => void;
+}) {
+  const [estado, action, pendiente] = useActionState(trasladarServicioPorFallaAction, null);
+
+  return (
+    <div className="sticky top-2 z-40 rounded-xl border-2 border-amber-400 bg-amber-50 p-3 shadow-xl dark:border-amber-700 dark:bg-amber-950">
+      <form action={action} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <input type="hidden" name="suscripcion_id" value={seleccion.suscripcionId} />
+        <input type="hidden" name="slug" value={slug} />
+        <input
+          type="hidden"
+          name="cuenta_destino_id"
+          value={seleccion.seleccionado?.cuentaId ?? ""}
+        />
+        <input
+          type="hidden"
+          name="unidad_destino_id"
+          value={seleccion.seleccionado?.unidadId ?? ""}
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-bold text-amber-950 dark:text-amber-100">
+            Mover a {seleccion.clienteNombre}: toca un cupo verde compatible
+          </p>
+          <p className="mt-0.5 truncate text-[11px] text-amber-800 dark:text-amber-200">
+            {seleccion.seleccionado
+              ? `Destino: ${seleccion.seleccionado.etiqueta}`
+              : `${seleccion.destinos.length} destino(s) disponible(s)`}
+          </p>
+          {estado?.error && <p className="mt-1 text-[11px] font-semibold text-red-700">{estado.error}</p>}
+          {estado?.ok && <p className="mt-1 text-[11px] font-semibold text-emerald-700">{estado.ok}</p>}
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onCancelar}
+            className="rounded-lg border border-amber-400 px-3 py-2 text-xs font-semibold text-amber-900 dark:text-amber-100"
+          >
+            {estado?.ok ? "Listo" : "Cancelar"}
+          </button>
+          {!estado?.ok && (
+            <button
+              type="submit"
+              disabled={!seleccion.seleccionado || pendiente}
+              className="rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-40"
+            >
+              {pendiente ? "Moviendo…" : "Confirmar traslado"}
+            </button>
+          )}
+        </div>
+      </form>
+      {!estado?.ok && (
+        <div className="mt-3 grid max-h-40 gap-2 overflow-y-auto border-t border-amber-300 pt-3 sm:grid-cols-2 lg:grid-cols-3 dark:border-amber-800">
+          {seleccion.destinos.map((destino) => {
+            const elegido =
+              seleccion.seleccionado?.cuentaId === destino.cuentaId &&
+              seleccion.seleccionado?.unidadId === destino.unidadId;
+            return (
+              <button
+                key={`${destino.cuentaId}:${destino.unidadId ?? "cuenta"}`}
+                type="button"
+                onClick={() => onSeleccionar(destino)}
+                className={`rounded-lg border px-3 py-2 text-left text-[11px] font-semibold transition ${
+                  elegido
+                    ? "border-amber-600 bg-amber-500 text-white"
+                    : "border-emerald-300 bg-white text-emerald-900 hover:border-emerald-600 dark:border-emerald-800 dark:bg-neutral-900 dark:text-emerald-200"
+                }`}
+              >
+                {elegido ? "✓ " : ""}{destino.etiqueta}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ControlesOrden({
   cuentaId,
@@ -175,6 +272,7 @@ export function TablaInventario({
   } | null>(null);
 
   const [gestionVentaTarget, setGestionVentaTarget] = useState<CupoFila | null>(null);
+  const [seleccionTraslado, setSeleccionTraslado] = useState<SeleccionTraslado | null>(null);
 
   const [renovarProvTarget, setRenovarProvTarget] = useState<{
     cuentaId: string;
@@ -265,6 +363,34 @@ export function TablaInventario({
 
   const tienePagador = cuentasState.some((c) => Boolean(c.pagador)) || slug.includes("spotify");
 
+  const buscarDestino = (cuentaId: string, unidadId: string | null) =>
+    seleccionTraslado?.destinos.find(
+      (destino) => destino.cuentaId === cuentaId && destino.unidadId === unidadId,
+    ) ?? null;
+
+  const manejarCupoLibre = (
+    cuenta: BloqueCuenta,
+    unidadId: string | null,
+    nombrePerfil: string,
+    clienteLogin: string | null,
+    clienteClave: string | null,
+  ) => {
+    if (seleccionTraslado) {
+      const destino = buscarDestino(cuenta.cuentaId, unidadId);
+      if (destino) {
+        setSeleccionTraslado({ ...seleccionTraslado, seleccionado: destino });
+      }
+      return;
+    }
+    setVentaTarget({
+      cuentaId: cuenta.cuentaId,
+      unidadId,
+      nombrePerfil,
+      clienteLogin,
+      clienteClave,
+    });
+  };
+
   const handleDrop = (origenIdx: number, destinoIdx: number) => {
     if (origenIdx === destinoIdx) return;
     const nuevas = [...cuentasState];
@@ -285,6 +411,16 @@ export function TablaInventario({
 
   return (
     <div className="space-y-4">
+      {seleccionTraslado && (
+        <BarraSeleccionTraslado
+          seleccion={seleccionTraslado}
+          slug={slug}
+          onCancelar={() => setSeleccionTraslado(null)}
+          onSeleccionar={(destino) =>
+            setSeleccionTraslado({ ...seleccionTraslado, seleccionado: destino })
+          }
+        />
+      )}
       {/* Barra de acciones: borrar cuentas en lote */}
       <div className="flex items-center justify-end gap-2">
         {!modoBorrar ? (
@@ -403,8 +539,10 @@ export function TablaInventario({
             onToggleBorrar={() => alternarBorrar(cta.cuentaId)}
             onEditar={() => setCuentaEditando(cta)}
             onIniciarVenta={(unidadId, nombrePerfil, clienteLogin, clienteClave) =>
-              setVentaTarget({ cuentaId: cta.cuentaId, unidadId, nombrePerfil, clienteLogin, clienteClave })
+              manejarCupoLibre(cta, unidadId, nombrePerfil, clienteLogin, clienteClave)
             }
+            destinosTraslado={seleccionTraslado?.destinos ?? null}
+            destinoSeleccionado={seleccionTraslado?.seleccionado ?? null}
             onGestionarVenta={(fila) => setGestionVentaTarget(fila)}
             onRenovarProveedor={() =>
               setRenovarProvTarget({
@@ -510,8 +648,10 @@ export function TablaInventario({
                 isTarget={targetIndex === index}
                 onEditar={() => setCuentaEditando(cta)}
                 onIniciarVenta={(unidadId, nombrePerfil, clienteLogin, clienteClave) =>
-                  setVentaTarget({ cuentaId: cta.cuentaId, unidadId, nombrePerfil, clienteLogin, clienteClave })
+                  manejarCupoLibre(cta, unidadId, nombrePerfil, clienteLogin, clienteClave)
                 }
+                destinosTraslado={seleccionTraslado?.destinos ?? null}
+                destinoSeleccionado={seleccionTraslado?.seleccionado ?? null}
                 onGestionarVenta={(fila) => setGestionVentaTarget(fila)}
                 onRenovarProveedor={() =>
                   setRenovarProvTarget({
@@ -585,6 +725,15 @@ export function TablaInventario({
           slug={slug}
           vendedores={vendedores}
           onCerrar={() => setGestionVentaTarget(null)}
+          onSeleccionarTraslado={(destinos) => {
+            setSeleccionTraslado({
+              suscripcionId: gestionVentaTarget.suscripcionId!,
+              clienteNombre: gestionVentaTarget.cliente ?? "Cliente",
+              destinos,
+              seleccionado: null,
+            });
+            setGestionVentaTarget(null);
+          }}
         />
       )}
 
@@ -637,6 +786,8 @@ function BloqueCuentaExcel({
   isTarget,
   onEditar,
   onIniciarVenta,
+  destinosTraslado,
+  destinoSeleccionado,
   onGestionarVenta,
   onRenovarProveedor,
   onDragStart,
@@ -663,6 +814,8 @@ function BloqueCuentaExcel({
     clienteLogin: string | null,
     clienteClave: string | null,
   ) => void;
+  destinosTraslado: DestinoTraslado[] | null;
+  destinoSeleccionado: DestinoTraslado | null;
   onGestionarVenta: (fila: CupoFila) => void;
   onRenovarProveedor: () => void;
   onDragStart: () => void;
@@ -680,11 +833,34 @@ function BloqueCuentaExcel({
         let claseAlerta = "bg-[#16a34a] text-white";
         let textoAlerta = "";
         const esLibre = !f.cliente;
+        const destinoCompatible = destinosTraslado?.find(
+          (destino) =>
+            destino.cuentaId === cta.cuentaId &&
+            (destino.unidadId === f.unidadId || (destino.unidadId === null && i === 0)),
+        );
+        const esDestinoSeleccionado = Boolean(
+          destinoCompatible &&
+            destinoSeleccionado?.cuentaId === destinoCompatible.cuentaId &&
+            destinoSeleccionado?.unidadId === destinoCompatible.unidadId,
+        );
 
         if (esLibre) {
-          claseAlerta =
-            "bg-[#1d4ed8] hover:bg-[#1e40af] text-white cursor-pointer transition active:scale-[0.98]";
-          textoAlerta = "Vacío (+ Vender)";
+          if (destinosTraslado) {
+            claseAlerta = destinoCompatible
+              ? esDestinoSeleccionado
+                ? "bg-amber-500 text-white cursor-pointer font-bold ring-2 ring-amber-300"
+                : "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer font-bold"
+              : "bg-neutral-200 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-600";
+            textoAlerta = destinoCompatible
+              ? esDestinoSeleccionado
+                ? "Destino elegido ✓"
+                : "Elegir destino"
+              : "No compatible";
+          } else {
+            claseAlerta =
+              "bg-[#1d4ed8] hover:bg-[#1e40af] text-white cursor-pointer transition active:scale-[0.98]";
+            textoAlerta = "Vacío (+ Vender)";
+          }
         } else if (f.dias === null) {
           claseAlerta = "bg-neutral-200 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-300";
           textoAlerta = "Sin fecha";
@@ -860,13 +1036,27 @@ function BloqueCuentaExcel({
                   rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
                   onClick={() => {
                     if (esLibre) {
-                      onIniciarVenta(f.unidadId, f.cupo, f.clienteLogin, f.clienteClave);
+                      if (destinosTraslado && !destinoCompatible) return;
+                      onIniciarVenta(
+                        destinosTraslado ? destinoCompatible!.unidadId : f.unidadId,
+                        f.cupo,
+                        f.clienteLogin,
+                        f.clienteClave,
+                      );
                     } else {
                       onGestionarVenta(f);
                     }
                   }}
                   className={`border border-neutral-300 px-2 py-0.5 text-center align-middle ${claseAlerta}`}
-                  title={esLibre ? "Haz clic para vender este cupo" : "Haz clic para gestionar esta venta"}
+                  title={
+                    esLibre
+                      ? destinosTraslado
+                        ? destinoCompatible
+                          ? "Elegir este cupo como destino"
+                          : "Este cupo no es compatible"
+                        : "Haz clic para vender este cupo"
+                      : "Haz clic para gestionar esta venta"
+                  }
                 >
                   {textoAlerta}
                 </td>
@@ -1021,6 +1211,8 @@ function TarjetaCuentaMovil({
   onToggleBorrar,
   onEditar,
   onIniciarVenta,
+  destinosTraslado,
+  destinoSeleccionado,
   onGestionarVenta,
   onRenovarProveedor,
 }: {
@@ -1041,6 +1233,8 @@ function TarjetaCuentaMovil({
     clienteLogin: string | null,
     clienteClave: string | null,
   ) => void;
+  destinosTraslado: DestinoTraslado[] | null;
+  destinoSeleccionado: DestinoTraslado | null;
   onGestionarVenta: (fila: CupoFila) => void;
   onRenovarProveedor: () => void;
 }) {
@@ -1145,8 +1339,19 @@ function TarjetaCuentaMovil({
 
       {/* Lista de cupos/perfiles */}
       <div className="mt-3 space-y-2">
-        {filasMovil.map((fila) => {
+        {filasMovil.map((fila, indiceFila) => {
           const estaVendido = Boolean(fila.suscripcionId);
+          const destinoCompatible = destinosTraslado?.find(
+            (destino) =>
+              destino.cuentaId === cta.cuentaId &&
+              (destino.unidadId === fila.unidadId ||
+                (destino.unidadId === null && indiceFila === 0)),
+          );
+          const esDestinoSeleccionado = Boolean(
+            destinoCompatible &&
+              destinoSeleccionado?.cuentaId === destinoCompatible.cuentaId &&
+              destinoSeleccionado?.unidadId === destinoCompatible.unidadId,
+          );
           const whatsappLimpio = fila.celular?.replace(/[^0-9+]/g, "");
           const alertaVencimiento = alertaVencimientoMovil(fila.dias);
 
@@ -1156,7 +1361,13 @@ function TarjetaCuentaMovil({
               className={`flex flex-col gap-1.5 rounded-lg border p-2.5 transition ${
                 estaVendido
                   ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-950 dark:bg-emerald-950/20"
-                  : "border-dashed border-neutral-300 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-800/40"
+                  : destinosTraslado
+                    ? destinoCompatible
+                      ? esDestinoSeleccionado
+                        ? "border-amber-500 bg-amber-50 ring-2 ring-amber-300 dark:bg-amber-950/30"
+                        : "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
+                      : "border-neutral-200 bg-neutral-100 opacity-45 dark:border-neutral-800 dark:bg-neutral-900"
+                    : "border-dashed border-neutral-300 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-800/40"
               }`}
             >
               <div className="flex items-center justify-between">
@@ -1180,17 +1391,32 @@ function TarjetaCuentaMovil({
                 ) : (
                   <button
                     type="button"
+                    disabled={Boolean(destinosTraslado && !destinoCompatible)}
                     onClick={() =>
                       onIniciarVenta(
-                        fila.unidadId,
+                        destinosTraslado ? destinoCompatible!.unidadId : fila.unidadId,
                         fila.cupo,
                         fila.clienteLogin,
                         fila.clienteClave,
                       )
                     }
-                    className="rounded bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white active:scale-95"
+                    className={`rounded px-2.5 py-1 text-xs font-semibold text-white active:scale-95 disabled:cursor-not-allowed ${
+                      destinosTraslado
+                        ? esDestinoSeleccionado
+                          ? "bg-amber-500"
+                          : destinoCompatible
+                            ? "bg-emerald-600"
+                            : "bg-neutral-400"
+                        : "bg-blue-600"
+                    }`}
                   >
-                    ⚡ Vender
+                    {destinosTraslado
+                      ? esDestinoSeleccionado
+                        ? "✓ Elegido"
+                        : destinoCompatible
+                          ? "Elegir"
+                          : "No compatible"
+                      : "⚡ Vender"}
                   </button>
                 )}
               </div>
