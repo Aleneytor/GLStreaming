@@ -3,6 +3,7 @@
 import { useActionState, useState, useEffect, useRef } from "react";
 import { cancelarVentaConLimpiezaAction, editarVentaDirectaAction } from "./actions";
 import { renovarAction } from "@/features/ventas/acciones-suscripcion";
+import { PanelTrasladoServicio } from "./panel-traslado-servicio";
 import type { VendedorOp } from "./modal-venta-rapida";
 import {
   calcularFechaRenovacion,
@@ -57,7 +58,7 @@ export function ModalGestionVenta({
   vendedores?: VendedorOp[];
   onCerrar: () => void;
 }) {
-  const [modo, setModo] = useState<"ver" | "renovar" | "eliminar">("ver");
+  const [modo, setModo] = useState<"ver" | "renovar" | "eliminar" | "trasladar">("ver");
   const [seleccionVendedor, setSeleccionVendedor] = useState(vendedorActualId ?? "");
   const [tipoVendedor, setTipoVendedor] = useState<"revendedor" | "intermediario">(
     vendedorActualTipo ?? "intermediario",
@@ -329,14 +330,23 @@ export function ModalGestionVenta({
               </p>
             )}
 
-            <div className="flex items-center justify-between border-t border-neutral-200 pt-3 dark:border-neutral-800">
-              <button
-                type="button"
-                onClick={() => setModo("eliminar")}
-                className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100 dark:bg-red-950/50 dark:text-red-300"
-              >
-                🗑️ Eliminar Venta
-              </button>
+            <div className="flex flex-col gap-2 border-t border-neutral-200 pt-3 dark:border-neutral-800 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setModo("eliminar")}
+                  className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100 dark:bg-red-950/50 dark:text-red-300"
+                >
+                  🗑️ Eliminar Venta
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModo("trasladar")}
+                  className="rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100 dark:bg-amber-950/50 dark:text-amber-200"
+                >
+                  Mover por falla
+                </button>
+              </div>
 
               <div className="flex items-center gap-2">
                 <button
@@ -468,6 +478,17 @@ export function ModalGestionVenta({
               )}
             </div>
           </form>
+        )}
+
+        {/* MODO TRASLADAR POR FALLA */}
+        {modo === "trasladar" && (
+          <PanelTrasladoServicio
+            suscripcionId={suscripcionId}
+            clienteNombre={clienteNombre}
+            slug={slug}
+            onVolver={() => setModo("ver")}
+            onTerminado={onCerrar}
+          />
         )}
 
         {/* MODO ELIMINAR VENTA */}

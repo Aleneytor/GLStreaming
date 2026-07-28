@@ -334,34 +334,34 @@ propia, estado disponible/completo, cuentas, ventas, cupos libres y porcentaje
 de ocupación. Las plataformas vacías mantienen su identidad, pero ocupan menos
 altura para conservar una navegación móvil ágil.
 
-Validación acumulada: **150 pruebas unitarias**, **16 suites SQL** y typecheck en
-verde; el último build de producción también pasó. La base local se reinició con
-migraciones hasta `0037`, quedó con **0 cuentas operativas** y recreó los dos
-usuarios de desarrollo. Por tanto, toda comprobación con la cartera real —incluidos
-los Gmail pagadores— debe repetirse después de reimportar el respaldo.
+El inventario ya permite **mover un servicio por falla** desde el mismo modal de
+gestión. El selector ofrece únicamente cuentas/cupos de otro recurso con el
+mismo producto y modalidad: una venta por perfil exige una unidad libre,
+habilitada, limpia y del mismo tipo; una venta completa exige una cuenta
+totalmente libre. La migración `0040` ejecuta el cambio bajo bloqueo, cierra la
+asignación anterior con `traslado_falla`, abre el tramo nuevo en el mismo
+instante, deja el origen en mantenimiento, revoca la entrega anterior y crea una
+entrega nueva pendiente. No crea otra suscripción, período, cobro o movimiento
+de Caja. El evento conserva IDs de origen/destino en auditoría, nunca secretos.
+
+Validación acumulada: **150 pruebas unitarias**, **17 suites SQL** y typecheck en
+verde. La suite de traslado comprueba el cambio de asignación, preservación del
+período, mantenimiento, entrega, auditoría, cuenta completa y rechazo a
+revendedores. El usuario confirmó la recuperación de la app y la reimportación;
+la base local contiene nuevamente la cartera operativa (298 cuentas y 629
+suscripciones al cerrar esta sesión).
 
 ## 5. Próxima sesión — lista acordada con el usuario
 
-1. **Resolver que la app no abre.** El aviso llegó después del `db:reset`; la
-   revisión de puerto 3000, proceso de Next y logs fue interrumpida cuando el
-   usuario tuvo que irse. Supabase sí quedó sano. Diagnosticar antes de modificar.
-2. **Probar el importador nuevo con el respaldo real.** Verificar que cada
-   plataforma recupere cuentas, ventas, fechas, vendedores, proveedor y costos;
-   que la primera cuenta pegada aparezca primera; que una cuenta completa ocupe
-   una sola posición; y que PAN/vencimiento puedan revelarse temporalmente desde
-   la máscara sin persistir CVV.
-3. **Añadir “Mover servicio por falla”.** Ya está decidido por `DEC-03` y
-   `DEC-60`: el traslado conserva suscripción, cliente, período, vencimiento,
-   precio, cobro y vendedor. Solo cierra la asignación/entrega del origen y abre
-   otra en un destino compatible; la cuenta defectuosa queda en mantenimiento.
-   Para cuenta completa, el destino debe estar totalmente libre; para perfil o
-   cupo, basta una unidad compatible libre. Debe ser transaccional y auditado.
-4. **Trabajar el panel de revendedor con los cambios recientes.** Adaptar la
+1. **Trabajar el panel de revendedor con los cambios recientes.** Adaptar la
    experiencia responsive, variantes Netflix/Spotify, renovaciones, traslado y
    paquete de acceso. No ampliar permisos: el revendedor solo ve sus ventas y
    nunca recibe inventario, proveedor, costo o tarjetas propias.
-5. **Agregar los siguientes pasos junto con el usuario.** No asumir todavía
-   funcionalidades posteriores a estas cuatro prioridades.
+2. **Probar visualmente el traslado con un caso real controlado.** Elegir una
+   venta respaldada, moverla a un cupo libre y comprobar el paquete de acceso en
+   escritorio y móvil. La prueba SQL ya cubre la atomicidad sin tocar datos.
+3. **Agregar los siguientes pasos junto con el usuario.** No asumir todavía
+   funcionalidades posteriores a estas prioridades.
 
 ## 6. Qué hacer si hay que reiniciar desde cero
 

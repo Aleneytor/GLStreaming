@@ -267,23 +267,26 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
   vacías se muestran aparte y en tarjetas más compactas para no alargar de más la
   navegación móvil.
 
+### Traslado administrativo por falla (migración `0040`, 2026-07-28)
+
+- `ModalGestionVenta` ofrece **Mover por falla** y carga únicamente destinos
+  compatibles. Las cuentas importadas no tienen filas en `cuenta_modalidades`;
+  por eso la compatibilidad real se valida con el mismo producto y una
+  `producto_modalidades` activa, además del tipo/estado del cupo.
+- `trasladar_servicio_por_falla` bloquea suscripción, origen y destino; conserva
+  suscripción, cliente, vendedor, períodos, cobros, precio y renovación. Solo
+  cierra/abre `asignaciones_inventario`, marca la cuenta y unidades origen en
+  mantenimiento, revoca el acceso viejo, crea una entrega `traslado` pendiente
+  y registra IDs no sensibles en `eventos_auditoria`.
+- Perfil/cupo exige otra unidad libre, habilitada, limpia y del mismo tipo.
+  Alcance cuenta exige una cuenta totalmente libre y preparada. Una familia
+  Spotify con admisión bloqueada nunca aparece ni se acepta como destino.
+- `supabase/tests/traslado_servicio.sql` pasa dentro de transacción/rollback:
+  10 verificaciones, rechazo de cuenta completa parcialmente ocupada y rechazo
+  RLS para revendedor. Typecheck y las 150 unitarias continúan en verde.
+
 ### ⚠️ Pendiente para el próximo agente
 
-- **Inicio obligatorio: diagnosticar «no abre».** Después del `db:reset` el
-  usuario indicó que la app no abría. El diagnóstico de puerto 3000/servidor
-  Next fue interrumpido porque debía irse; no asumir una causa. Supabase sí quedó
-  reconstruido con migraciones hasta `0037`, 0 cuentas y los 2 usuarios dev.
-- **Probar el importador con el respaldo real.** Confirmar de punta a punta:
-  plataformas y modalidades, cuentas completas, orden exacto según la primera
-  aparición, metadatos, tarjetas propias cifradas y botón de revelado en
-  escritorio/móvil. El código tiene pruebas, pero falta esta prueba operativa.
-- **Implementar traslado por falla de cuenta (DEC-03/DEC-60).** Añadir una opción
-  administrativa para mover un cliente/servicio desde una cuenta defectuosa a
-  otro cupo compatible. Debe cerrar el tramo de asignación anterior y abrir el
-  nuevo sin crear otra venta ni cambiar cliente, vendedor, precio, cobro,
-  período o fecha de renovación. Cuenta completa exige destino totalmente libre;
-  perfil/cupo exige slot compatible libre. El origen queda en mantenimiento y
-  el acceso/entrega debe regenerarse y auditarse.
 - **Actualizar el panel de revendedor.** Revisarlo contra todos los cambios
   recientes: variantes Netflix/Spotify, vendedor afiliado, base BCV/paralela,
   renovaciones, nuevas vistas responsive, traslados y paquete de acceso. Mantener
@@ -312,9 +315,9 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
   en `resolverVendedorId`.
 
 ---
-*Pendiente destacado: recuperar el arranque local, probar la reimportación real,
-implementar traslados por falla y actualizar el panel de revendedor.*
+*Pendiente destacado: probar visualmente un traslado real controlado y actualizar
+el panel de revendedor.*
 
-*Última actualización: 2026-07-27 (tarjetas propias cifradas y revelado auditado;
-orden de importación conservado; base local reiniciada; Inventario visual;
-Finanzas/importador/Catálogo/Clientes responsive; 150 unitarias y nueva suite RLS).*
+*Última actualización: 2026-07-28 (traslado por falla transaccional y auditado;
+cartera real reimportada/verificada por el usuario; 150 unitarias y suite SQL de
+traslado en verde).*

@@ -3008,6 +3008,7 @@ export type Database = {
       }
       eliminar_cliente: { Args: { p_cliente_id: string }; Returns: undefined }
       eliminar_cuenta: { Args: { p_cuenta_id: string }; Returns: undefined }
+      eliminar_cuentas: { Args: { p_cuenta_ids: string[] }; Returns: number }
       es_admin: { Args: never; Returns: boolean }
       fecha_renovacion_cliente: {
         Args: { p_inicio: string; p_meses?: number }
@@ -3107,6 +3108,18 @@ export type Database = {
           p_vendedor_id?: string
         }
         Returns: Json
+      }
+      listar_destinos_traslado: {
+        Args: { p_suscripcion_id: string }
+        Returns: {
+          alcance: string
+          cuenta_alias: string
+          cuenta_id: string
+          cuenta_orden: number
+          unidad_id: string
+          unidad_numero: number
+          unidad_tipo: string
+        }[]
       }
       marcar_periodo_cortesia: {
         Args: { p_periodo_id: string }
@@ -3278,6 +3291,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      trasladar_servicio_por_falla: {
+        Args: {
+          p_cuenta_destino_id: string
+          p_suscripcion_id: string
+          p_unidad_destino_id?: string
+        }
+        Returns: string
       }
       vender_unidad: {
         Args: {
