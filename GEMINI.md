@@ -19,6 +19,7 @@ Cuando llames a funciones de Postgres mediante `supabase.rpc(...)`, usa **EXCLUS
 | **Renovar/Pagar Proveedor** | `registrar_renovacion_y_pago` | `p_cuenta_id`, `p_costo_usdt`, `p_inicio`, `p_fecha_pago`, `p_referencia`, `p_pagar` | `registrar_ciclo_proveedor` no crea pagos ❌ |
 | **Renovar Proveedor por Lote** | `registrar_renovaciones_proveedor_lote` | `p_items` (JSONB con `cuenta_id`/`costo_usdt`), `p_fecha_pago`, `p_referencia` | No usar la fecha común de pago como inicio de todos los ciclos ❌ |
 | **Confirmar Limpieza** | `confirmar_limpieza_unidad` | `p_unidad_id` | `limpiar_unidad` ❌ |
+| **Preparar identidad Spotify** | `preparar_identidad_spotify` | `p_unidad_id`, `p_login_cifrado`, `p_login_fingerprint`, `p_contrasena_cifrada`, `p_tipo_correo` | Preparar no equivale a vender ni ocupar el cupo |
 
 ---
 

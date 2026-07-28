@@ -33,7 +33,7 @@ export async function obtenerDestinosTrasladoAction(
 
   if (error) return { ok: false, error: error.message };
 
-  const filas = (data ?? []) as Array<{
+  let filas = (data ?? []) as Array<{
     cuenta_id: string;
     unidad_id: string | null;
     cuenta_alias: string | null;
@@ -41,6 +41,26 @@ export async function obtenerDestinosTrasladoAction(
     unidad_numero: number | null;
     alcance: string;
   }>;
+  const unidadesCandidatas = filas
+    .map((destino) => destino.unidad_id)
+    .filter((unidadId): unidadId is string => Boolean(unidadId));
+  if (unidadesCandidatas.length > 0) {
+    const { data: preparadas, error: errorPreparadas } = await supabase
+      .from("identidades_spotify")
+      .select("unidad_preparada_id")
+      .in("unidad_preparada_id", unidadesCandidatas);
+    if (errorPreparadas) {
+      return { ok: false, error: errorPreparadas.message };
+    }
+    const reservadas = new Set(
+      (preparadas ?? [])
+        .map((identidad) => identidad.unidad_preparada_id)
+        .filter((unidadId): unidadId is string => Boolean(unidadId)),
+    );
+    filas = filas.filter(
+      (destino) => !destino.unidad_id || !reservadas.has(destino.unidad_id),
+    );
+  }
   const cuentas = [...new Set(filas.map((destino) => destino.cuenta_id))];
   const { data: credenciales } = cuentas.length
     ? await supabase

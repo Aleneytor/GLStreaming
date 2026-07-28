@@ -86,6 +86,33 @@ export default async function PlataformaPage({
   const { data: cuentas, error: errorCuentas } = await consulta.order("orden", { ascending: false });
   if (errorCuentas) throw new Error(`No se pudo cargar el inventario: ${errorCuentas.message}`);
 
+  // Un miembro familiar puede tener su correo/clave preparados antes de la
+  // venta. Sigue siendo un cupo libre: esta relación solo permite mostrar el
+  // acceso que se entregará cuando se venda.
+  const identidadesPreparadasPorUnidad = new Map<
+    string,
+    { login_cifrado: string | null; contrasena_cifrada: string | null }
+  >();
+  if (slug === "spotify") {
+    const unidadesIds = (cuentas ?? []).flatMap((cuenta) =>
+      (cuenta.unidades_inventario ?? []).map((unidad) => unidad.id),
+    );
+    if (unidadesIds.length > 0) {
+      const { data: preparadas, error: errorPreparadas } = await supabase
+        .from("identidades_spotify")
+        .select("unidad_preparada_id, login_cifrado, contrasena_cifrada")
+        .in("unidad_preparada_id", unidadesIds);
+      if (errorPreparadas) {
+        throw new Error(`No se pudieron cargar las identidades preparadas: ${errorPreparadas.message}`);
+      }
+      for (const identidad of preparadas ?? []) {
+        if (identidad.unidad_preparada_id) {
+          identidadesPreparadasPorUnidad.set(identidad.unidad_preparada_id, identidad);
+        }
+      }
+    }
+  }
+
   const proveedoresIds = Array.from(
     new Set(
       (cuentas ?? [])
@@ -213,6 +240,8 @@ export default async function PlataformaPage({
           ? datosVenta(asignacionCompleta)
           : vUnidad;
         const esPrimerSlot = u.numero_slot === 1;
+        const identidadPreparada = identidadesPreparadasPorUnidad.get(u.id);
+        const esSpotifyFamiliar = prod.codigo === "spotify-familiar";
 
         filas.push({
           slotNumber: u.numero_slot,
@@ -220,7 +249,9 @@ export default async function PlataformaPage({
           cupo:
             asignacionCompleta && esPrimerSlot
               ? "Cuenta Completa"
-              : u.nombre_visible ?? `Perfil ${u.numero_slot}`,
+              : esSpotifyFamiliar
+                ? `Miembro ${u.numero_slot}`
+                : u.nombre_visible ?? `Perfil ${u.numero_slot}`,
           unidadId: u.id as string,
           nombreUnidad: u.nombre_visible ?? null,
           suscripcionId: v?.suscripcionId ?? null,
@@ -231,9 +262,11 @@ export default async function PlataformaPage({
           vendedorId: v?.vendedorId ?? null,
           vendedorTipo: v?.vendedorTipo ?? null,
           vendedorCobraEnParalela: v?.vendedorCobraEnParalela ?? false,
-          clienteLogin: v?.clienteLogin ?? null,
-          clienteClave: v?.clienteClave ?? null,
-          pin: desc(uno(u.secretos_unidad)?.pin_cifrado) || null,
+          clienteLogin:
+            (v?.clienteLogin ?? desc(identidadPreparada?.login_cifrado)) || null,
+          clienteClave:
+            (v?.clienteClave ?? desc(identidadPreparada?.contrasena_cifrada)) || null,
+          pin: esSpotifyFamiliar ? null : desc(uno(u.secretos_unidad)?.pin_cifrado) || null,
           ingreso: asignacionCompleta && !esPrimerSlot ? null : (v?.ingreso ?? null),
           inicio: v?.inicio ?? null,
           vence: v?.vence ?? null,
@@ -364,6 +397,7 @@ export default async function PlataformaPage({
       // Un recurso indivisible (Spotify individual, Canva…) va en una sola línea.
       esCuentaCompleta:
         Boolean(asignacionCompleta) && prod.tipo_inventario !== "recurso_indivisible",
+      esSpotifyFamiliar: prod.codigo === "spotify-familiar",
       filas,
     });
     grupos.set(prod.id, grupo);

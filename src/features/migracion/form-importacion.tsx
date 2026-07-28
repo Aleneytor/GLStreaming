@@ -388,7 +388,7 @@ export function FormImportacion({
                 <article key={f.numero} className={`rounded-xl border p-3 ${f.errores.length ? "border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/30" : "border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900/60"}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{f.datos.cliente ?? f.datos.perfil ?? "Cupo libre"}</p>
+                      <p className="truncate text-sm font-medium">{f.datos.cliente ?? (esFamiliar ? f.datos.correoCliente : f.datos.perfil) ?? "Cupo libre"}</p>
                       <p className="mt-0.5 truncate text-xs text-neutral-500">#{f.numero} · {f.heredaCuenta ? "↳ " : ""}{f.datos.correo}</p>
                     </div>
                     <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-medium ${f.errores.length ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"}`}>
@@ -396,7 +396,12 @@ export function FormImportacion({
                     </span>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                    <div><span className="block text-neutral-500">Perfil</span>{f.slot || "—"}{f.datos.perfil ? ` · ${f.datos.perfil}` : ""}</div>
+                    <div>
+                      <span className="block text-neutral-500">{esFamiliar ? "Acceso cliente" : "Perfil"}</span>
+                      {esFamiliar
+                        ? `${f.datos.correoCliente ?? "Sin correo"} · ${f.datos.claveCliente ?? "Sin clave"}`
+                        : `${f.slot || "—"}${f.datos.perfil ? ` · ${f.datos.perfil}` : ""}`}
+                    </div>
                     <div><span className="block text-neutral-500">Vence</span>{f.datos.vence ?? "—"}</div>
                     <div><span className="block text-neutral-500">Ingreso</span>{f.datos.monto == null ? "—" : moneda === "usd" ? `$${f.datos.monto}` : `${f.datos.monto} Bs`}{moneda === "usd" && bs != null ? <span className="block text-[10px] text-neutral-500">≈ {bs.toLocaleString("es-VE", { maximumFractionDigits: 2 })} Bs</span> : null}</div>
                     <div><span className="block text-neutral-500">Vendido por</span>{f.datos.vendio ? `${f.datos.vendio} · ${base === "paralela" ? "Paralela" : "BCV"}` : "Directa · BCV"}</div>
@@ -411,7 +416,7 @@ export function FormImportacion({
             <table className="w-full text-left text-xs">
               <thead className="sticky top-0 bg-neutral-100 dark:bg-neutral-900">
                 <tr>
-                  {["#", "Cuenta", "Perfil", "Cliente", "Vence", "Monto", "Vendió", "Costo", "Estado"].map(
+                  {["#", "Cuenta", esFamiliar ? "Acceso cliente" : "Perfil", "Cliente", "Vence", "Monto", "Vendió", "Costo", "Estado"].map(
                     (h) => (
                       <th key={h} className="whitespace-nowrap px-2 py-1.5 font-medium">
                         {h}
@@ -443,8 +448,17 @@ export function FormImportacion({
                         )}
                       </td>
                       <td className="px-2 py-1.5">
-                        {f.slot || "—"}
-                        {f.datos.perfil ? ` · ${f.datos.perfil}` : ""}
+                        {esFamiliar ? (
+                          <span className="font-mono text-[11px]">
+                            <span className="block">{f.datos.correoCliente ?? "Sin correo"}</span>
+                            <span className="block text-neutral-500">{f.datos.claveCliente ?? "Sin clave"}</span>
+                          </span>
+                        ) : (
+                          <>
+                            {f.slot || "—"}
+                            {f.datos.perfil ? ` · ${f.datos.perfil}` : ""}
+                          </>
+                        )}
                       </td>
                       <td className="px-2 py-1.5">
                         {f.datos.cliente ?? <span className="text-neutral-400">libre</span>}

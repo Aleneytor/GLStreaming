@@ -1360,6 +1360,7 @@ export type Database = {
           sustituye_a_id: string | null
           tipo_correo: string
           titular_tipo: string
+          unidad_preparada_id: string | null
           version_clave: number
         }
         Insert: {
@@ -1376,6 +1377,7 @@ export type Database = {
           sustituye_a_id?: string | null
           tipo_correo: string
           titular_tipo?: string
+          unidad_preparada_id?: string | null
           version_clave?: number
         }
         Update: {
@@ -1392,6 +1394,7 @@ export type Database = {
           sustituye_a_id?: string | null
           tipo_correo?: string
           titular_tipo?: string
+          unidad_preparada_id?: string | null
           version_clave?: number
         }
         Relationships: [
@@ -1407,6 +1410,13 @@ export type Database = {
             columns: ["sustituye_a_id"]
             isOneToOne: false
             referencedRelation: "identidades_spotify"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "identidades_spotify_unidad_preparada_id_fkey"
+            columns: ["unidad_preparada_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_inventario"
             referencedColumns: ["id"]
           },
         ]
@@ -3128,6 +3138,16 @@ export type Database = {
       mover_cuenta: {
         Args: { p_accion: string; p_cuenta_id: string }
         Returns: undefined
+      }
+      preparar_identidad_spotify: {
+        Args: {
+          p_contrasena_cifrada: string
+          p_login_cifrado: string
+          p_login_fingerprint: string
+          p_tipo_correo?: string
+          p_unidad_id: string
+        }
+        Returns: string
       }
       reabrir_mes: {
         Args: { p_mes: string; p_motivo: string }

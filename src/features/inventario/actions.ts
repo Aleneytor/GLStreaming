@@ -657,7 +657,9 @@ export async function editarVentaDirectaAction(
     if (eVend) return { error: eVend.message };
   }
 
-  if (unidadId) {
+  // Spotify familiar administra una identidad (correo/clave), no perfil/PIN.
+  // Si el formulario no trae estos campos, se conserva intacta la unidad.
+  if (unidadId && formData.has("nombre_perfil")) {
     await supabase.from("unidades_inventario").update({
       nombre_visible: nombrePerfil || null,
     }).eq("id", unidadId);

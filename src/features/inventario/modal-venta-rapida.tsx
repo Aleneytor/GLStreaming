@@ -15,6 +15,8 @@ export function ModalVentaRapida({
   cuentaId,
   unidadId,
   nombrePerfil,
+  clienteLogin,
+  clienteClave,
   slug,
   vendedores = [],
   onCerrar,
@@ -22,6 +24,8 @@ export function ModalVentaRapida({
   cuentaId: string;
   unidadId: string | null;
   nombrePerfil: string;
+  clienteLogin?: string | null;
+  clienteClave?: string | null;
   slug: string;
   vendedores?: VendedorOp[];
   onCerrar: () => void;
@@ -56,6 +60,7 @@ export function ModalVentaRapida({
   const esNombreGenerico =
     !nombrePerfil ||
     nombrePerfil.toLowerCase().startsWith("perfil ") ||
+    nombrePerfil.toLowerCase().startsWith("miembro ") ||
     nombrePerfil === "Vacío (+ Vender)" ||
     nombrePerfil === "Cuenta Completa";
   const clienteInicial = esNombreGenerico ? "" : nombrePerfil;
@@ -85,6 +90,19 @@ export function ModalVentaRapida({
           <input type="hidden" name="cuenta_id" value={cuentaId} />
           {unidadId && <input type="hidden" name="unidad_id" value={unidadId} />}
           <input type="hidden" name="slug" value={slug} />
+
+          {(clienteLogin || clienteClave) && (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
+              <strong>Acceso Spotify preparado para este cupo</strong>
+              <div className="mt-2 grid gap-1 font-mono text-[11px]">
+                <span className="break-all">Correo: {clienteLogin ?? "Sin correo"}</span>
+                <span className="break-all">Clave: {clienteClave ?? "Sin clave"}</span>
+              </div>
+              <p className="mt-2 opacity-75">
+                Al confirmar, este acceso quedará enlazado automáticamente al cliente.
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">

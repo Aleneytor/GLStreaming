@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { resumirCuentaInventario } from "@/domain/resumen-inventario";
 
 export const dynamic = "force-dynamic";
 
@@ -299,7 +300,9 @@ export default async function InventarioPage() {
       .select(
         `id, productos_plataforma!inner ( plataforma_id ),
          unidades_inventario ( id ),
-         asignaciones_inventario ( fin )`,
+         asignaciones_inventario (
+           fin, alcance, consume_capacidad, capacidad_vendible_consumida_snapshot
+         )`,
       )
       .neq("estado", "archivada"),
   ]);
@@ -310,14 +313,14 @@ export default async function InventarioPage() {
       plataforma_id: string;
     };
     const previo = resumen.get(relacion.plataforma_id) ?? RESUMEN_VACIO;
+    const ocupacionCuenta = resumirCuentaInventario(
+      cuenta.unidades_inventario?.length ?? 0,
+      cuenta.asignaciones_inventario ?? [],
+    );
     resumen.set(relacion.plataforma_id, {
       cuentas: previo.cuentas + 1,
-      unidades: previo.unidades + (cuenta.unidades_inventario?.length ?? 0),
-      ventas:
-        previo.ventas +
-        (cuenta.asignaciones_inventario ?? []).filter(
-          (asignacion) => asignacion.fin === null,
-        ).length,
+      unidades: previo.unidades + ocupacionCuenta.capacidad,
+      ventas: previo.ventas + ocupacionCuenta.ocupados,
     });
   }
 

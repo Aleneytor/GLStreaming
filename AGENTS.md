@@ -283,7 +283,26 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
   Spotify con admisión bloqueada nunca aparece ni se acepta como destino.
 - `supabase/tests/traslado_servicio.sql` pasa dentro de transacción/rollback:
   10 verificaciones, rechazo de cuenta completa parcialmente ocupada y rechazo
-  RLS para revendedor. Typecheck y las 150 unitarias continúan en verde.
+  RLS para revendedor. Typecheck y las pruebas unitarias continúan en verde.
+
+### Spotify familiar: identidades preparadas (migración `0041`, 2026-07-28)
+
+- Un cupo familiar representa un **miembro con correo/contraseña propios**, no
+  un perfil/PIN. Inventario usa las columnas `Correo cliente` / `Clave cliente`
+  en escritorio y muestra el acceso dentro de cada tarjeta móvil.
+- `identidades_spotify.unidad_preparada_id` permite guardar correo/clave en un
+  cupo aún libre. Prepararlo no crea cliente, suscripción ni asignación y no
+  ocupa stock. Al vender, un trigger enlaza esa misma identidad a la suscripción
+  dentro de la transacción y limpia la preparación.
+- El importador guarda ahora las columnas `Correo Cliente` / `Clave Cliente`
+  aunque la fila no tenga señal de venta. Las credenciales de cupos libres de la
+  importación anterior no existen en PostgreSQL y deben reimportarse desde el
+  respaldo (pueden pegarse solo esas filas libres).
+- El resumen de `/inventario` cuenta una unidad por recurso indivisible sin
+  perfiles y usa el consumo snapshot de las ventas completas. Así ya no mezcla
+  las ventas individuales de Spotify contra solo los 240 cupos familiares.
+- Validación: 153 unitarias, suite `spotify.sql` y nueva suite transaccional
+  `spotify_identidades_preparadas.sql` en verde.
 
 ### ⚠️ Pendiente para el próximo agente
 
@@ -318,6 +337,6 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 *Pendiente destacado: probar visualmente un traslado real controlado y actualizar
 el panel de revendedor.*
 
-*Última actualización: 2026-07-28 (traslado por falla transaccional y auditado;
-cartera real reimportada/verificada por el usuario; 150 unitarias y suite SQL de
-traslado en verde).*
+*Última actualización: 2026-07-28 (Spotify familiar modelado como identidad por
+miembro, credenciales preparadas en cupos libres y ocupación corregida; traslado
+por falla transaccional; 153 unitarias y suites SQL en verde).*

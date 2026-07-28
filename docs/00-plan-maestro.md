@@ -344,7 +344,23 @@ instante, deja el origen en mantenimiento, revoca la entrega anterior y crea una
 entrega nueva pendiente. No crea otra suscripción, período, cobro o movimiento
 de Caja. El evento conserva IDs de origen/destino en auditoría, nunca secretos.
 
-Validación acumulada: **150 pruebas unitarias**, **17 suites SQL** y typecheck en
+Spotify familiar ya no se presenta como perfiles con PIN. Cada posición muestra
+el correo y la contraseña de la identidad del miembro, separados del correo de
+la madre y del Gmail pagador. La migración `0041` permite que una identidad de
+dominio GL o Gmail quede preparada en una unidad todavía libre: no crea una
+venta ni altera la ocupación, y se enlaza automáticamente a la suscripción al
+confirmar la venta. El importador conserva también estas credenciales cuando la
+fila no tiene cliente, monto, teléfono ni vendedor. Las filas libres importadas
+antes de `0041` deben volver a pegarse desde el respaldo porque sus credenciales
+no llegaron a guardarse en la base anterior.
+
+El resumen de plataformas calcula ahora capacidad física en vez de restar el
+número bruto de asignaciones: una cuenta indivisible sin unidades aporta un
+cupo, una venta completa consume todas sus unidades y un uso principal que no
+consume capacidad no reduce los cupos familiares. Esto corrige el falso 100 %
+de Spotify producido al sumar individuales y familiares en la misma tarjeta.
+
+Validación acumulada: **153 pruebas unitarias**, **18 suites SQL** y typecheck en
 verde. La suite de traslado comprueba el cambio de asignación, preservación del
 período, mantenimiento, entrega, auditoría, cuenta completa y rechazo a
 revendedores. El usuario confirmó la recuperación de la app y la reimportación;

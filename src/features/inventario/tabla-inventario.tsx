@@ -57,6 +57,7 @@ export type BloqueCuenta = {
   renovarProveedor: string | null;
   diasProveedor: number | null;
   esCuentaCompleta?: boolean;
+  esSpotifyFamiliar?: boolean;
   filas: CupoFila[];
 };
 
@@ -167,6 +168,8 @@ export function TablaInventario({
     cuentaId: string;
     unidadId: string | null;
     nombrePerfil: string;
+    clienteLogin: string | null;
+    clienteClave: string | null;
   } | null>(null);
 
   const [gestionVentaTarget, setGestionVentaTarget] = useState<CupoFila | null>(null);
@@ -397,8 +400,8 @@ export function TablaInventario({
             borrarMarcada={cuentasBorrarSel.includes(cta.cuentaId)}
             onToggleBorrar={() => alternarBorrar(cta.cuentaId)}
             onEditar={() => setCuentaEditando(cta)}
-            onIniciarVenta={(unidadId, nombrePerfil) =>
-              setVentaTarget({ cuentaId: cta.cuentaId, unidadId, nombrePerfil })
+            onIniciarVenta={(unidadId, nombrePerfil, clienteLogin, clienteClave) =>
+              setVentaTarget({ cuentaId: cta.cuentaId, unidadId, nombrePerfil, clienteLogin, clienteClave })
             }
             onGestionarVenta={(fila) => setGestionVentaTarget(fila)}
             onRenovarProveedor={() =>
@@ -433,10 +436,14 @@ export function TablaInventario({
                 Contraseña
               </th>
               <th className="border border-neutral-400 bg-[#1e3a8a] px-2 py-1 font-bold text-white">
-                Perfil
+                {cuentasState.some((cuenta) => cuenta.esSpotifyFamiliar)
+                  ? "Correo cliente"
+                  : "Perfil"}
               </th>
               <th className="border border-neutral-400 bg-[#1e3a8a] px-1.5 py-1 text-center font-bold text-white">
-                Pin
+                {cuentasState.some((cuenta) => cuenta.esSpotifyFamiliar)
+                  ? "Clave cliente"
+                  : "Pin"}
               </th>
               <th className="border border-neutral-400 bg-[#1e3a8a] px-2 py-1 text-right font-bold text-white">
                 Ingresos
@@ -500,8 +507,8 @@ export function TablaInventario({
                 onToggleBorrar={() => alternarBorrar(cta.cuentaId)}
                 isTarget={targetIndex === index}
                 onEditar={() => setCuentaEditando(cta)}
-                onIniciarVenta={(unidadId, nombrePerfil) =>
-                  setVentaTarget({ cuentaId: cta.cuentaId, unidadId, nombrePerfil })
+                onIniciarVenta={(unidadId, nombrePerfil, clienteLogin, clienteClave) =>
+                  setVentaTarget({ cuentaId: cta.cuentaId, unidadId, nombrePerfil, clienteLogin, clienteClave })
                 }
                 onGestionarVenta={(fila) => setGestionVentaTarget(fila)}
                 onRenovarProveedor={() =>
@@ -541,6 +548,8 @@ export function TablaInventario({
           cuentaId={ventaTarget.cuentaId}
           unidadId={ventaTarget.unidadId}
           nombrePerfil={ventaTarget.nombrePerfil}
+          clienteLogin={ventaTarget.clienteLogin}
+          clienteClave={ventaTarget.clienteClave}
           slug={slug}
           vendedores={vendedores}
           onCerrar={() => setVentaTarget(null)}
@@ -557,6 +566,13 @@ export function TablaInventario({
           clienteCelular={gestionVentaTarget.celular}
           nombrePerfil={gestionVentaTarget.cupo}
           pinPerfil={gestionVentaTarget.pin}
+          esSpotifyFamiliar={Boolean(
+            cuentasState.find((cuenta) =>
+              cuenta.filas.some((fila) => fila.clave === gestionVentaTarget.clave),
+            )?.esSpotifyFamiliar,
+          )}
+          clienteLogin={gestionVentaTarget.clienteLogin}
+          clienteClave={gestionVentaTarget.clienteClave}
           vence={gestionVentaTarget.vence}
           precioUsd={gestionVentaTarget.ingreso}
           vendedorActualId={gestionVentaTarget.vendedorId}
@@ -637,7 +653,12 @@ function BloqueCuentaExcel({
   onToggleBorrar: () => void;
   isTarget: boolean;
   onEditar: () => void;
-  onIniciarVenta: (unidadId: string | null, nombrePerfil: string) => void;
+  onIniciarVenta: (
+    unidadId: string | null,
+    nombrePerfil: string,
+    clienteLogin: string | null,
+    clienteClave: string | null,
+  ) => void;
   onGestionarVenta: (fila: CupoFila) => void;
   onRenovarProveedor: () => void;
   onDragStart: () => void;
@@ -778,7 +799,11 @@ function BloqueCuentaExcel({
                 rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
                 className="border border-neutral-300 px-2 py-0.5 font-medium text-neutral-900 align-middle dark:border-neutral-700 dark:text-white"
               >
-                {cta.esCuentaCompleta ? "Cuenta Completa" : f.cupo}
+                {cta.esSpotifyFamiliar
+                  ? f.clienteLogin ?? "Sin correo preparado"
+                  : cta.esCuentaCompleta
+                    ? "Cuenta Completa"
+                    : f.cupo}
               </td>
             )}
 
@@ -788,7 +813,7 @@ function BloqueCuentaExcel({
                 rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
                 className="border border-neutral-300 px-1.5 py-0.5 text-center font-mono text-neutral-700 align-middle dark:border-neutral-700 dark:text-neutral-300"
               >
-                {f.pin ?? ""}
+                {cta.esSpotifyFamiliar ? f.clienteClave ?? "" : f.pin ?? ""}
               </td>
             )}
 
@@ -836,13 +861,13 @@ function BloqueCuentaExcel({
                   rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
                   onClick={() => {
                     if (esLibre) {
-                      onIniciarVenta(f.unidadId, f.cupo);
+                      onIniciarVenta(f.unidadId, f.cupo, f.clienteLogin, f.clienteClave);
                     } else {
                       onGestionarVenta(f);
                     }
                   }}
                   className={`border border-neutral-300 px-2 py-0.5 text-center align-middle ${claseAlerta}`}
-                  title={esLibre ? "Haz clic para vender este perfil" : "Haz clic para gestionar esta venta"}
+                  title={esLibre ? "Haz clic para vender este cupo" : "Haz clic para gestionar esta venta"}
                 >
                   {textoAlerta}
                 </td>
@@ -1011,7 +1036,12 @@ function TarjetaCuentaMovil({
   borrarMarcada: boolean;
   onToggleBorrar: () => void;
   onEditar: () => void;
-  onIniciarVenta: (unidadId: string | null, nombrePerfil: string) => void;
+  onIniciarVenta: (
+    unidadId: string | null,
+    nombrePerfil: string,
+    clienteLogin: string | null,
+    clienteClave: string | null,
+  ) => void;
   onGestionarVenta: (fila: CupoFila) => void;
   onRenovarProveedor: () => void;
 }) {
@@ -1133,7 +1163,7 @@ function TarjetaCuentaMovil({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-neutral-900 dark:text-white">
                   <span>{fila.cupo}</span>
-                  {fila.pin && (
+                  {!cta.esSpotifyFamiliar && fila.pin && (
                     <span className="rounded bg-neutral-200 px-1 py-0.2 font-mono text-[10px] text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300">
                       PIN: {fila.pin}
                     </span>
@@ -1151,13 +1181,27 @@ function TarjetaCuentaMovil({
                 ) : (
                   <button
                     type="button"
-                    onClick={() => onIniciarVenta(fila.unidadId, fila.cupo)}
+                    onClick={() =>
+                      onIniciarVenta(
+                        fila.unidadId,
+                        fila.cupo,
+                        fila.clienteLogin,
+                        fila.clienteClave,
+                      )
+                    }
                     className="rounded bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white active:scale-95"
                   >
                     ⚡ Vender
                   </button>
                 )}
               </div>
+
+              {cta.esSpotifyFamiliar && (fila.clienteLogin || fila.clienteClave) && (
+                <div className="grid gap-1 rounded-md bg-neutral-100 px-2 py-1.5 font-mono text-[11px] text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200 sm:grid-cols-2">
+                  <span className="break-all">📧 {fila.clienteLogin ?? "Sin correo"}</span>
+                  <span className="break-all">🔑 {fila.clienteClave ?? "Sin clave"}</span>
+                </div>
+              )}
 
               {estaVendido && (
                 <div className="flex items-center justify-between text-xs">

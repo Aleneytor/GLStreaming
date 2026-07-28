@@ -412,6 +412,26 @@ export async function importarAction(
       }));
     }
 
+    // Un correo/clave de miembro sin cliente es una identidad PREPARADA para
+    // un cupo todavía libre. Se conserva sin inventar una venta o suscripción.
+    const resultadoBase = data as { unidad_id?: string } | null;
+    if (
+      !error &&
+      esFamiliar &&
+      !d.cliente &&
+      d.correoCliente &&
+      resultadoBase?.unidad_id
+    ) {
+      const preparada = await supabase.rpc("preparar_identidad_spotify", {
+        p_unidad_id: resultadoBase.unidad_id,
+        p_login_cifrado: cifrarSecreto(d.correoCliente),
+        p_login_fingerprint: huellaSecreto(d.correoCliente),
+        p_contrasena_cifrada: d.claveCliente ? cifrarSecreto(d.claveCliente) : "",
+        p_tipo_correo: tipoCorreo(d.correoCliente),
+      });
+      if (preparada.error) error = { message: preparada.error.message };
+    }
+
     // Cortesía (monto 0): el servicio queda resuelto, no pendiente de cobro.
     const periodoId = (data as { periodo_id?: string } | null)?.periodo_id;
     const ids = data as {
@@ -530,7 +550,9 @@ export async function importarAction(
           ? `${d.cliente} · vence ${vence}${etiquetaCobro}${etiquetaVendedor}${
               advertenciasMeta.length ? ` · aviso: ${advertenciasMeta.join("; ")}` : ""
             }`
-          : `Perfil ${fila.slot} cargado libre${
+          : `${esFamiliar ? `Miembro ${fila.slot}` : `Perfil ${fila.slot}`} cargado libre${
+              esFamiliar && d.correoCliente ? " con correo y clave preparados" : ""
+            }${
               advertenciasMeta.length ? ` · aviso: ${advertenciasMeta.join("; ")}` : ""
             }`,
     });

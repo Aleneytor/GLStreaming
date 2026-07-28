@@ -33,6 +33,9 @@ export function ModalGestionVenta({
   clienteCelular,
   nombrePerfil,
   pinPerfil,
+  esSpotifyFamiliar = false,
+  clienteLogin = null,
+  clienteClave = null,
   vence,
   precioUsd,
   vendedorActualId,
@@ -49,6 +52,9 @@ export function ModalGestionVenta({
   clienteCelular: string | null;
   nombrePerfil: string;
   pinPerfil: string | null;
+  esSpotifyFamiliar?: boolean;
+  clienteLogin?: string | null;
+  clienteClave?: string | null;
   vence: string | null;
   precioUsd: number | null;
   vendedorActualId: string | null;
@@ -186,29 +192,52 @@ export function ModalGestionVenta({
                 />
               </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                  Nombre del Perfil
-                </label>
-                <input
-                  name="nombre_perfil"
-                  defaultValue={nombrePerfil}
-                  placeholder="Ej. Perfil 1"
-                  className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                />
-              </div>
+              {esSpotifyFamiliar ? (
+                <>
+                  <div>
+                    <span className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                      Correo Spotify del cliente
+                    </span>
+                    <div className="min-h-8 break-all rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 font-mono text-xs text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white">
+                      {clienteLogin ?? "No registrado"}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                      Contraseña Spotify del cliente
+                    </span>
+                    <div className="min-h-8 break-all rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 font-mono text-xs text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white">
+                      {clienteClave ?? "No registrada"}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                      Nombre del Perfil
+                    </label>
+                    <input
+                      name="nombre_perfil"
+                      defaultValue={nombrePerfil}
+                      placeholder="Ej. Perfil 1"
+                      className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                    />
+                  </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                  PIN (4 dígitos)
-                </label>
-                <input
-                  name="pin_perfil"
-                  defaultValue={pinPerfil ?? ""}
-                  placeholder="sin PIN"
-                  className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-mono text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                />
-              </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                      PIN (4 dígitos)
+                    </label>
+                    <input
+                      name="pin_perfil"
+                      defaultValue={pinPerfil ?? ""}
+                      placeholder="sin PIN"
+                      className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-mono text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             <div>
