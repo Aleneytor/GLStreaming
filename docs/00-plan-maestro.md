@@ -483,15 +483,10 @@ cierre está consignado arriba para no conservar cifras históricas contradictor
    renovación” e “Inicio del ciclo” como datos separados. Revisar modalidades,
    capacidad, credenciales, costo, proveedor, renovación y excepciones propias de
    Netflix, Spotify y el resto antes de implementar.
-2. **Terminar de revisar el panel de revendedor con los cambios recientes.** Adaptar la
-   experiencia responsive, variantes Netflix/Spotify, renovaciones, traslado y
-   paquete de acceso. No ampliar permisos: el revendedor solo ve sus ventas y
-   nunca recibe inventario, proveedor, costo o tarjetas propias.
-3. **Probar visualmente el traslado con un caso real controlado.** Elegir una
-   venta respaldada, moverla a un cupo libre y comprobar el paquete de acceso en
-   escritorio y móvil. La prueba SQL ya cubre la atomicidad sin tocar datos.
-4. **Agregar los siguientes pasos junto con el usuario.** No asumir todavía
-   funcionalidades posteriores a estas prioridades.
+2. **Panel del revendedor finalizado visualmente (COMPLETO 2026-07-28).** Adaptada la experiencia responsive, KPI cromáticos, tarjetas de clientes con modalidad, badges de vencimiento y simplificación de Spotify Premium.
+3. **Vista móvil colapsable del inventario y rediseño de espaciado (COMPLETO 2026-07-28).** Rediseño estético con tipografía pulida (`text-xs`), badges HSL suaves, `whitespace-nowrap` en 100% de las celdas, desplegables individuales (`▲ Cerrar` / `▼ Abrir`) y control masivo (`📁 Cerrar todas` / `📂 Abrir todas`).
+4. **Corrección de sincronización de proveedor en importaciones masivas (COMPLETO 2026-07-28).** Resuelto el bug de nombre de columna `dia_ancla_proveedor` en `sincronizarCicloProveedorImportado`.
+5. **Agregar los siguientes pasos junto con el usuario.** No asumir todavía funcionalidades posteriores a estas prioridades.
 
 ## 6. Qué hacer si hay que reiniciar desde cero
 
