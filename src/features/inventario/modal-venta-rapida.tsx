@@ -19,6 +19,7 @@ export function ModalVentaRapida({
   clienteClave,
   clienteTipoCorreo,
   esSpotifyFamiliar = false,
+  esCorreoIntegrante = false,
   slug,
   vendedores = [],
   onCerrar,
@@ -30,6 +31,10 @@ export function ModalVentaRapida({
   clienteClave?: string | null;
   clienteTipoCorreo?: string | null;
   esSpotifyFamiliar?: boolean;
+  /** Canva y afines: cada integrante entra al panel con su PROPIO correo, sin
+   * clave compartida. El "nombre del cliente" es solo el registro interno de
+   * quién paga; el correo de invitación es un dato aparte y obligatorio. */
+  esCorreoIntegrante?: boolean;
   slug: string;
   vendedores?: VendedorOp[];
   onCerrar: () => void;
@@ -254,6 +259,25 @@ export function ModalVentaRapida({
               </div>
               <p className="mt-2 opacity-75">
                 Al confirmar, este acceso quedará enlazado automáticamente al cliente.
+              </p>
+            </div>
+          )}
+
+          {esCorreoIntegrante && (
+            <div className="rounded-xl border border-indigo-300 bg-indigo-50 p-3 dark:border-indigo-900 dark:bg-indigo-950/25">
+              <label className="mb-1 block text-xs font-bold text-indigo-950 dark:text-indigo-100">
+                Correo del integrante (para invitarlo al panel) *
+              </label>
+              <input
+                type="email"
+                name="nombre_perfil"
+                required
+                placeholder="miembro@gmail.com"
+                className="w-full rounded-lg border border-indigo-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-indigo-800 dark:bg-neutral-900 dark:text-white"
+              />
+              <p className="mt-1.5 text-[11px] text-indigo-800 dark:text-indigo-300">
+                Es el correo con el que lo invitas al panel. El nombre de abajo
+                es solo tu registro de quién paga, no se usa para la invitación.
               </p>
             </div>
           )}

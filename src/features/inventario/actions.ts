@@ -611,6 +611,9 @@ export async function venderUnidadRapidaAction(
   const unidadId = String(formData.get("unidad_id") ?? "") || null;
   const clienteNombre = String(formData.get("cliente_nombre") ?? "").trim();
   const clienteWhatsapp = String(formData.get("cliente_whatsapp") ?? "").trim();
+  // Identificador visible del cupo cuando difiere del nombre del cliente: en
+  // Canva es el correo con el que se invita al integrante al panel.
+  const nombrePerfil = String(formData.get("nombre_perfil") ?? "").trim();
   const precioUsdTxt = String(formData.get("precio_usd") ?? "").trim();
   const fechaInicioTxt = String(formData.get("fecha_inicio") ?? "").trim();
   const vendedorIdInput = String(formData.get("vendedor_id") ?? "").trim() || null;
@@ -709,6 +712,7 @@ export async function venderUnidadRapidaAction(
         p_unidad_id: unidadId,
         p_cliente_nombre: clienteNombre,
         p_cliente_whatsapp: clienteWhatsapp || null,
+        p_nombre_perfil: nombrePerfil || undefined,
         p_precio_usd: precioUsd,
         p_monto_usd: precioUsd,
         p_inicio: fechaInicioTxt || null,

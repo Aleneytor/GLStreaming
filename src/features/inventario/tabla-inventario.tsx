@@ -304,6 +304,7 @@ export function TablaInventario({
     clienteClave: string | null;
     clienteTipoCorreo: string | null;
     esSpotifyFamiliar: boolean;
+    esCorreoIntegrante: boolean;
   } | null>(null);
 
   const [gestionVentaTarget, setGestionVentaTarget] = useState<CupoFila | null>(null);
@@ -425,6 +426,7 @@ export function TablaInventario({
       clienteClave,
       clienteTipoCorreo,
       esSpotifyFamiliar: Boolean(cuenta.esSpotifyFamiliar),
+      esCorreoIntegrante: Boolean(cuenta.esCorreoIntegrante),
     });
   };
 
@@ -749,6 +751,7 @@ export function TablaInventario({
           clienteClave={ventaTarget.clienteClave}
           clienteTipoCorreo={ventaTarget.clienteTipoCorreo}
           esSpotifyFamiliar={ventaTarget.esSpotifyFamiliar}
+          esCorreoIntegrante={ventaTarget.esCorreoIntegrante}
           slug={slug}
           vendedores={vendedores}
           onCerrar={() => setVentaTarget(null)}
