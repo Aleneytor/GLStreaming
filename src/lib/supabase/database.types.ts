@@ -3024,6 +3024,22 @@ export type Database = {
         }
         Returns: string
       }
+      crear_familia_spotify: {
+        Args: {
+          p_alias: string
+          p_capacidad: number
+          p_contrasena_cifrada: string
+          p_gmail_pagador_cifrado?: string
+          p_gmail_pagador_fingerprint?: string
+          p_login_cifrado: string
+          p_login_fingerprint: string
+          p_notas: string
+          p_origen_gpay?: string
+          p_producto_id: string
+          p_proveedor_nombre: string
+        }
+        Returns: string
+      }
       editar_acceso_miembro_spotify: {
         Args: {
           p_contrasena_cifrada: string

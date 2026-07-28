@@ -46,6 +46,7 @@ export function FormCuenta({
     producto?.capacidad_fija ?? producto?.capacidad_min ?? 1;
 
   const esDeCliente = producto?.titularidad_predeterminada === "cliente";
+  const esSpotifyFamiliar = producto?.codigo === "spotify-familiar";
 
   return (
     <form action={formAction} className="space-y-5">
@@ -85,6 +86,16 @@ export function FormCuenta({
           Este producto es propiedad del cliente. Se carga por el flujo de servicio
           existente, no por aquí.
         </p>
+      )}
+
+      {esSpotifyFamiliar && (
+        <div className="rounded-xl border border-green-300 bg-green-50 p-4 text-sm text-green-950 dark:border-green-900 dark:bg-green-950/30 dark:text-green-100">
+          <strong>Familia Spotify · 5 miembros</strong>
+          <p className="mt-1 text-xs opacity-80">
+            Aquí se crea la cuenta administradora y la cobertura. Los correos de los
+            miembros se preparan después desde “Gestionar familia”.
+          </p>
+        </div>
       )}
 
       <div className="grid grid-cols-2 gap-4">
@@ -204,6 +215,38 @@ export function FormCuenta({
           />
         </div>
       </fieldset>
+
+      {esSpotifyFamiliar && (
+        <fieldset className="space-y-4 rounded-xl border border-green-200 p-4 dark:border-green-900">
+          <legend className="px-1 text-sm font-medium">Pago de Spotify (opcional)</legend>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            Registra solamente el Gmail que paga la familia. Nunca se solicita su contraseña.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="gmail_pagador" className="mb-1.5 block text-sm font-medium">
+                Gmail pagador
+              </label>
+              <input
+                id="gmail_pagador"
+                name="gmail_pagador"
+                type="email"
+                autoComplete="off"
+                className={claseCampo}
+              />
+            </div>
+            <div>
+              <label htmlFor="origen_gpay" className="mb-1.5 block text-sm font-medium">
+                Origen
+              </label>
+              <select id="origen_gpay" name="origen_gpay" className={claseCampo}>
+                <option value="gpay_usa">GPay USA</option>
+                <option value="gpay_nigeria">GPay Nigeria</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+      )}
 
       <fieldset className="space-y-4 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
         <legend className="px-1 text-sm font-medium">

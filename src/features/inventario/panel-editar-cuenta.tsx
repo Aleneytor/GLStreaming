@@ -293,7 +293,12 @@ export function PanelEditarCuenta({
 
       {/* --- BOTONES DE ACCIÓN --- */}
       <div className="flex items-center justify-between border-t border-neutral-200 pt-4 dark:border-neutral-800">
-        <BotonEliminarCuenta cuentaId={cuenta.cuentaId} etiqueta="Eliminar Cuenta" />
+        <BotonEliminarCuenta
+          cuentaId={cuenta.cuentaId}
+          etiqueta={cuenta.correo}
+          slug={slug}
+          onEliminada={onCerrar}
+        />
 
         <div className="flex items-center gap-2">
           <button

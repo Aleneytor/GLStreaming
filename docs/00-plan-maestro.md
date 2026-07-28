@@ -413,6 +413,14 @@ venta ni altera período, precio o cobro: cierra el vínculo de identidad anteri
 abre el nuevo y registra auditoría. El modal de venta también permite sustituir
 el acceso preparado antes de confirmarlo, dentro de la misma transacción.
 
+La migración `0047` actualiza también el alta manual: al elegir Spotify familiar,
+“Nueva cuenta” crea la identidad administradora, los cinco miembros, cobertura
+abierta y Gmail pagador opcional, en lugar de dejar una cuenta base incompleta.
+El borrado desde el editor ya no usa un formulario anidado —causa del error de
+React al enviar—, sino una acción confirmada que cierra el panel y refresca el
+inventario. La cuenta manual incompleta usada para detectar el fallo fue
+eliminada mediante `eliminar_cuenta` después de verificar su UUID y producto.
+
 La carga del inventario Spotify pagina internamente los filtros de UUID en lotes
 de 100. Con la cartera actual se validaron 471 unidades en 5 lotes y 243 cuentas
 en 3 lotes, evitando el error `URI too long` sin omitir identidades preparadas ni

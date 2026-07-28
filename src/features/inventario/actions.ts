@@ -67,19 +67,44 @@ export async function crearCuentaAction(
   const datos = parsed.data;
 
   const supabase = await createClient();
+  const { data: producto } = await supabase
+    .from("productos_plataforma")
+    .select("codigo")
+    .eq("id", datos.producto_id)
+    .maybeSingle();
+  const loginCifrado = cifrarSecreto(datos.correo);
+  const loginFingerprint = huellaSecreto(datos.correo);
+  const contrasenaCifrada = cifrarSecreto(datos.contrasena);
+  const gmailPagador = String(formData.get("gmail_pagador") ?? "").trim();
+  const origenGpay =
+    formData.get("origen_gpay") === "gpay_nigeria" ? "gpay_nigeria" : "gpay_usa";
 
-  const { data: cuentaId, error } = await supabase.rpc("crear_cuenta_con_unidades", {
-    p_producto_id: datos.producto_id,
-    p_capacidad: datos.capacidad,
-    p_alias: datos.alias || null,
-    p_proveedor_id: null,
-    p_proveedor_nombre: datos.proveedor || null,
-    p_notas: datos.notas || null,
-    p_login_cifrado: cifrarSecreto(datos.correo),
-    p_login_fingerprint: huellaSecreto(datos.correo),
-    p_contrasena_cifrada: cifrarSecreto(datos.contrasena),
-    p_nombres_unidades: null,
-  });
+  const { data: cuentaId, error } = producto?.codigo === "spotify-familiar"
+    ? await supabase.rpc("crear_familia_spotify", {
+        p_producto_id: datos.producto_id,
+        p_capacidad: datos.capacidad,
+        p_alias: datos.alias || null,
+        p_proveedor_nombre: datos.proveedor || null,
+        p_notas: datos.notas || null,
+        p_login_cifrado: loginCifrado,
+        p_login_fingerprint: loginFingerprint,
+        p_contrasena_cifrada: contrasenaCifrada,
+        p_gmail_pagador_cifrado: gmailPagador ? cifrarSecreto(gmailPagador) : null,
+        p_gmail_pagador_fingerprint: gmailPagador ? huellaSecreto(gmailPagador) : null,
+        p_origen_gpay: gmailPagador ? origenGpay : null,
+      })
+    : await supabase.rpc("crear_cuenta_con_unidades", {
+        p_producto_id: datos.producto_id,
+        p_capacidad: datos.capacidad,
+        p_alias: datos.alias || null,
+        p_proveedor_id: null,
+        p_proveedor_nombre: datos.proveedor || null,
+        p_notas: datos.notas || null,
+        p_login_cifrado: loginCifrado,
+        p_login_fingerprint: loginFingerprint,
+        p_contrasena_cifrada: contrasenaCifrada,
+        p_nombres_unidades: null,
+      });
 
   if (error) return { error: error.message };
 

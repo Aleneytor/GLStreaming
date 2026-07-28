@@ -17,6 +17,25 @@ select set_config('request.jwt.claims', json_build_object(
   'sub', :'admin_id', 'role', 'authenticated')::text, true);
 set role authenticated;
 
+select public.crear_familia_spotify(
+  :'producto', 5, 'Familia manual QA', 'Yo', 'alta manual',
+  'madre-manual-cifrada', 'madre-manual-' || :'admin_id', 'clave-manual-cifrada',
+  'pagador-manual-cifrado', 'pagador-manual-' || :'admin_id', 'gpay_usa'
+) as familia_manual \gset
+
+select 'Nueva cuenta crea una familia Spotify completa' as prueba,
+       (select count(*) = 5 from public.unidades_inventario
+        where cuenta_id = :'familia_manual')
+       and exists (
+         select 1 from public.coberturas_spotify
+         where cuenta_id = :'familia_manual' and tipo = 'familiar'
+           and estado_admision = 'abierta' and identidad_madre_id is not null
+       )
+       and exists (
+         select 1 from public.controles_pago_spotify
+         where cobertura_cuenta_id = :'familia_manual' and origen = 'gpay_usa'
+       ) as pass;
+
 select public.abrir_sesion_carga(:'producto', 'alta Spotify QA') as sesion \gset
 select public.importar_spotify_familiar(
   p_sesion_id => :'sesion', p_producto_id => :'producto', p_capacidad => 5,
