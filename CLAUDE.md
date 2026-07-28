@@ -243,7 +243,54 @@ de cuentas.
 servidor que verifica propiedad y descifra en memoria. **No** ve stock ni solicita
 por la app (pide directo). Su única ventana: `v_mis_ventas_revendedor`.
 
+## Rediseño visual en curso (2026-07-28)
+
+El panel tenía dos problemas de diseño detectados por el usuario: (1) cada
+plataforma pintaba su propia paleta (rojo Netflix, verde Spotify, violeta
+HBO, fucsia Canva…), saturando la vista sin aportar información; (2) varias
+pantallas tenían fondos oscuros **fijos sin variante `dark:`**, invisibles
+hasta que se intentó quitar el `dark` por defecto y aparecieron mal en claro.
+
+**Decisión de diseño (confirmada por el usuario, no cambiar sin pedirlo):**
+oscuro sigue siendo el modo por defecto de la app (`className="dark"` en
+`src/app/layout.tsx`) — el usuario probó claro y no le convenció. Lo que
+pidió es un oscuro **más calmado**: paleta neutra por defecto, **un solo
+color de acento** (azul) para lo interactivo/marca, y color reservado
+**solo para significado semántico** (vencimiento: verde=ok / ámbar=pronto /
+rojo=vencido; ganancia/pérdida) — nunca para decorar una plataforma o
+categoría. No existe todavía un selector de tema real; cuando lo haya, debe
+controlar esa clase en vez de tenerla fija.
+
+**Pantallas ya migradas a la paleta calmada**: `tabla-inventario.tsx`
+(cabecera unificada, botón "Pagador" inline, paginación de 30 filas para
+cuentas grandes como Canva), `panel-revendedor.tsx` + `mis-ventas.tsx`
+(quitado el array `PALETAS` de 10 temas por plataforma; borde-color de
+tarjeta ahora refleja el estado de vencimiento, no la plataforma),
+`(finanzas)/cierre/page.tsx` (Resumen Mensual: KPIs con franja de color en
+vez de fondo saturado), `inventario/page.tsx` (selector de plataforma: quitado
+`TEMAS_PLATAFORMA` de 14 temas, ahora insignia de letra/símbolo neutra),
+`clientes/page.tsx` (cabecera y acento alineados a azul).
+
+**Pantallas pendientes de revisar/migrar**: `egresos/page.tsx` y
+`tasas/page.tsx` (grep sin coincidencias del patrón "gradiente oscuro fijo",
+pero no leídas línea a línea todavía), `migracion/page.tsx`,
+`vencimientos/page.tsx`, `ventas/nueva/page.tsx`,
+`inventario/cuenta/[id]/editar/page.tsx`,
+`inventario/cuenta/[id]/perfiles/page.tsx`. `catalogo/page.tsx`,
+`(finanzas)/caja/page.tsx`, `dashboard/page.tsx` y `(panel)/layout.tsx`
+estaban siendo editados por otro proceso en paralelo al cierre de esta
+sesión — revisar `git status` antes de tocarlos.
+
+⚠️ **Bug de caché conocido, no resuelto**: el servidor de desarrollo
+(Turbopack) a veces no refleja ediciones a `src/app/layout.tsx` vía `curl`
+incluso con `Cache-Control: no-store` y parámetros anti-caché — hace falta
+recargar fuerte en el navegador (Ctrl+Shift+R) o, si persiste, reiniciar
+`npm run dev` (confirmar con el usuario antes, el servidor es compartido).
+
 ## Lo que sigue
+
+**Continuar el rediseño calmado** en las pantallas pendientes listadas
+arriba, pantalla por pantalla (ver convención de "rebanadas pequeñas").
 
 **Cerrar los flecos de la Fase 3**: reservas y las subentregas de YouTube (carga
 de cartera con sesión de corte) y Spotify.
@@ -295,5 +342,6 @@ propio teléfono). Si cambia la red, hay que actualizarlas — ver
 - `docs/plataformas/` — ficha por plataforma + arquetipos.
 
 ---
-*Última actualización: 2026-07-24 (cobro en Bs + renovar_y_cobrar + importación masiva). Actualiza este
+*Última actualización: 2026-07-28 (rediseño visual: paleta calmada, oscuro por defecto, un solo
+acento). Actualiza este
 archivo al terminar cada sesión: estado, lo que sigue y cualquier decisión nueva.*
