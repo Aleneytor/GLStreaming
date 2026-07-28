@@ -3,6 +3,8 @@ import { uno } from "@/lib/supabase/util";
 import { badgeVencimiento, diasParaRenovar, type BadgeVencimiento } from "@/domain/fechas";
 import { obtenerTasasVigentes } from "@/features/tasas/actions";
 import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
+import { descifrarSecreto } from "@/lib/crypto";
+import { tipoTarifaSpotifyDesdeCorreo, type TipoCorreoTarifaSpotify } from "@/domain/tarifas-spotify";
 
 export type SuscripcionOperativa = {
   id: string;
@@ -19,6 +21,7 @@ export type SuscripcionOperativa = {
   renovacion: string | null;
   dias: number | null;
   badge: BadgeVencimiento | null;
+  tipoCorreoTarifaSpotify: TipoCorreoTarifaSpotify | null;
 };
 
 export type LimpiezaPendiente = {
@@ -63,7 +66,8 @@ export async function obtenerDatosOperaciones(): Promise<DatosOperaciones> {
          vendedores ( nombre ),
          productos_plataforma ( nombre, plataformas ( nombre ) ),
          periodos_servicio ( inicio, fecha_renovacion ),
-         asignaciones_inventario ( unidad_id, fin, unidades_inventario ( nombre_visible ) )`,
+         asignaciones_inventario ( unidad_id, fin, unidades_inventario ( nombre_visible ) ),
+         vinculos_identidad_spotify ( fin, identidades_spotify ( tipo_correo, login_cifrado ) )`,
       )
       .in("estado", ["activa", "pausada"]),
     supabase
@@ -93,6 +97,16 @@ export async function obtenerDatosOperaciones(): Promise<DatosOperaciones> {
       const dias = ultimo ? diasParaRenovar(ultimo.fecha_renovacion, hoy) : null;
       const asignacion = (s.asignaciones_inventario ?? []).find((a) => a.fin === null);
       const unidad = uno(asignacion?.unidades_inventario);
+      const vinculoSpotify = (s.vinculos_identidad_spotify ?? []).find((v) => v.fin === null);
+      const identidadSpotify = uno(vinculoSpotify?.identidades_spotify);
+      let correoSpotify: string | null = null;
+      if (identidadSpotify?.login_cifrado) {
+        try {
+          correoSpotify = descifrarSecreto(identidadSpotify.login_cifrado);
+        } catch {
+          correoSpotify = null;
+        }
+      }
 
       return {
         id: s.id,
@@ -109,6 +123,10 @@ export async function obtenerDatosOperaciones(): Promise<DatosOperaciones> {
         renovacion: ultimo?.fecha_renovacion ?? null,
         dias,
         badge: dias !== null ? badgeVencimiento(dias) : null,
+        tipoCorreoTarifaSpotify:
+          plat?.nombre?.toLowerCase() === "spotify"
+            ? tipoTarifaSpotifyDesdeCorreo(correoSpotify, identidadSpotify?.tipo_correo)
+            : null,
       };
     })
     .sort((a, b) => (a.dias ?? 0) - (b.dias ?? 0));

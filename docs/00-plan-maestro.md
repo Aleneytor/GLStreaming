@@ -358,6 +358,16 @@ reverso del cobro equivocado y su cobro sustituto usando la misma fecha y base
 efectiva; actualiza el valor comercial del período y deja auditoría. Esto sirve
 para corregir errores del Excel después de importar sin rehacer la venta.
 
+Spotify admite renovaciones de `1`, `3`, `6` o `12` meses tanto desde
+Inventario como desde Operaciones. La fecha final se calcula por meses
+calendario y el monto representa el paquete completo: una promoción de 3 meses
+por `$13` crea un solo período de tres meses con ingreso total `$13`.
+Los formularios sugieren la tabla vigente según titularidad del correo:
+dominio GL = `$4/$10/$18/$32` y correo del cliente = `$5/$13/$22/$40` para
+`1/3/6/12` meses. El total continúa editable para registrar excepciones reales.
+La tabla no participa en la importación: el respaldo conserva exactamente el
+ingreso histórico escrito en cada fila y se irá sincerando al renovar.
+
 Spotify familiar ya no se presenta como perfiles con PIN. Cada posición muestra
 el correo y la contraseña de la identidad del miembro, separados del correo de
 la madre y del Gmail pagador. La migración `0041` permite que una identidad de
@@ -374,7 +384,7 @@ cupo, una venta completa consume todas sus unidades y un uso principal que no
 consume capacidad no reduce los cupos familiares. Esto corrige el falso 100 %
 de Spotify producido al sumar individuales y familiares en la misma tarjeta.
 
-Validación acumulada: **154 pruebas unitarias**, **19 suites SQL** y typecheck en
+Validación acumulada: **159 pruebas unitarias**, **20 suites SQL** y typecheck en
 verde. La suite de traslado comprueba el cambio de asignación, preservación del
 período, mantenimiento, entrega, auditoría, cuenta completa y rechazo a
 revendedores. El usuario confirmó la recuperación de la app y la reimportación;

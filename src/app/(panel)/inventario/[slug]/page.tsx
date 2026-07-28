@@ -79,7 +79,7 @@ export default async function PlataformaPage({
            vendedores ( id, nombre, tipo, cobra_en_paralela ),
            periodos_servicio ( id, inicio, fecha_renovacion, precio_comercial_usd ),
            vinculos_identidad_spotify ( fin,
-             identidades_spotify ( login_cifrado, contrasena_cifrada ) ) ) )`,
+             identidades_spotify ( login_cifrado, contrasena_cifrada, tipo_correo ) ) ) )`,
     )
     .eq("productos_plataforma.plataforma_id", plataforma.id);
 
@@ -188,6 +188,7 @@ export default async function PlataformaPage({
       ingreso: ult?.precio_comercial_usd == null ? null : Number(ult.precio_comercial_usd),
       clienteLogin: ident ? desc((ident as { login_cifrado?: string }).login_cifrado) : null,
       clienteClave: ident ? desc((ident as { contrasena_cifrada?: string }).contrasena_cifrada) : null,
+      clienteTipoCorreo: ident ? (ident as { tipo_correo?: string }).tipo_correo ?? null : null,
     };
   };
 
@@ -268,6 +269,7 @@ export default async function PlataformaPage({
             (v?.clienteLogin ?? desc(identidadPreparada?.login_cifrado)) || null,
           clienteClave:
             (v?.clienteClave ?? desc(identidadPreparada?.contrasena_cifrada)) || null,
+          clienteTipoCorreo: v?.clienteTipoCorreo ?? null,
           pin: esSpotifyFamiliar ? null : desc(uno(u.secretos_unidad)?.pin_cifrado) || null,
           ingreso: asignacionCompleta && !esPrimerSlot ? null : (v?.ingreso ?? null),
           inicio: v?.inicio ?? null,
@@ -297,6 +299,7 @@ export default async function PlataformaPage({
           vendedorCobraEnParalela: v?.vendedorCobraEnParalela ?? false,
           clienteLogin: v?.clienteLogin ?? null,
           clienteClave: v?.clienteClave ?? null,
+          clienteTipoCorreo: v?.clienteTipoCorreo ?? null,
           pin: null,
           ingreso: v?.ingreso ?? null,
           inicio: v?.inicio ?? null,
@@ -336,6 +339,7 @@ export default async function PlataformaPage({
           vendedorCobraEnParalela: v?.vendedorCobraEnParalela ?? false,
           clienteLogin: v?.clienteLogin ?? null,
           clienteClave: v?.clienteClave ?? null,
+          clienteTipoCorreo: v?.clienteTipoCorreo ?? null,
           pin: null,
           ingreso: esPrimerSlot ? (v?.ingreso ?? null) : null,
           inicio: v?.inicio ?? null,
@@ -363,6 +367,7 @@ export default async function PlataformaPage({
         vendedorCobraEnParalela: false,
         clienteLogin: null,
         clienteClave: null,
+        clienteTipoCorreo: null,
         pin: null,
         ingreso: null,
         inicio: null,

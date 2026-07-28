@@ -126,6 +126,15 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **Renovación conserva vendedor y base de tasa**: `ModalGestionVenta` recibe el `vendedor_origen_id` real y lo preselecciona. Muestra/permite corregir `tipo` y `cobra_en_paralela`; si hay cambios sin guardar bloquea Renovar. La pantalla de renovación confirma vendedor + BCV/paralela antes de cobrar.
 - **Filtros operativos de inventario**: el desplegable de `/inventario/[slug]` ya no usa los estados técnicos poco útiles de la cuenta. Filtra cupos `Disponibles para vender` (libres y con cuenta activa), `Próximos 5 días`, `Vencen hoy`, `Vencidos` y conserva `Cuentas suspendidas`. La lógica pura vive en `src/domain/filtros-inventario.ts`.
 - **Renovación anticipada encadenada**: `ModalGestionVenta` no usa «hoy» ciegamente. Si el servicio sigue vigente, el período nuevo comienza en `fecha_renovacion` (ej. 29/07 → 29/08); si ya venció, comienza hoy y envía `tardia=on`. La regla pura es `planificarRenovacionCliente`.
+- **Paquetes multimes de Spotify**: al renovar desde Inventario u Operaciones se
+  puede elegir `1`, `3`, `6` o `12` meses. El monto ingresado es el total del
+  paquete (por ejemplo, `$13` por 3 meses), no una mensualidad que se multiplica.
+- **Tarifas sugeridas de Spotify, siempre editables**: correo GL usa
+  1/3/6/12 meses = $4/$10/$18/$32; correo del cliente usa
+  $5/$13/$22/$40. Al cambiar duración o titularidad, el modal propone el total
+  del paquete en USD, pero el administrador puede corregirlo para excepciones.
+  Esta sugerencia aplica solo a renovaciones nuevas: el importador conserva el
+  monto histórico del Excel sin recalcularlo ni compararlo con la tabla.
 - **Confirmación visible de renovación**: tras el éxito, `ModalGestionVenta` muestra un aviso verde con el período creado y reemplaza las acciones por `Listo`; el botón de confirmar desaparece para impedir una renovación duplicada.
 - **Corrección auditable de ingresos (migración `0042`)**: “Gestionar venta”
   permite editar el ingreso USD del período actual. No sobrescribe el cobro:
@@ -312,7 +321,7 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 - El resumen de `/inventario` cuenta una unidad por recurso indivisible sin
   perfiles y usa el consumo snapshot de las ventas completas. Así ya no mezcla
   las ventas individuales de Spotify contra solo los 240 cupos familiares.
-- Validación: 154 unitarias, suite `spotify.sql` y nueva suite transaccional
+- Validación: 159 unitarias, suite `spotify.sql` y nuevas suites transaccionales
   `spotify_identidades_preparadas.sql` en verde.
 
 ### ⚠️ Pendiente para el próximo agente
@@ -350,5 +359,5 @@ el panel de revendedor.*
 
 *Última actualización: 2026-07-28 (Spotify familiar modelado como identidad por
 miembro, credenciales preparadas en cupos libres y ocupación corregida; traslado
-por falla transaccional; corrección auditable de cobros; 154 unitarias y suites
+por falla transaccional; corrección auditable de cobros; tarifas multimes editables; 159 unitarias y suites
 SQL en verde).*

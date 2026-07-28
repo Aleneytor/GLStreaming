@@ -365,7 +365,15 @@ Spotify tiene una regla comercial específica confirmada:
 
 La paralela no sustituye la BCV usada para cobrar al cliente. Sirve para comparar, valorizar costos y presentar el resultado real frente a la referencia con la que se paga normalmente a proveedores.
 
-No existe catálogo obligatorio de tarifas ni precios inferidos por modalidad, tipo de correo o duración. El administrador escribe lo efectivamente acordado en cada operación. Que el correo del cliente acostumbre ser más costoso es una decisión comercial, no una regla automática.
+La renovación ofrece una tabla comercial sugerida por duración y titularidad del
+correo. Con correo de los dominios GL: 1 mes $4, 3 meses $10, 6 meses $18 y 12
+meses $32. Con correo del cliente: 1 mes $5, 3 meses $13, 6 meses $22 y 12 meses
+$40. El valor es el **total del paquete**, no una mensualidad que deba
+multiplicarse. La sugerencia rellena el formulario, pero permanece editable para
+registrar promociones, acuerdos anteriores o cambios de precio sin falsear el
+cobro real. Esta sugerencia no modifica el importador: los montos históricos se
+leen tal como aparecen en el Excel y solo adoptan la tabla cuando se registra
+una renovación futura.
 
 ### Costos de cobertura
 

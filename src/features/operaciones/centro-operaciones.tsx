@@ -250,7 +250,9 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
         <ModalRenovacion
           suscripcionId={renovandoItem.id}
           clienteNombre={renovandoItem.clienteNombre}
+          plataformaNombre={renovandoItem.plataformaNombre}
           productoNombre={renovandoItem.productoNombre}
+          tipoCorreoTarifaSpotify={renovandoItem.tipoCorreoTarifaSpotify}
           renovacionActual={renovandoItem.renovacion}
           bcv={datos.bcv}
           onCerrar={() => setRenovandoItem(null)}

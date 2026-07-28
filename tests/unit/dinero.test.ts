@@ -5,9 +5,23 @@ import {
   diasEntre,
   diasInterseccion,
   prorratear,
+  parsearMontoFormulario,
   redondearMitadArriba,
   valorEconomicoUsdParalela,
 } from "@/domain/dinero";
+
+describe("parsearMontoFormulario", () => {
+  it("conserva decimales con punto o coma", () => {
+    expect(parsearMontoFormulario("13.00")).toBe(13);
+    expect(parsearMontoFormulario("13,00")).toBe(13);
+  });
+
+  it("acepta miles en formato latino y decimal internacional", () => {
+    expect(parsearMontoFormulario("2.500,00")).toBe(2500);
+    expect(parsearMontoFormulario("2500.00")).toBe(2500);
+    expect(parsearMontoFormulario("2.500")).toBe(2500);
+  });
+});
 
 describe("redondearMitadArriba", () => {
   it("redondea a 2 decimales mitad hacia arriba (trampa de punto flotante)", () => {

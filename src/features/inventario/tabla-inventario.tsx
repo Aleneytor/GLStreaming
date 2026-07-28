@@ -31,6 +31,7 @@ export type CupoFila = {
   vendedorCobraEnParalela: boolean;
   clienteLogin: string | null;
   clienteClave: string | null;
+  clienteTipoCorreo: string | null;
   pin: string | null;
   ingreso: number | null;
   inicio: string | null;
@@ -575,6 +576,7 @@ export function TablaInventario({
           )}
           clienteLogin={gestionVentaTarget.clienteLogin}
           clienteClave={gestionVentaTarget.clienteClave}
+          clienteTipoCorreo={gestionVentaTarget.clienteTipoCorreo}
           vence={gestionVentaTarget.vence}
           precioUsd={gestionVentaTarget.ingreso}
           vendedorActualId={gestionVentaTarget.vendedorId}

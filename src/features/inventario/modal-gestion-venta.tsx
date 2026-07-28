@@ -9,6 +9,11 @@ import {
   calcularFechaRenovacion,
   planificarRenovacionCliente,
 } from "@/domain/fechas";
+import {
+  tarifaSpotify,
+  tipoTarifaSpotifyDesdeCorreo,
+  type TipoCorreoTarifaSpotify,
+} from "@/domain/tarifas-spotify";
 
 function hoyCaracas(): string {
   return new Intl.DateTimeFormat("en-CA", {
@@ -37,6 +42,7 @@ export function ModalGestionVenta({
   esSpotifyFamiliar = false,
   clienteLogin = null,
   clienteClave = null,
+  clienteTipoCorreo = null,
   vence,
   precioUsd,
   vendedorActualId,
@@ -57,6 +63,7 @@ export function ModalGestionVenta({
   esSpotifyFamiliar?: boolean;
   clienteLogin?: string | null;
   clienteClave?: string | null;
+  clienteTipoCorreo?: string | null;
   vence: string | null;
   precioUsd: number | null;
   vendedorActualId: string | null;
@@ -66,6 +73,10 @@ export function ModalGestionVenta({
   vendedores?: VendedorOp[];
   onCerrar: () => void;
 }) {
+  const tipoCorreoTarifaInicial = tipoTarifaSpotifyDesdeCorreo(
+    clienteLogin,
+    clienteTipoCorreo,
+  );
   const [modo, setModo] = useState<"ver" | "renovar" | "eliminar" | "trasladar">("ver");
   const [seleccionVendedor, setSeleccionVendedor] = useState(vendedorActualId ?? "");
   const [tipoVendedor, setTipoVendedor] = useState<"revendedor" | "intermediario">(
@@ -73,6 +84,16 @@ export function ModalGestionVenta({
   );
   const [cobraParalela, setCobraParalela] = useState(
     vendedorActualTipo === "revendedor" && vendedorActualCobraEnParalela,
+  );
+  const [mesesRenovacion, setMesesRenovacion] = useState(1);
+  const [tipoCorreoTarifa, setTipoCorreoTarifa] =
+    useState<TipoCorreoTarifaSpotify>(tipoCorreoTarifaInicial);
+  const [montoRenovacion, setMontoRenovacion] = useState(
+    slug === "spotify"
+      ? (tarifaSpotify(tipoCorreoTarifaInicial, 1)?.toFixed(2) ?? "")
+      : precioUsd != null
+        ? precioUsd.toFixed(2)
+        : "3.00",
   );
   const [configGuardada, setConfigGuardada] = useState({
     vendedorId: vendedorActualId ?? "",
@@ -89,7 +110,16 @@ export function ModalGestionVenta({
 
   const hoyFormato = hoyCaracas();
   const planRenovacion = planificarRenovacionCliente(vence, hoyFormato);
-  const proximoVencimiento = calcularFechaRenovacion(planRenovacion.inicio, 1);
+  const proximoVencimiento = calcularFechaRenovacion(
+    planRenovacion.inicio,
+    mesesRenovacion,
+  );
+  const opcionesMeses = slug === "spotify" ? [1, 3, 6, 12] : [1];
+
+  function aplicarTarifaSpotify(meses: number, tipo = tipoCorreoTarifa) {
+    const tarifa = tarifaSpotify(tipo, meses);
+    if (tarifa !== null) setMontoRenovacion(tarifa.toFixed(2));
+  }
   const revendedores = vendedores.filter((v) => v.tipo === "revendedor");
   const intermediarios = vendedores.filter((v) => v.tipo !== "revendedor");
   const vendedorSeleccionado = vendedores.find((v) => v.id === seleccionVendedor);
@@ -426,12 +456,62 @@ export function ModalGestionVenta({
           <form action={actionRenovar} className="space-y-4">
             <input type="hidden" name="suscripcion_id" value={suscripcionId} />
             <input type="hidden" name="inicio" value={planRenovacion.inicio} />
-            <input type="hidden" name="meses" value="1" />
             {planRenovacion.tardia && <input type="hidden" name="tardia" value="on" />}
 
             <p className="text-xs text-neutral-600 dark:text-neutral-300">
-              Registrar renovación de 1 mes para <strong className="text-neutral-900 dark:text-white">{clienteNombre}</strong>.
+              Registrar renovación de {mesesRenovacion} {mesesRenovacion === 1 ? "mes" : "meses"} para <strong className="text-neutral-900 dark:text-white">{clienteNombre}</strong>.
             </p>
+
+            {slug === "spotify" ? (
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                  Duración del nuevo paquete
+                </label>
+                <select
+                  name="meses"
+                  value={mesesRenovacion}
+                  onChange={(e) => {
+                    const meses = Number(e.target.value);
+                    setMesesRenovacion(meses);
+                    aplicarTarifaSpotify(meses);
+                  }}
+                  className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                >
+                  {opcionesMeses.map((meses) => (
+                    <option key={meses} value={meses}>
+                      {meses} {meses === 1 ? "mes" : "meses"}
+                    </option>
+                  ))}
+                </select>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {([
+                    ["dominio_gl", "Correo de mi dominio"],
+                    ["correo_cliente", "Correo del cliente"],
+                  ] as const).map(([tipo, etiqueta]) => (
+                    <button
+                      key={tipo}
+                      type="button"
+                      onClick={() => {
+                        setTipoCorreoTarifa(tipo);
+                        aplicarTarifaSpotify(mesesRenovacion, tipo);
+                      }}
+                      className={`rounded-lg border px-2 py-2 text-[11px] font-semibold ${
+                        tipoCorreoTarifa === tipo
+                          ? "border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+                          : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-300"
+                      }`}
+                    >
+                      {etiqueta}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+                  Se sugiere la tarifa vigente; puedes editar el monto si acordaste una excepción.
+                </p>
+              </div>
+            ) : (
+              <input type="hidden" name="meses" value="1" />
+            )}
 
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
               <strong>
@@ -442,8 +522,8 @@ export function ModalGestionVenta({
               </p>
               <p className="mt-1 text-[11px] font-normal opacity-80">
                 {planRenovacion.tardia
-                  ? "El servicio ya venció: el mes nuevo comienza hoy, fecha real del pago."
-                  : "El mes nuevo comienza cuando termina el actual, aunque pagues anticipadamente."}
+                  ? `El servicio ya venció: el paquete de ${mesesRenovacion} ${mesesRenovacion === 1 ? "mes" : "meses"} comienza hoy.`
+                  : "El período nuevo comienza cuando termina el actual, aunque pagues anticipadamente."}
               </p>
             </div>
 
@@ -465,11 +545,12 @@ export function ModalGestionVenta({
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                  Monto a Cobrar *
+                  Monto total del paquete *
                 </label>
                 <input
                   name="monto"
-                  defaultValue={precioUsd != null ? precioUsd.toFixed(2) : "3.00"}
+                  value={montoRenovacion}
+                  onChange={(e) => setMontoRenovacion(e.target.value)}
                   required
                   className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-mono text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                 />

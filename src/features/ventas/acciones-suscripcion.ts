@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
+import { parsearMontoFormulario } from "@/domain/dinero";
 
 export type EstadoAccion = { error?: string; ok?: string } | null;
 
@@ -62,7 +63,7 @@ export async function renovarAction(
   let monto: number | null = null;
   if (parsed.data.monto) {
     // El usuario escribe "2.500,00" o "2500.00": ambas formas valen.
-    monto = Number(parsed.data.monto.replace(/\./g, "").replace(",", "."));
+    monto = parsearMontoFormulario(parsed.data.monto);
     if (!Number.isFinite(monto) || monto <= 0) {
       return { error: "El monto debe ser un número mayor que cero." };
     }

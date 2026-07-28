@@ -14,6 +14,29 @@
 
 const RE_FECHA = /^\d{4}-\d{2}-\d{2}$/;
 
+/** Interpreta montos escritos como 13.00, 13,00, 2500.00 o 2.500,00. */
+export function parsearMontoFormulario(valor: string): number {
+  const limpio = valor.trim().replace(/\s/g, "");
+  if (!limpio) return Number.NaN;
+
+  const tieneComa = limpio.includes(",");
+  const tienePunto = limpio.includes(".");
+  let normalizado = limpio;
+
+  if (tieneComa && tienePunto) {
+    normalizado = limpio.lastIndexOf(",") > limpio.lastIndexOf(".")
+      ? limpio.replace(/\./g, "").replace(",", ".")
+      : limpio.replace(/,/g, "");
+  } else if (tieneComa) {
+    normalizado = limpio.replace(",", ".");
+  } else if (tienePunto) {
+    const decimales = limpio.length - limpio.lastIndexOf(".") - 1;
+    normalizado = decimales === 3 ? limpio.replace(/\./g, "") : limpio;
+  }
+
+  return Number(normalizado);
+}
+
 function fechaAMillis(fecha: string): number {
   if (!RE_FECHA.test(fecha)) {
     throw new Error(`Fecha inválida (se espera YYYY-MM-DD): ${fecha}`);
