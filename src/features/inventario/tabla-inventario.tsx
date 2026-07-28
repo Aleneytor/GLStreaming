@@ -289,6 +289,7 @@ export function TablaInventario({
     nombrePerfil: string;
     clienteLogin: string | null;
     clienteClave: string | null;
+    clienteTipoCorreo: string | null;
     esSpotifyFamiliar: boolean;
   } | null>(null);
 
@@ -396,6 +397,7 @@ export function TablaInventario({
     nombrePerfil: string,
     clienteLogin: string | null,
     clienteClave: string | null,
+    clienteTipoCorreo: string | null,
   ) => {
     if (seleccionTraslado) {
       const destino = buscarDestino(cuenta.cuentaId, unidadId);
@@ -410,6 +412,7 @@ export function TablaInventario({
       nombrePerfil,
       clienteLogin,
       clienteClave,
+      clienteTipoCorreo,
       esSpotifyFamiliar: Boolean(cuenta.esSpotifyFamiliar),
     });
   };
@@ -575,8 +578,8 @@ export function TablaInventario({
             borrarMarcada={cuentasBorrarSel.includes(cta.cuentaId)}
             onToggleBorrar={() => alternarBorrar(cta.cuentaId)}
             onEditar={() => setCuentaEditando(cta)}
-            onIniciarVenta={(unidadId, nombrePerfil, clienteLogin, clienteClave) =>
-              manejarCupoLibre(cta, unidadId, nombrePerfil, clienteLogin, clienteClave)
+            onIniciarVenta={(unidadId, nombrePerfil, clienteLogin, clienteClave, clienteTipoCorreo) =>
+              manejarCupoLibre(cta, unidadId, nombrePerfil, clienteLogin, clienteClave, clienteTipoCorreo)
             }
             destinosTraslado={seleccionTraslado?.destinos ?? null}
             destinoSeleccionado={seleccionTraslado?.seleccionado ?? null}
@@ -685,8 +688,8 @@ export function TablaInventario({
                 onToggleBorrar={() => alternarBorrar(cta.cuentaId)}
                 isTarget={targetIndex === index}
                 onEditar={() => setCuentaEditando(cta)}
-                onIniciarVenta={(unidadId, nombrePerfil, clienteLogin, clienteClave) =>
-                  manejarCupoLibre(cta, unidadId, nombrePerfil, clienteLogin, clienteClave)
+                onIniciarVenta={(unidadId, nombrePerfil, clienteLogin, clienteClave, clienteTipoCorreo) =>
+                  manejarCupoLibre(cta, unidadId, nombrePerfil, clienteLogin, clienteClave, clienteTipoCorreo)
                 }
                 destinosTraslado={seleccionTraslado?.destinos ?? null}
                 destinoSeleccionado={seleccionTraslado?.seleccionado ?? null}
@@ -734,6 +737,7 @@ export function TablaInventario({
           nombrePerfil={ventaTarget.nombrePerfil}
           clienteLogin={ventaTarget.clienteLogin}
           clienteClave={ventaTarget.clienteClave}
+          clienteTipoCorreo={ventaTarget.clienteTipoCorreo}
           esSpotifyFamiliar={ventaTarget.esSpotifyFamiliar}
           slug={slug}
           vendedores={vendedores}
@@ -856,6 +860,7 @@ function BloqueCuentaExcel({
     nombrePerfil: string,
     clienteLogin: string | null,
     clienteClave: string | null,
+    clienteTipoCorreo: string | null,
   ) => void;
   destinosTraslado: DestinoTraslado[] | null;
   destinoSeleccionado: DestinoTraslado | null;
@@ -1088,6 +1093,7 @@ function BloqueCuentaExcel({
                         f.cupo,
                         f.clienteLogin,
                         f.clienteClave,
+                        f.clienteTipoCorreo,
                       );
                     } else {
                       onGestionarVenta(f);
@@ -1279,6 +1285,7 @@ function TarjetaCuentaMovil({
     nombrePerfil: string,
     clienteLogin: string | null,
     clienteClave: string | null,
+    clienteTipoCorreo: string | null,
   ) => void;
   destinosTraslado: DestinoTraslado[] | null;
   destinoSeleccionado: DestinoTraslado | null;
@@ -1493,6 +1500,7 @@ function TarjetaCuentaMovil({
                             fila.cupo,
                             fila.clienteLogin,
                             fila.clienteClave,
+                            fila.clienteTipoCorreo,
                           )
                         }
                         className={`rounded px-2.5 py-1 text-xs font-semibold text-white active:scale-95 disabled:cursor-not-allowed ${

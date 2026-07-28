@@ -222,9 +222,10 @@ export async function editarCuentaAction(
     const unidadId = clave.slice("spotify_login_".length);
     const login = String(valor).trim();
     const contrasena = String(formData.get(`spotify_clave_${unidadId}`) ?? "");
+    const tipoCrudo = String(formData.get(`spotify_tipo_${unidadId}`) ?? "");
     const tipo =
-      formData.get(`spotify_tipo_${unidadId}`) === "dominio_gl"
-        ? "dominio_gl"
+      tipoCrudo === "dominio_gl" || tipoCrudo === "gmail_propio"
+        ? tipoCrudo
         : "correo_cliente";
     const suscripcionId =
       String(formData.get(`spotify_suscripcion_${unidadId}`) ?? "").trim() || null;
@@ -235,7 +236,10 @@ export async function editarCuentaAction(
     const tipoAnteriorCrudo = String(
       formData.get(`spotify_original_tipo_${unidadId}`) ?? "",
     );
-    const tipoAnterior = tipoAnteriorCrudo === "dominio_gl" ? "dominio_gl" : "correo_cliente";
+    const tipoAnterior =
+      tipoAnteriorCrudo === "dominio_gl" || tipoAnteriorCrudo === "gmail_propio"
+        ? tipoAnteriorCrudo
+        : "correo_cliente";
 
     if (!login && !contrasena && !loginAnterior && !claveAnterior) continue;
     if (login === loginAnterior && contrasena === claveAnterior && tipo === tipoAnterior) continue;
@@ -258,6 +262,22 @@ export async function editarCuentaAction(
       p_tipo_correo: tipo,
     });
     if (errorIdentidad) return { error: errorIdentidad.message };
+  }
+
+  if (formData.has("spotify_estado_admision")) {
+    const estadoAdmision =
+      formData.get("spotify_estado_admision") === "bloqueada_por_spotify"
+        ? "bloqueada_por_spotify"
+        : "abierta";
+    const { error: errorAdmision } = await supabase.rpc(
+      "actualizar_admision_familia_spotify",
+      {
+        p_cuenta_id: cuentaId,
+        p_estado: estadoAdmision,
+        p_motivo: String(formData.get("spotify_motivo_bloqueo") ?? "").trim() || null,
+      },
+    );
+    if (errorAdmision) return { error: errorAdmision.message };
   }
 
   const ids: string[] = [];
@@ -599,9 +619,10 @@ export async function venderUnidadRapidaAction(
   const slug = String(formData.get("slug") ?? "");
   const spotifyLogin = String(formData.get("spotify_login") ?? "").trim();
   const spotifyClave = String(formData.get("spotify_clave") ?? "");
+  const spotifyTipoCrudo = String(formData.get("spotify_tipo_correo") ?? "");
   const spotifyTipoCorreo =
-    formData.get("spotify_tipo_correo") === "correo_cliente"
-      ? "correo_cliente"
+    spotifyTipoCrudo === "correo_cliente" || spotifyTipoCrudo === "gmail_propio"
+      ? spotifyTipoCrudo
       : "dominio_gl";
 
   if (!cuentaId || !clienteNombre || !precioUsdTxt) {

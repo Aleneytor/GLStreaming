@@ -387,6 +387,21 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 - Validación: 159 unitarias, suite `spotify.sql` y nuevas suites transaccionales
   `spotify_identidades_preparadas.sql` en verde.
 
+### Edición administrativa completa de familias Spotify (migración `0050`)
+
+- `No se puede` es un bloqueo de admisión de **toda la familia**, no una
+  clasificación del Gmail ni un estado permanente del cupo. “Gestionar
+  familia” permite abrirla o bloquearla y guardar el motivo; al abrirla vuelven
+  a ser vendibles sus cupos libres.
+- La titularidad del acceso conserva tres valores reales: `dominio_gl`,
+  `gmail_propio` y `correo_cliente`. Un admin puede corregir correo, clave y
+  titularidad incluso en una venta activa, incluida la transición de correo del
+  cliente a correo propio sin recrear cupo, suscripción, período ni cobro.
+- Un Gmail propio del negocio usa la tarifa de correo administrado por GL. La
+  tarifa se decide por la titularidad registrada y no por inferir el dominio.
+- Validación: 162 unitarias y las suites `spotify.sql`,
+  `spotify_identidades_preparadas.sql` y `spotify_edicion_admin.sql` en verde.
+
 ### ⚠️ Pendiente para el próximo agente
 
 - **Rediseñar por completo “Nueva cuenta” para TODAS las plataformas (prioridad indicada por el usuario al cerrar 2026-07-28).** El formulario actual sigue siendo genérico, largo y visualmente pobre. Debe convertirse en un flujo corto y contextual por producto/plataforma, mostrando únicamente datos que el negocio realmente usa. Eliminar pasos redundantes como pedir a la vez `Día de renovación` e `Inicio del ciclo actual`: una fecha exacta debe bastar y el ancla se deriva. Revisar especialmente modalidades, capacidad fija, proveedor/costo/renovación, credenciales, Gmail pagador, cuenta completa/extra/individual/familiar y responsive móvil. No copiar sin criterio el importador; ambos flujos comparten dominio pero “Nueva cuenta” es una alta operativa individual.
@@ -422,9 +437,9 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 probar visualmente un traslado real controlado y terminar la revisión del panel
 de revendedor.*
 
-*Última actualización: 2026-07-28 (migraciones hasta `0049`; Spotify familiar
+*Última actualización: 2026-07-28 (migraciones hasta `0050`; Spotify familiar
 con bloqueos, identidades editables y alta manual coherente; renovaciones con
 costo cero reparables; traslado/estados/inventario corregidos; pausas separadas
 de urgencias, liberación explicada como retiro externo y renovación operativa
-con vendedor/base visibles; 161 unitarias y 21
+con vendedor/base visibles; 162 unitarias y 22
 suites SQL en verde).*

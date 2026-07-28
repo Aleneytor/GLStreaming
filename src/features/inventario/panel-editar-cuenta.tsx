@@ -135,6 +135,39 @@ export function PanelEditarCuenta({
             </div>
           </div>
         </div>
+
+        {cuenta.esSpotifyFamiliar && (
+          <div className="mt-4 rounded-lg border border-violet-200 bg-violet-50 p-3 dark:border-violet-900 dark:bg-violet-950/25">
+            <label className="mb-1 block text-xs font-semibold text-violet-950 dark:text-violet-100">
+              Admisión de nuevos miembros
+            </label>
+            <select
+              name="spotify_estado_admision"
+              defaultValue={
+                cuenta.admisionSpotifyBloqueada ? "bloqueada_por_spotify" : "abierta"
+              }
+              className={CAMPO}
+            >
+              <option value="abierta">Abierta · permite vender cupos libres</option>
+              <option value="bloqueada_por_spotify">
+                Bloqueada por Spotify · “No se puede”
+              </option>
+            </select>
+            <label className="mb-1 mt-3 block text-[11px] font-medium text-violet-800 dark:text-violet-200">
+              Motivo del bloqueo (opcional)
+            </label>
+            <input
+              name="spotify_motivo_bloqueo"
+              defaultValue={cuenta.motivoBloqueoSpotify ?? ""}
+              placeholder="Ej. Spotify bloqueó temporalmente nuevas incorporaciones"
+              className={CAMPO}
+            />
+            <p className="mt-2 text-[11px] leading-relaxed text-violet-800 dark:text-violet-200">
+              Este estado pertenece a toda la familia, no a un Gmail específico. Puedes
+              abrirla de nuevo cuando Spotify permita agregar miembros.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* --- SECCIÓN 2: PERFILES / CUPOS DE LA CUENTA --- */}
@@ -218,16 +251,23 @@ export function PanelEditarCuenta({
                         <select
                           name={`spotify_tipo_${f.unidadId}`}
                           defaultValue={
-                            !f.clienteLogin ||
                             f.clienteTipoCorreo === "dominio_gl" ||
-                            /@(glstreaming\.org|glcuenta\.com)$/i.test(f.clienteLogin ?? "")
-                              ? "dominio_gl"
-                              : "correo_cliente"
+                            f.clienteTipoCorreo === "gmail_propio" ||
+                            f.clienteTipoCorreo === "correo_cliente"
+                              ? f.clienteTipoCorreo
+                              : /@(glstreaming\.org|glcuenta\.com)$/i.test(
+                                    f.clienteLogin ?? "",
+                                  )
+                                ? "dominio_gl"
+                                : "gmail_propio"
                           }
                           className={CAMPO}
                         >
-                          <option value="dominio_gl">Correo a mi dominio</option>
-                          <option value="correo_cliente">Correo del cliente</option>
+                          <option value="dominio_gl">Dominio GL · correo mío</option>
+                          <option value="gmail_propio">Gmail/otro correo mío</option>
+                          {f.suscripcionId && (
+                            <option value="correo_cliente">Correo del cliente</option>
+                          )}
                         </select>
                       </div>
                     </>

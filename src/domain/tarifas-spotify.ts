@@ -16,10 +16,16 @@ export function tipoTarifaSpotifyDesdeCorreo(
   correo: string | null | undefined,
   tipoRegistrado?: string | null,
 ): TipoCorreoTarifaSpotify {
+  // La titularidad registrada manda sobre el dominio textual: un Gmail propio
+  // del negocio usa la tarifa de correo administrado por GL, no la de cliente.
+  if (tipoRegistrado === "dominio_gl" || tipoRegistrado === "gmail_propio") {
+    return "dominio_gl";
+  }
+  if (tipoRegistrado === "correo_cliente") return "correo_cliente";
   if (correo) {
     return /@(glstreaming\.org|glcuenta\.com)$/i.test(correo.trim())
       ? "dominio_gl"
       : "correo_cliente";
   }
-  return tipoRegistrado === "correo_cliente" ? "correo_cliente" : "dominio_gl";
+  return "dominio_gl";
 }

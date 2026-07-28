@@ -19,4 +19,13 @@ describe("tarifas de Spotify", () => {
     expect(tipoTarifaSpotifyDesdeCorreo("dos@glcuenta.com")).toBe("dominio_gl");
     expect(tipoTarifaSpotifyDesdeCorreo("roberto@gmail.com")).toBe("correo_cliente");
   });
+
+  it("respeta la titularidad guardada aunque sea un Gmail externo", () => {
+    expect(tipoTarifaSpotifyDesdeCorreo("negocio@gmail.com", "gmail_propio")).toBe(
+      "dominio_gl",
+    );
+    expect(tipoTarifaSpotifyDesdeCorreo("cliente@glcuenta.com", "correo_cliente")).toBe(
+      "correo_cliente",
+    );
+  });
 });

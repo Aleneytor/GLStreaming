@@ -17,6 +17,7 @@ export function ModalVentaRapida({
   nombrePerfil,
   clienteLogin,
   clienteClave,
+  clienteTipoCorreo,
   esSpotifyFamiliar = false,
   slug,
   vendedores = [],
@@ -27,6 +28,7 @@ export function ModalVentaRapida({
   nombrePerfil: string;
   clienteLogin?: string | null;
   clienteClave?: string | null;
+  clienteTipoCorreo?: string | null;
   esSpotifyFamiliar?: boolean;
   slug: string;
   vendedores?: VendedorOp[];
@@ -43,8 +45,18 @@ export function ModalVentaRapida({
   const correoPreparadoEsDominio = /@(glstreaming\.org|glcuenta\.com)$/i.test(
     clienteLogin ?? "",
   );
-  const [tipoCorreoSpotify, setTipoCorreoSpotify] = useState<"dominio_gl" | "correo_cliente">(
-    correoPreparadoEsDominio ? "dominio_gl" : "correo_cliente",
+  const [tipoCorreoSpotify, setTipoCorreoSpotify] = useState<
+    "dominio_gl" | "gmail_propio" | "correo_cliente"
+  >(
+    clienteTipoCorreo === "dominio_gl" ||
+      clienteTipoCorreo === "gmail_propio" ||
+      clienteTipoCorreo === "correo_cliente"
+      ? clienteTipoCorreo
+      : correoPreparadoEsDominio
+        ? "dominio_gl"
+        : clienteLogin
+          ? "gmail_propio"
+          : "dominio_gl",
   );
   const [editarIdentidadPreparada, setEditarIdentidadPreparada] = useState(false);
   const requiereIdentidadSpotify =
@@ -109,7 +121,7 @@ export function ModalVentaRapida({
               <input
                 type="hidden"
                 name="spotify_tipo_correo"
-                value={correoPreparadoEsDominio ? "dominio_gl" : "correo_cliente"}
+                value={tipoCorreoSpotify}
               />
             </>
           )}
@@ -126,7 +138,7 @@ export function ModalVentaRapida({
                     : "Este cupo no tiene correo preparado. Define primero el acceso que usará el cliente."}
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid gap-2 sm:grid-cols-3">
                 <label className={`cursor-pointer rounded-lg border p-2 text-[11px] ${
                   tipoCorreoSpotify === "dominio_gl"
                     ? "border-green-600 bg-white text-green-950 dark:bg-green-950 dark:text-green-100"
@@ -142,6 +154,22 @@ export function ModalVentaRapida({
                   />
                   <strong>Correo a mi dominio</strong>
                   <span className="mt-0.5 block opacity-75">Reutilizable después de sanear.</span>
+                </label>
+                <label className={`cursor-pointer rounded-lg border p-2 text-[11px] ${
+                  tipoCorreoSpotify === "gmail_propio"
+                    ? "border-green-600 bg-white text-green-950 dark:bg-green-950 dark:text-green-100"
+                    : "border-green-200 text-green-800 dark:border-green-900 dark:text-green-300"
+                }`}>
+                  <input
+                    type="radio"
+                    name="spotify_tipo_correo"
+                    value="gmail_propio"
+                    checked={tipoCorreoSpotify === "gmail_propio"}
+                    onChange={() => setTipoCorreoSpotify("gmail_propio")}
+                    className="mr-1.5"
+                  />
+                  <strong>Gmail/correo mío</strong>
+                  <span className="mt-0.5 block opacity-75">Tuyo y reutilizable.</span>
                 </label>
                 <label className={`cursor-pointer rounded-lg border p-2 text-[11px] ${
                   tipoCorreoSpotify === "correo_cliente"
@@ -170,7 +198,13 @@ export function ModalVentaRapida({
                     name="spotify_login"
                     required
                     defaultValue={clienteLogin ?? ""}
-                    placeholder={tipoCorreoSpotify === "dominio_gl" ? "spotify000@glstreaming.org" : "cliente@gmail.com"}
+                    placeholder={
+                      tipoCorreoSpotify === "dominio_gl"
+                        ? "spotify000@glstreaming.org"
+                        : tipoCorreoSpotify === "gmail_propio"
+                          ? "micorreo@gmail.com"
+                          : "cliente@gmail.com"
+                    }
                     className="w-full rounded-lg border border-green-300 bg-white px-3 py-1.5 text-xs text-neutral-900 dark:border-green-800 dark:bg-neutral-900 dark:text-white"
                   />
                 </div>

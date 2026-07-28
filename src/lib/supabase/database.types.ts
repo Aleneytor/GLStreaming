@@ -2960,6 +2960,10 @@ export type Database = {
         Args: { p_motivo?: string; p_producto_id?: string }
         Returns: string
       }
+      actualizar_admision_familia_spotify: {
+        Args: { p_cuenta_id: string; p_estado: string; p_motivo?: string }
+        Returns: undefined
+      }
       actualizar_cuenta: {
         Args: {
           p_alias?: string

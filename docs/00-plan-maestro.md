@@ -518,10 +518,26 @@ reaparecer con un valor obsoleto de React. La migración corrigió el único res
 histórico confirmado y sin nueva asignación (`Rossy Cohello` en GLFlujo011),
 verificando después que Mawa y Blanca continuaran asignadas sin cambios.
 
-Estado real al cierre: migraciones aplicadas hasta **`0049`**, **244 cuentas**,
+### Admisión y titularidad editables en Spotify familiar (migración `0050`)
+
+El marcador importado `no se puede` representa un bloqueo temporal de toda la
+familia y no una propiedad del Gmail que aparezca en la misma fila del Excel.
+El editor permite ahora cambiar explícitamente la admisión entre abierta y
+bloqueada, con su motivo, sin tocar las identidades ya vendidas.
+
+Cada miembro conserva además una de tres titularidades: correo del dominio GL,
+Gmail u otro correo propiedad del negocio, o correo personal del cliente. El
+administrador puede corregir correo, clave y titularidad en un cupo preparado o
+en una venta activa. Esto permite reutilizar el mismo cupo y sustituir un correo
+del cliente por uno propio sin recrear la suscripción, el período ni el cobro;
+la identidad personal anterior se retira y destruye sus secretos. Las tarifas
+sugeridas se basan en la titularidad registrada, no en adivinarla por el texto
+del dominio.
+
+Estado real al cierre: migraciones aplicadas hasta **`0050`**, **244 cuentas**,
 **476 unidades** y **432 suscripciones** en la base local.
 
-Validación acumulada: **159 pruebas unitarias**, **21 suites SQL** y typecheck en
+Validación acumulada: **162 pruebas unitarias**, **22 suites SQL** y typecheck en
 verde. La suite de traslado comprueba el cambio de asignación, preservación del
 período, mantenimiento, entrega, auditoría, cuenta completa y rechazo a
 revendedores. El usuario confirmó la recuperación de la app y la reimportación;

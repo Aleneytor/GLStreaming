@@ -20,6 +20,8 @@ Cuando llames a funciones de Postgres mediante `supabase.rpc(...)`, usa **EXCLUS
 | **Renovar Proveedor por Lote** | `registrar_renovaciones_proveedor_lote` | `p_items` (JSONB con `cuenta_id`/`costo_usdt`), `p_fecha_pago`, `p_referencia` | No usar la fecha común de pago como inicio de todos los ciclos ❌ |
 | **Confirmar Limpieza** | `confirmar_limpieza_unidad` | `p_unidad_id` | `limpiar_unidad` ❌ |
 | **Preparar identidad Spotify** | `preparar_identidad_spotify` | `p_unidad_id`, `p_login_cifrado`, `p_login_fingerprint`, `p_contrasena_cifrada`, `p_tipo_correo` | Preparar no equivale a vender ni ocupar el cupo |
+| **Editar acceso de miembro Spotify** | `editar_acceso_miembro_spotify` | `p_unidad_id`, `p_suscripcion_id`, `p_login_cifrado`, `p_login_fingerprint`, `p_contrasena_cifrada`, `p_tipo_correo` | Admite `dominio_gl`, `gmail_propio` y `correo_cliente`; no recrea la venta |
+| **Cambiar admisión de familia Spotify** | `actualizar_admision_familia_spotify` | `p_cuenta_id`, `p_estado`, `p_motivo` | `no se puede` bloquea la familia completa, no un Gmail o cupo individual |
 | **Corregir cobro cliente** | `corregir_cobro_cliente` | `p_periodo_id`, `p_nuevo_monto_usd`, `p_motivo` | No actualizar ni borrar el cobro original: crea reverso y sustituto auditados |
 
 ---
