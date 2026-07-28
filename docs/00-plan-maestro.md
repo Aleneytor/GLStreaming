@@ -373,6 +373,12 @@ destinos como tarjetas clicables aunque la búsqueda actual oculte su cuenta; el
 desplegable queda como opción secundaria. La migración `0043` limpia el nombre
 operativo del cupo origen al cerrar su asignación y sanea los nombres residuales
 de traslados anteriores sin alterar la asignación histórica.
+
+La migración `0044` elimina la inconsistencia entre el estado de una cuenta y
+el de sus unidades: mantenimiento se propaga a los cupos habilitados y una
+reactivación publica otra vez únicamente los cupos ya preparados como `lista`.
+Los pendientes de limpieza permanecen bloqueados. El editor conserva en pantalla
+el estado recién guardado, sin obligar a cerrar y volver a abrir el panel.
 Los formularios sugieren la tabla vigente según titularidad del correo:
 dominio GL = `$4/$10/$18/$32` y correo del cliente = `$5/$13/$22/$40` para
 `1/3/6/12` meses. El total continúa editable para registrar excepciones reales.

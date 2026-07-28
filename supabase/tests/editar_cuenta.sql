@@ -37,6 +37,29 @@ union all select 'Proveedor nuevo enlazado',
           join public.proveedores p on p.id = c.proveedor_operativo_id
         where c.id = :'cta') = 'Distribuidor Ana';
 
+select 'Mantenimiento baja también los cupos' as prueba,
+       not exists (
+         select 1 from public.unidades_inventario
+         where cuenta_id = :'cta' and estado_operativo <> 'mantenimiento'
+       ) as pass;
+
+update public.unidades_inventario
+set estado_preparacion = 'pendiente_limpieza'
+where cuenta_id = :'cta' and numero_slot = 5;
+
+select public.actualizar_cuenta(:'cta', 'Renombrada', 'Distribuidor Ana', 'nota nueva', 'activa');
+
+select 'Reactivar habilita los cupos preparados' as prueba,
+       not exists (
+         select 1 from public.unidades_inventario
+         where cuenta_id = :'cta' and estado_preparacion = 'lista'
+           and estado_operativo <> 'habilitada'
+       ) as pass
+union all select 'Reactivar no publica un cupo por limpiar',
+       (select estado_operativo = 'mantenimiento'
+        from public.unidades_inventario
+        where cuenta_id = :'cta' and numero_slot = 5);
+
 -- 2. Rotar credenciales
 select public.rotar_credenciales_cuenta(:'cta', 'CIF_NUEVO', 'huella-NUEVA', 'PASS_NUEVO');
 

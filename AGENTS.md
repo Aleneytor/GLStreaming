@@ -139,6 +139,12 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
   filtro o búsqueda los oculte; se confirma mostrando correo/cupo. Al cerrar la
   asignación se limpia `nombre_visible` del origen y se conserva en el destino;
   la migración sanea también nombres residuales de traslados anteriores.
+- **Estado de cuenta y cupos sincronizado (migración `0044`)**: cambiar una
+  cuenta a mantenimiento baja sus unidades habilitadas; reactivarla vuelve a
+  habilitar solo las unidades con `estado_preparacion='lista'`. Los cupos
+  pendientes de limpieza siguen bloqueados. La migración saneó las cuentas ya
+  reactivadas después de traslados. El selector del editor es controlado y ya
+  no vuelve visualmente al estado anterior después de guardar.
 - **Tarifas sugeridas de Spotify, siempre editables**: correo GL usa
   1/3/6/12 meses = $4/$10/$18/$32; correo del cliente usa
   $5/$13/$22/$40. Al cambiar duración o titularidad, el modal propone el total

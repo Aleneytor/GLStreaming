@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { guardarCuentaInlineAction, type EstadoInline } from "./actions";
 import type { BloqueCuenta } from "./tabla-inventario";
 import { BotonEliminarCuenta } from "./boton-eliminar-cuenta";
@@ -23,6 +23,11 @@ export function PanelEditarCuenta({
   );
   const [credsCambiadas, setCredsCambiadas] = useState(false);
   const [verClave, setVerClave] = useState(false);
+  const [estadoCuenta, setEstadoCuenta] = useState(cuenta.cuentaEstado);
+
+  useEffect(() => {
+    setEstadoCuenta(cuenta.cuentaEstado);
+  }, [cuenta.cuentaEstado]);
 
   const editables = cuenta.filas.filter((f) => f.unidadId || f.clienteId);
 
@@ -82,7 +87,12 @@ export function PanelEditarCuenta({
             <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
               Estado de la Cuenta
             </label>
-            <select name="estado" defaultValue={cuenta.cuentaEstado} className={CAMPO}>
+            <select
+              name="estado"
+              value={estadoCuenta}
+              onChange={(evento) => setEstadoCuenta(evento.target.value)}
+              className={CAMPO}
+            >
               <option value="activa">🟢 Activa</option>
               <option value="mantenimiento">🟡 Mantenimiento</option>
               <option value="suspendida">🔴 Suspendida</option>
