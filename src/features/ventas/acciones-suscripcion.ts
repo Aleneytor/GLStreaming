@@ -196,3 +196,26 @@ export async function recordatorioAction(
   refrescar();
   return { ok: "Recordatorio guardado." };
 }
+
+export async function deshacerUltimaRenovacionAction(
+  _prev: EstadoAccion,
+  formData: FormData,
+): Promise<EstadoAccion> {
+  if (!(await guard())) return { error: "No autorizado." };
+
+  const suscripcionId = String(formData.get("suscripcion_id") ?? "");
+  const motivo = String(formData.get("motivo") ?? "").trim();
+  if (!suscripcionId) return { error: "Falta la suscripción." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("deshacer_ultima_renovacion", {
+    p_suscripcion_id: suscripcionId,
+    p_motivo: motivo || null,
+  });
+  if (error) return { error: error.message };
+
+  refrescar();
+  revalidatePath("/caja");
+  revalidatePath("/cobros");
+  return { ok: "Última renovación deshecha." };
+}

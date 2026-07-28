@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { CampoMonto, type Moneda } from "@/features/finanzas/campo-monto";
+import { BotonDeshacerRenovacion } from "./boton-deshacer-renovacion";
 import {
   cambiarEstadoAction,
   cancelarAction,
@@ -130,6 +131,10 @@ export function PanelSuscripcion({
         </p>
         <Aviso estado={renov} />
       </form>
+
+      <div className="border-t border-neutral-200 pt-4 dark:border-neutral-800">
+        <BotonDeshacerRenovacion suscripcionId={suscripcionId} />
+      </div>
 
       {/* Pausar / reactivar */}
       <form

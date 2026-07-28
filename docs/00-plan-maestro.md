@@ -602,3 +602,15 @@ de edición más usados. Ese reset era el que rehidrataba momentáneamente los
 `ModalGestionVenta` recibió además estado local para los datos editables y para
 la base comparada de Spotify; así, el modal ya no vuelve a mostrar la edición
 anterior ni siquiera entre dos guardados seguidos sin cerrarlo.
+### Nota de sesión 2026-07-28: deshacer renovación accidental
+
+Se añadió `deshacer_ultima_renovacion`, una reversa administrativa de la última
+renovación vigente de una suscripción. No cancela el servicio ni manda el cupo a
+limpieza: elimina solo el período renovado por error y sus cobros/reversos
+asociados, restaura la fecha de renovación anterior y deja auditoría.
+
+Si la renovación accidental había reactivado una suscripción pausada, el undo la
+devuelve a `pausada`. Si además cambió el vendedor de origen durante la
+renovación, restaura el vendedor del período anterior. La UI expone la acción
+desde `PanelSuscripcion` y desde el éxito inmediato del modal de renovación en
+Operaciones.

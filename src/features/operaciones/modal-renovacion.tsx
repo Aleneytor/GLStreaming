@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { renovarAction, type EstadoAccion } from "@/features/ventas/acciones-suscripcion";
+import { BotonDeshacerRenovacion } from "@/features/ventas/boton-deshacer-renovacion";
 import {
   tarifaSpotify,
   type TipoCorreoTarifaSpotify,
@@ -111,6 +112,7 @@ export function ModalRenovacion({
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
               ✓ {estado.ok}
             </div>
+            <BotonDeshacerRenovacion suscripcionId={suscripcionId} onHecho={onCerrar} />
             <button
               type="button"
               onClick={onCerrar}

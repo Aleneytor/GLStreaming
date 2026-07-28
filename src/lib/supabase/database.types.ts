@@ -3309,6 +3309,10 @@ export type Database = {
         Args: { p_motivo?: string; p_pago_id: string }
         Returns: string
       }
+      deshacer_ultima_renovacion: {
+        Args: { p_motivo?: string; p_suscripcion_id: string }
+        Returns: string
+      }
       revertir_gasto_operativo: {
         Args: { p_gasto_id: string; p_motivo?: string }
         Returns: string
@@ -3556,4 +3560,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
