@@ -50,6 +50,9 @@ Cuando llames a funciones de Postgres mediante `supabase.rpc(...)`, usa **EXCLUS
 - `nombre` (text)
 - `alias` (text)
 - `activo` (boolean)
+- `tipo` (`revendedor`/`intermediario`): describe afiliación y acceso al portal.
+- `cobra_en_paralela` (boolean): decide la base BCV/paralela independientemente
+  de `tipo`; desde la migración `0051` también puede ser `true` en intermediarios.
 
 ### `clientes`
 - `id` (uuid)

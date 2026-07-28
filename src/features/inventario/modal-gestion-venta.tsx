@@ -86,7 +86,7 @@ export function ModalGestionVenta({
     vendedorActualTipo ?? "intermediario",
   );
   const [cobraParalela, setCobraParalela] = useState(
-    vendedorActualTipo === "revendedor" && vendedorActualCobraEnParalela,
+    vendedorActualCobraEnParalela,
   );
   const [mesesRenovacion, setMesesRenovacion] = useState(1);
   const [tipoCorreoTarifa, setTipoCorreoTarifa] =
@@ -101,7 +101,7 @@ export function ModalGestionVenta({
   const [configGuardada, setConfigGuardada] = useState({
     vendedorId: vendedorActualId ?? "",
     tipo: vendedorActualTipo ?? "intermediario",
-    cobraParalela: vendedorActualTipo === "revendedor" && vendedorActualCobraEnParalela,
+    cobraParalela: vendedorActualCobraEnParalela,
   });
   const [estadoEdicion, actionEditar, pendienteEditar] = useActionState(editarVentaDirectaAction, null);
   const [estadoRenovar, actionRenovar, pendienteRenovar] = useActionState(renovarAction, null);
@@ -134,7 +134,7 @@ export function ModalGestionVenta({
         ? "Nuevo vendedor"
         : vendedorSeleccionado?.nombre ?? "Vendedor no disponible";
   const baseSeleccionada =
-    seleccionVendedor !== "" && tipoVendedor === "revendedor" && cobraParalela
+    seleccionVendedor !== "" && cobraParalela
       ? "Paralela"
       : "BCV";
   const hayCambioVendedor =
@@ -146,12 +146,11 @@ export function ModalGestionVenta({
     setSeleccionVendedor(valor);
     const vendedor = vendedores.find((v) => v.id === valor);
     setTipoVendedor(vendedor?.tipo ?? "intermediario");
-    setCobraParalela(vendedor?.tipo === "revendedor" ? vendedor.cobraEnParalela : false);
+    setCobraParalela(vendedor?.cobraEnParalela ?? false);
   }
 
   function cambiarTipo(tipo: "revendedor" | "intermediario") {
     setTipoVendedor(tipo);
-    if (tipo === "intermediario") setCobraParalela(false);
   }
 
   useEffect(() => {
@@ -319,10 +318,11 @@ export function ModalGestionVenta({
                   </optgroup>
                 )}
                 {intermediarios.length > 0 && (
-                  <optgroup label="Intermediarios (BCV)">
+                  <optgroup label="Intermediarios (sin portal)">
                     {intermediarios.map((v) => (
                       <option key={v.id} value={v.id}>
-                        {v.nombre} {v.alias ? `(${v.alias})` : ""} · BCV
+                        {v.nombre} {v.alias ? `(${v.alias})` : ""}
+                        {v.cobraEnParalela ? " · paralela" : " · BCV"}
                       </option>
                     ))}
                   </optgroup>
@@ -352,8 +352,7 @@ export function ModalGestionVenta({
                         className="mt-0.5"
                       />
                       <span>
-                        <strong>Intermediario</strong> — compra para conocidos y siempre
-                        se cobra a <strong>BCV</strong>.
+                        <strong>Intermediario</strong> — compra para conocidos, sin portal.
                       </span>
                     </label>
                     <label className="flex items-start gap-2">
@@ -371,8 +370,7 @@ export function ModalGestionVenta({
                     </label>
                   </div>
 
-                  {tipoVendedor === "revendedor" && (
-                    <label className="flex items-start gap-2 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                  <label className="flex items-start gap-2 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
                       <input
                         type="checkbox"
                         name="vendedor_cobra_paralela"
@@ -384,7 +382,6 @@ export function ModalGestionVenta({
                         Cobra a <strong>tasa paralela</strong>; desmarcado cobra a BCV.
                       </span>
                     </label>
-                  )}
 
                   <p className="text-[11px] font-semibold text-neutral-700 dark:text-neutral-200">
                     Renovaciones: {nombreVendedorSeleccionado} · {tipoVendedor} · {baseSeleccionada}

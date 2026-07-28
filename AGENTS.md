@@ -20,8 +20,8 @@ tasa paralela) y revendedores. Reemplaza un Excel. Zona horaria del negocio:
    pruebas. Así hemos encontrado bugs reales (orden de funciones, grants, etc.).
 2. **Avanza por rebanadas pequeñas y coherentes**, no todo de golpe. Cada
    rebanada: escribir → validar → **commit**. Un commit por rebanada.
-3. **El dominio manda.** Las reglas de negocio están en `docs/` con ~101
-   decisiones confirmadas (`DEC-01..DEC-101`). No inventes reglas: si falta una
+3. **El dominio manda.** Las reglas de negocio están en `docs/` con más de 100
+   decisiones confirmadas (`DEC-01..DEC-108`). No inventes reglas: si falta una
    decisión de negocio que solo el usuario sabe, **pregúntale**.
 4. **No programar de más.** El usuario prefiere no construir lo que no usará
    (ver DEC-97: sin stock para revendedor). Ante la duda, confirma alcance.
@@ -204,7 +204,7 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
   con la misma fecha y base efectiva del original, y registra auditoría.
 - **Cuentas completas compatibles y fusionadas en todas las plataformas**: la detección prioriza `alcance='cuenta'`, pero conserva compatibilidad estricta con 24 ventas importadas antiguas de Netflix, Disney+, HBO, Prime Video y Crunchyroll cuya primera unidad tiene exactamente `Cuenta Completa`/`Completa`. En escritorio mantiene sus filas numeradas de 23px (cinco filas = 115px) y fusiona los datos con `rowSpan`; en móvil muestra una sola tarjeta. Spotify individual queda excluido porque es `recurso_indivisible`.
 - **Pagos de proveedor por lote (migración `0036`)**: el inventario permite seleccionar todas las cuentas visibles de un mismo proveedor, desmarcar excepciones y editar el costo de cada ciclo. Comparten una sola `fecha_pago` y un `lote_pago_id`, pero cada ciclo nuevo comienza en la `proxima_renovacion` individual ya guardada. La operación es atómica y rechaza mezclar proveedores. El pago individual también usa `registrar_renovacion_y_pago`, por lo que ahora sí crea el egreso en Caja.
-- **Importador ampliado sin romper el Excel anterior**: `/migracion` conserva todas las columnas y reglas históricas (encabezados libres, celdas combinadas, Canva, Spotify, cuentas completas, costos y renovaciones) y ahora también puede leer `Alias Cuenta`, `Notas Cuenta`, `Estado Cuenta`, `Notas Cliente`, `Nota Renovación`, `Alias/Tipo/Tasa Vendedor` y `Tipo/Teléfono/Notas Proveedor`. Son columnas opcionales. La vista previa y el guardado comparten la decisión de tasa: directa/intermediario usa BCV y un revendedor marcado usa paralela. Los vendedores existentes conservan su configuración si la hoja vieja solo trae `Vendió`; una configuración explícita sí la actualiza. El selector de modalidad se reinicia al cambiar de producto para no enviar un UUID de la variante anterior.
+- **Importador ampliado sin romper el Excel anterior**: `/migracion` conserva todas las columnas y reglas históricas (encabezados libres, celdas combinadas, Canva, Spotify, cuentas completas, costos y renovaciones) y ahora también puede leer `Alias Cuenta`, `Notas Cuenta`, `Estado Cuenta`, `Notas Cliente`, `Nota Renovación`, `Alias/Tipo/Tasa Vendedor` y `Tipo/Teléfono/Notas Proveedor`. Son columnas opcionales. La vista previa y el guardado comparten la decisión de tasa: directa usa BCV y cualquier vendedor/intermediario usa su base guardada. Los vendedores existentes conservan su configuración si la hoja vieja solo trae `Vendió`; una configuración explícita sí la actualiza. El selector de modalidad se reinicia al cambiar de producto para no enviar un UUID de la variante anterior.
 - **Renovaciones de proveedor con costo cero en todo el importador**: una fecha en `Renovar` crea o sincroniza el ciclo aunque `Inversión` sea `0`, tanto en Netflix/resto de plataformas como en las rutas especiales Spotify familiar e individual. Si Spotify ya se había importado con el bug, se pueden volver a pegar sus filas: el importador repara el ciclo y trata la venta existente como metadato ya cargado, sin duplicarla. Las fechas omitidas por la carga anterior no pueden reconstruirse desde PostgreSQL y deben venir otra vez del respaldo.
 - **Importador rediseñado visualmente**: el flujo se presenta en cuatro pasos (configurar, pegar, revisar e importar), con producto/modalidad y moneda en tarjetas, área de pegado prominente, guía larga plegable, métricas de validación y confirmación sticky. La vista previa mantiene la tabla densa en escritorio y usa tarjetas por fila en móvil; ya no se declara la pantalla «solo PC».
 - **Orden exacto de importación**: al terminar una carga, las cuentas reciben
@@ -216,7 +216,7 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
   90 segundos desde Inventario; el acceso se audita. **El CVV nunca se guarda**,
   aunque venga en la celda: se descarta antes del cifrado.
 - **Finanzas rediseñadas con lenguaje operativo**: la subnavegación ahora usa `Resumen diario`, `Pagos pendientes`, `Pagos y gastos`, `Resumen mensual` y `Tasas de cambio`. “Pagos pendientes” explica que solo contiene servicios entregados/renovados sin cobro registrado; al cobrar pasan al resumen diario. “Resumen mensual” muestra primero la ganancia final estimada y traduce el antiguo cierre: guardar borrador conserva una revisión provisional y confirmar el mes congela una versión oficial, sin mover dinero ni cambiar ventas. Los cálculos/RPC no cambiaron; la suite SQL financiera completa sigue en verde.
-- **Catálogo convertido en configuración operativa responsive**: `/catalogo` usa un resumen del negocio y cuatro módulos por tarjetas (`Productos`, `Plataformas`, `Vendedores`, `Proveedores`). Los formularios permanecen cerrados hasta editar. El vendedor ya expone y persiste `tipo` (`revendedor`/`intermediario`) y `cobra_en_paralela`, respetando que el intermediario siempre sea BCV.
+- **Catálogo convertido en configuración operativa responsive**: `/catalogo` usa un resumen del negocio y cuatro módulos por tarjetas (`Productos`, `Plataformas`, `Vendedores`, `Proveedores`). Los formularios permanecen cerrados hasta editar. El vendedor expone y persiste por separado `tipo` (`revendedor`/`intermediario`) y base (`BCV`/`paralela`).
 - **Clientes convertido en cartera operativa mobile-first**: `/clientes` muestra servicios activos, vencimiento prioritario, estados próximos/vencidos, WhatsApp y acceso directo al inventario filtrado por cliente. Busca también por plataforma y vendedor; crear un cliente manual queda como acción secundaria porque el flujo normal lo crea desde la venta.
 - **Simplificación de Menú Principal**: Se removió la sección duplicada `Vencimientos` del menú de navegación (toda la gestión central de vencimientos, renovaciones y cobros se realiza unificadamente desde `Operaciones` / `/dashboard`), dejando un flujo más limpio.
 - **Corrección de Firma `registrar_cobro_cliente` (Migración `0033`)**: Se ajustó la llamada interna dentro de `vender_unidad` para coincidir con la firma exacta de `registrar_cobro_cliente` en PostgreSQL (`p_periodo_id`, `p_monto_ves`, `p_referencia`, `p_monto_usd`).
@@ -292,17 +292,17 @@ fallaban enteras. Se pasaron **todas** esas llamadas a **argumentos por nombre**
   Operaciones). Se agregó `revalidatePath('/dashboard')` en venderUnidadRapida,
   cancelarVentaConLimpieza, registrarPagoProveedorRapido, renovar e importación.
 
-### Base de tasa por revendedor: BCV vs Paralela (migración 0034)
+### Base de tasa por vendedor/intermediario: BCV vs Paralela (migraciones 0034 y 0051)
 
 Situación real: las ventas **directas** se cobran a **BCV**, pero algunos
-**revendedores** cobran a **paralela** (y los egresos ya van a paralela). El motor
+**vendedores e intermediarios** cobran a **paralela** (y los egresos ya van a paralela). El motor
 (0019) ya lee el ingreso económico a paralela, así que la ganancia sale bien con
 solo registrar los Bs reales; faltaba la ergonomía de entrada.
 
-- **`vendedores.cobra_en_paralela`** (bool): marca por revendedor. `registrar_cobro_cliente`
+- **`vendedores.cobra_en_paralela`** (bool): marca por persona. `registrar_cobro_cliente`
   lee la marca vía `suscripciones.vendedor_origen_id` y elige la base: **paralela**
-  para revendedores marcados, **BCV** en directa. Así toda venta Y renovación de
-  ese revendedor heredan la base sola (sin elegir nada por venta).
+  para cualquiera marcado, **BCV** en directa. Así toda venta Y renovación de
+  esa persona heredan la base sola (sin elegir nada por venta).
 - Efecto: al indicar el cobro en USD, convierte a Bs con la tasa correcta, y
   `precio_comercial_usd` (columna «Ingreso») se deriva a la MISMA base → un $5 de
   revendedor-paralela graba `5×paralela` Bs y se lee como $5 (no inflado a BCV).
@@ -313,18 +313,18 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
   `ModalGestionVenta`; se autocompleta con la marca guardada y se persiste al
   confirmar. La renovación no permite escoger una tasa independiente: muestra y
   hereda la base del vendedor para evitar divergencias.
-- Validación: suite `supabase/tests/base_tasa.sql` (7 comprobaciones en verde).
+- Validación: suite `supabase/tests/base_tasa.sql` (12 comprobaciones en verde).
 
-**Revendedor vs Intermediario (migración 0035):** `vendedores.tipo` distingue
-  · **revendedor**: afiliado, tendrá usuario y verá sus clientes por el portal;
-    puede cobrar a paralela.
+**Revendedor vs Intermediario (migraciones 0035 y 0051):** `vendedores.tipo` distingue
+  · **revendedor**: afiliado, tendrá usuario y verá sus clientes por el portal.
   · **intermediario**: compra para conocidos, informal (cualquiera, se escribe el
-    nombre y ya), sin usuario, **siempre BCV**.
-  Regla de dominio por CHECK: un intermediario NO puede tener `cobra_en_paralela`.
+    nombre y ya), sin usuario.
+  Desde `0051`, el tipo no decide la tasa: ambos pueden usar BCV o paralela
+  (`EUR`, Zelle u otra vía equivalente) mediante `cobra_en_paralela`.
   El default de un vendedor nuevo creado al vuelo es `intermediario`. En la UI
   (`ModalVentaRapida`) el dropdown separa ambos en optgroups, y al elegir/crear
-  uno se muestra un radio tipo + el checkbox de paralela (solo si revendedor);
-  `resolverVendedorId` persiste `tipo` y fuerza BCV para intermediarios.
+  uno se muestra un radio tipo + el checkbox de paralela para ambos;
+  `resolverVendedorId` persiste tipo y base de forma independiente.
 
 ### Decisiones de diseño CONFIRMADAS por el usuario (no cambiar sin avisar)
 
@@ -413,6 +413,16 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
   automático de campos no controlados: al guardar ya no reaparecen fugazmente
   los valores anteriores mientras llega la revalidación del servidor.
 
+### Intermediarios a BCV o paralela (migración `0051`)
+
+- `tipo` solo describe la relación: revendedor afiliado con portal o
+  intermediario sin portal. Ya no decide la tasa.
+- `cobra_en_paralela` funciona para ambos tipos. Permite englobar EUR, Zelle y
+  vías equivalentes como paralela sin introducir nuevas monedas; desmarcado usa
+  BCV y venta directa continúa a BCV.
+- Catálogo, venta rápida, gestión, renovaciones e importador preservan esta base.
+  `Tipo Vendedor = Intermediario` + `Tasa Vendedor = Paralela` es válido.
+
 ### ⚠️ Pendiente para el próximo agente
 
 - **Rediseñar por completo “Nueva cuenta” para TODAS las plataformas (prioridad indicada por el usuario al cerrar 2026-07-28).** El formulario actual sigue siendo genérico, largo y visualmente pobre. Debe convertirse en un flujo corto y contextual por producto/plataforma, mostrando únicamente datos que el negocio realmente usa. Eliminar pasos redundantes como pedir a la vez `Día de renovación` e `Inicio del ciclo actual`: una fecha exacta debe bastar y el ancla se deriva. Revisar especialmente modalidades, capacidad fija, proveedor/costo/renovación, credenciales, Gmail pagador, cuenta completa/extra/individual/familiar y responsive móvil. No copiar sin criterio el importador; ambos flujos comparten dominio pero “Nueva cuenta” es una alta operativa individual.
@@ -448,7 +458,7 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 probar visualmente un traslado real controlado y terminar la revisión del panel
 de revendedor.*
 
-*Última actualización: 2026-07-28 (migraciones hasta `0050`; Spotify familiar
+*Última actualización: 2026-07-28 (migraciones hasta `0051`; Spotify familiar
 con bloqueos, identidades editables y alta manual coherente; renovaciones con
 costo cero reparables; traslado/estados/inventario corregidos; pausas separadas
 de urgencias, liberación explicada como retiro externo y renovación operativa

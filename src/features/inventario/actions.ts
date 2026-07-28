@@ -538,16 +538,14 @@ type OpcionesVendedor = {
 /**
  * El `tipo` y la base de tasa se guardan en el propio vendedor y se aplican
  * solos a sus ventas y renovaciones (migraciones 0034/0035). Reglas:
- *  · Intermediario → SIEMPRE BCV (nunca paralela).
- *  · Revendedor → paralela según `cobraEnParalela`.
+ *  · Revendedor o intermediario → base según `cobraEnParalela`.
+ *  · Venta directa sin vendedor → BCV.
  * Solo se persiste lo que llega explícitamente (undefined = no cambiar).
  */
 function parcheVendedor(opts?: OpcionesVendedor): { tipo?: string; cobra_en_paralela?: boolean } {
   const patch: { tipo?: string; cobra_en_paralela?: boolean } = {};
   if (opts?.tipo) patch.tipo = opts.tipo;
-  if (opts?.tipo === "intermediario") {
-    patch.cobra_en_paralela = false; // regla de dominio (CHECK en la base)
-  } else if (typeof opts?.cobraEnParalela === "boolean") {
+  if (typeof opts?.cobraEnParalela === "boolean") {
     patch.cobra_en_paralela = opts.cobraEnParalela;
   }
   return patch;

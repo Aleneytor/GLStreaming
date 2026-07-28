@@ -59,8 +59,7 @@ export function ModalRenovacion({
   const hoy = hoyCaracas();
   const fechaDefecto = renovacionActual ?? hoy;
   const vendedor = vendedores.find((item) => item.id === vendedorId) ?? null;
-  const cobraEnParalela =
-    vendedor?.tipo === "revendedor" && vendedor.cobraEnParalela;
+  const cobraEnParalela = Boolean(vendedor?.cobraEnParalela);
   const tasaBase = cobraEnParalela ? paralela : bcv;
   const nombreBase = cobraEnParalela ? "paralela" : "BCV";
 

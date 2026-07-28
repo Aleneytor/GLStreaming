@@ -107,7 +107,7 @@ export default async function TasasPage() {
         />
         <Tarjeta
           titulo="Paralela"
-          descripcion="Costos en USDT y revendedores marcados"
+          descripcion="Costos en USDT y vendedores/intermediarios marcados"
           tasa={paralela}
         />
       </div>

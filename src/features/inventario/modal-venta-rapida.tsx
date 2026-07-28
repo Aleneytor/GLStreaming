@@ -70,13 +70,11 @@ export function ModalVentaRapida({
     const v = vendedores.find((x) => x.id === valor);
     // Existente: hereda su tipo/base. Nuevo: intermediario por defecto (casual).
     setTipoVendedor(v?.tipo ?? "intermediario");
-    setCobraParalela(v?.tipo === "revendedor" ? v.cobraEnParalela : false);
+    setCobraParalela(v?.cobraEnParalela ?? false);
   }
 
-  // Un intermediario nunca cobra a paralela (siempre BCV).
   function onCambiarTipo(t: "revendedor" | "intermediario") {
     setTipoVendedor(t);
-    if (t === "intermediario") setCobraParalela(false);
   }
 
   const hoyIso = new Date().toISOString().split("T")[0];
@@ -336,10 +334,11 @@ export function ModalVentaRapida({
                 </optgroup>
               )}
               {intermediarios.length > 0 && (
-                <optgroup label="Intermediarios (BCV)">
+                <optgroup label="Intermediarios (sin portal)">
                   {intermediarios.map((v) => (
                     <option key={v.id} value={v.id}>
                       {v.nombre} {v.alias ? `(${v.alias})` : ""}
+                      {v.cobraEnParalela ? " · paralela" : " · BCV"}
                     </option>
                   ))}
                 </optgroup>
@@ -370,7 +369,7 @@ export function ModalVentaRapida({
                     />
                     <span>
                       <strong>Intermediario</strong> — compra para conocidos, sin
-                      usuario. Siempre a <strong>BCV</strong>.
+                      usuario ni portal.
                     </span>
                   </label>
                   <label className="flex items-start gap-2">
@@ -389,8 +388,7 @@ export function ModalVentaRapida({
                   </label>
                 </div>
 
-                {tipoVendedor === "revendedor" && (
-                  <label className="flex items-start gap-2 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                <label className="flex items-start gap-2 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
                     <input
                       type="checkbox"
                       name="vendedor_cobra_paralela"
@@ -403,7 +401,6 @@ export function ModalVentaRapida({
                       aplica a sus ventas y renovaciones.
                     </span>
                   </label>
-                )}
               </div>
             )}
           </div>

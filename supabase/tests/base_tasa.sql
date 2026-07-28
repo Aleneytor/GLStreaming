@@ -23,12 +23,14 @@ values ('bcv', 100, current_date, 'prueba', 'bt-bcv-1', now(), now(), 'vigente')
 insert into public.tasas_cambio (tipo, bs_por_usd, fuente, fuente_registro_id, observada_fuente_at, revalidada_at, estado)
 values ('paralela', 50, 'prueba', 'bt-par-1', now(), now(), 'vigente') returning id as tasa_par \gset
 
--- Dos revendedores: uno cobra a paralela, otro a BCV. (Un intermediario no puede
--- ser paralela — CHECK de 0035 — por eso el de paralela es tipo 'revendedor'.)
+-- Dos revendedores y un intermediario. La base es independiente del acceso al
+-- portal: cualquiera de los dos tipos puede usar BCV o paralela.
 insert into public.vendedores (nombre, activo, tipo, cobra_en_paralela)
 values ('Rev Paralela QA', true, 'revendedor', true) returning id as rev_par \gset
 insert into public.vendedores (nombre, activo, tipo, cobra_en_paralela)
 values ('Rev BCV QA', true, 'revendedor', false) returning id as rev_bcv \gset
+insert into public.vendedores (nombre, activo, tipo, cobra_en_paralela)
+values ('Intermediario Paralela QA', true, 'intermediario', true) returning id as int_par \gset
 
 reset role;
 select set_config('request.jwt.claims', json_build_object('sub', :'admin_id', 'role', 'authenticated')::text, true);
@@ -39,6 +41,7 @@ select public.crear_cuenta_con_unidades(:'prod', 5, 'BaseTasa-1', null, 'A', 'ha
 select id as u1 from public.unidades_inventario where cuenta_id = :'cta' and numero_slot = 1 \gset
 select id as u2 from public.unidades_inventario where cuenta_id = :'cta' and numero_slot = 2 \gset
 select id as u3 from public.unidades_inventario where cuenta_id = :'cta' and numero_slot = 3 \gset
+select id as u4 from public.unidades_inventario where cuenta_id = :'cta' and numero_slot = 4 \gset
 
 -- --- 1. Venta por revendedor-PARALELA, indicada como $5 ---
 select public.vender_unidad(
@@ -81,7 +84,20 @@ select 'Venta directa graba Bs a BCV (5 x 100 = 500)' as prueba,
 union all select 'Venta directa: USD comercial = Bs / BCV = 5',
        (select precio_comercial_usd from public.periodos_servicio where id = :'per_dir') = 5;
 
--- --- 4. La renovación puede corregir el vendedor atómicamente ---
+-- --- 4. Intermediario-PARALELA: mismo motor, sin convertirlo en revendedor ---
+select public.vender_unidad(
+  p_cuenta_id => :'cta', p_unidad_id => :'u4', p_modalidad_id => :'m_perfil',
+  p_cliente_id => :'cli', p_vendedor_id => :'int_par', p_monto_usd => 6
+) as susc_int_par \gset
+select id as per_int_par from public.periodos_servicio where suscripcion_id = :'susc_int_par' \gset
+
+select 'Intermediario conserva su tipo sin portal' as prueba,
+       (select tipo = 'intermediario' from public.vendedores where id = :'int_par') as pass
+union all select 'Intermediario-paralela graba Bs a paralela (6 x 50 = 300)',
+       (select monto_ves from public.pagos_cliente
+        where periodo_servicio_id = :'per_int_par' and tipo = 'cobro') = 300;
+
+-- --- 5. La renovación puede corregir el vendedor atómicamente ---
 select max(fecha_renovacion) as inicio_renovacion
 from public.periodos_servicio where suscripcion_id = :'susc_bcv' \gset
 

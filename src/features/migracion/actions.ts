@@ -25,7 +25,7 @@ import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
  *
  * MONEDA: el Excel del negocio lleva todo en divisas. Por eso el importador
  * convierte el monto a bolívares con la base comercial vigente: BCV para venta
- * directa/intermediario y paralela para el revendedor que tenga esa marca. La
+ * directa y la base guardada para cada vendedor o intermediario. La
  * base congela ambas tasas y deriva el precio USD sin deformar el Excel.
  */
 
@@ -144,16 +144,13 @@ async function resolverVendedores(
     const existente = existentesPorNombre.get(clave);
     if (existente) {
       const tipo = (config.tipo ?? existente.tipo) as "revendedor" | "intermediario";
-      const cobraEnParalela =
-        tipo === "revendedor"
-          ? config.tasa
-            ? config.tasa === "paralela"
-            : existente.cobra_en_paralela
-          : false;
+      const cobraEnParalela = config.tasa
+        ? config.tasa === "paralela"
+        : existente.cobra_en_paralela;
       const patch: { alias?: string; tipo?: string; cobra_en_paralela?: boolean } = {};
       if (config.alias) patch.alias = config.alias;
       if (config.tipo) patch.tipo = tipo;
-      if (config.tasa || tipo === "intermediario") patch.cobra_en_paralela = cobraEnParalela;
+      if (config.tasa) patch.cobra_en_paralela = cobraEnParalela;
       if (Object.keys(patch).length > 0) {
         const { error } = await supabase.from("vendedores").update(patch).eq("id", existente.id);
         if (error) throw new Error(`No se pudo actualizar a ${config.nombre}: ${error.message}`);
@@ -162,8 +159,8 @@ async function resolverVendedores(
       continue;
     }
 
-    const tipo = config.tipo ?? (config.tasa === "paralela" ? "revendedor" : "intermediario");
-    const cobraEnParalela = tipo === "revendedor" && config.tasa === "paralela";
+    const tipo = config.tipo ?? "intermediario";
+    const cobraEnParalela = config.tasa === "paralela";
     const { data, error } = await supabase
       .from("vendedores")
       .insert({
@@ -369,8 +366,8 @@ export async function importarAction(
     const vence = d.vence ?? sumarUnMes(inicio);
 
     const vendedor = d.vendio ? (vendedores.get(d.vendio.toLowerCase()) ?? null) : null;
-    // Monto → bolívares. En USD usa BCV en directa/intermediario y paralela
-    // únicamente para el revendedor que tenga guardada esa base.
+    // Monto → bolívares. En USD usa BCV en directa y la base guardada para
+    // cualquier vendedor o intermediario.
     let montoVes: number | null = null;
     if (d.cliente && d.monto != null) {
       const tasa = vendedor?.cobraEnParalela ? paralela : bcv;

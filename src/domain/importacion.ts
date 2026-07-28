@@ -102,9 +102,9 @@ export function baseCobroImportacion(
   importada: Pick<ConfiguracionVendedorImportacion, "tipo" | "tasa"> | null | undefined,
   existente: { tipo: string; cobraEnParalela: boolean } | null | undefined,
 ): "bcv" | "paralela" {
-  if (importada?.tipo === "intermediario" || importada?.tasa === "bcv") return "bcv";
+  if (importada?.tasa === "bcv") return "bcv";
   if (importada?.tasa === "paralela") return "paralela";
-  return existente?.tipo === "revendedor" && existente.cobraEnParalela ? "paralela" : "bcv";
+  return existente?.cobraEnParalela ? "paralela" : "bcv";
 }
 
 export type FilaAnalizada = {
@@ -661,12 +661,6 @@ export function analizarFilas(
     const tasaVendedor = tasaVendedorLeida === "invalido" ? null : tasaVendedorLeida;
     if (tasaVendedorLeida === "invalido") {
       errores.push(`Tasa del vendedor no entendida: «${leer(c, "tasaVendedor")}».`);
-    }
-    // Paralela solo existe para un revendedor afiliado. Si la hoja no incluyó
-    // el tipo, esta señal es suficiente y evita pedir una columna redundante.
-    if (tasaVendedor === "paralela" && tipoVendedor === null) tipoVendedor = "revendedor";
-    if (tipoVendedor === "intermediario" && tasaVendedor === "paralela") {
-      errores.push("Un intermediario no puede cobrar a tasa paralela.");
     }
     if (!vendio && (aliasVendedor || tipoVendedor || tasaVendedor)) {
       errores.push("Hay datos del vendedor, pero la columna «Vendió» está vacía.");

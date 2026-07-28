@@ -301,21 +301,18 @@ export function EditorVendedor({
           <option value="revendedor">Revendedor afiliado</option>
         </select>
         <span className="mt-1 block text-xs text-neutral-500">
-          Solo un revendedor afiliado puede cobrar usando la tasa paralela.
+          La relación define si tendrá portal; la tasa depende de cómo te paga.
         </span>
       </label>
 
-      <label className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
-        tipo === "revendedor" ? "border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30" : "border-neutral-200 opacity-60 dark:border-neutral-800"
-      }`}>
+      <label className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm dark:border-amber-900 dark:bg-amber-950/30">
         <input
           type="checkbox"
           name="cobra_en_paralela"
           defaultChecked={vendedor?.cobra_en_paralela ?? false}
-          disabled={tipo !== "revendedor"}
           className="size-4 accent-amber-600"
         />
-        Cobra a tasa paralela; desmarcado cobra a BCV
+        Usa tasa paralela (EUR, Zelle u otros); desmarcado usa BCV
       </label>
 
       <label className="block text-sm">

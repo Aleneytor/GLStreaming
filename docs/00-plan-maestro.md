@@ -287,7 +287,7 @@ vendedor y teléfono/tipo/notas del proveedor. Una hoja antigua que solo indica
 
 Se corrigió además una inconsistencia financiera del importador: los importes en
 USD ya no se convierten todos con BCV. La vista previa y el guardado usan BCV en
-venta directa o intermediario y paralela únicamente para el revendedor marcado,
+venta directa y la base guardada —BCV o paralela— para cualquier vendedor o intermediario,
 igual que las ventas y renovaciones normales. Si falta la tasa que corresponde,
 la importación se bloquea antes de crear los servicios. El selector de modalidad
 también queda sincronizado al cambiar de producto, evitando reutilizar la
@@ -544,7 +544,20 @@ Correo, clave y el encabezado del panel se mantienen además de forma optimista
 durante el guardado. Se evita el reinicio automático del formulario para que los
 datos anteriores no parpadeen mientras llega la revalidación del servidor.
 
-Estado real al cierre: migraciones aplicadas hasta **`0050`**, **244 cuentas**,
+### Intermediarios con tasa BCV o paralela (migración `0051`)
+
+La relación comercial y la base monetaria quedan desacopladas. `Revendedor`
+continúa significando afiliado con acceso al portal e `intermediario` una persona
+sin portal que compra para conocidos, pero ambos pueden configurarse a BCV o
+paralela. Esto engloba pagos en EUR, Zelle u otras vías equivalentes sin añadir
+monedas ni categorías nuevas. Venta directa permanece a BCV.
+
+La elección está disponible en Catálogo, venta rápida y gestión de una venta; se
+hereda en renovaciones de Inventario y Operaciones. El importador acepta también
+`Tipo Vendedor = Intermediario` junto con `Tasa Vendedor = Paralela` y ya no
+infiere que toda tasa paralela implica un revendedor con portal.
+
+Estado real al cierre: migraciones aplicadas hasta **`0051`**, **244 cuentas**,
 **476 unidades** y **432 suscripciones** en la base local.
 
 Validación acumulada: **165 pruebas unitarias**, **22 suites SQL** y typecheck en

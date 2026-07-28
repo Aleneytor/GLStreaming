@@ -126,7 +126,7 @@ export async function guardarVendedorAction(
     alias: alias || null,
     usuario_id: usuario_id || null,
     tipo,
-    cobra_en_paralela: tipo === "revendedor" && cobra_en_paralela,
+    cobra_en_paralela,
     activo,
   };
 

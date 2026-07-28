@@ -36,6 +36,9 @@ describe("baseCobroImportacion", () => {
     expect(baseCobroImportacion(null, { tipo: "intermediario", cobraEnParalela: false })).toBe(
       "bcv",
     );
+    expect(baseCobroImportacion(null, { tipo: "intermediario", cobraEnParalela: true })).toBe(
+      "paralela",
+    );
   });
 
   it("la configuración explícita de la hoja manda sobre la guardada", () => {
@@ -485,7 +488,7 @@ describe("analizarFilas", () => {
     ]);
   });
 
-  it("la tasa paralela infiere revendedor, pero rechaza un intermediario paralelo", () => {
+  it("la tasa paralela no cambia la relación comercial y admite intermediarios", () => {
     const inferido = analizarFilas(
       [
         fila("Correo", "Contraseña", "Perfil", "Ingresos", "Cliente", "Vendió", "Tasa Vendedor"),
@@ -494,16 +497,19 @@ describe("analizarFilas", () => {
       1,
     );
     expect(inferido.conError).toBe(0);
-    expect(inferido.filas[0].datos.tipoVendedor).toBe("revendedor");
+    expect(inferido.filas[0].datos.tipoVendedor).toBeNull();
 
-    const invalido = analizarFilas(
+    const intermediario = analizarFilas(
       [
         fila("Correo", "Contraseña", "Perfil", "Ingresos", "Cliente", "Vendió", "Tipo Vendedor", "Tasa Vendedor"),
         fila("b@gls.org", "c", "P1", "5", "Beto", "Edgar", "Intermediario", "Paralela"),
       ].join("\n"),
       1,
     );
-    expect(invalido.conError).toBe(1);
-    expect(invalido.filas[0].errores.join(" ")).toContain("intermediario no puede");
+    expect(intermediario.conError).toBe(0);
+    expect(intermediario.filas[0].datos).toMatchObject({
+      tipoVendedor: "intermediario",
+      tasaVendedor: "paralela",
+    });
   });
 });

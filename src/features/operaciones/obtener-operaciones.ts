@@ -147,7 +147,7 @@ export async function obtenerDatosOperaciones(): Promise<DatosOperaciones> {
         vendedorId: vendedor?.id ?? null,
         vendedorTipo: vendedor?.tipo ?? null,
         vendedorCobraEnParalela:
-          vendedor?.tipo === "revendedor" && Boolean(vendedor.cobra_en_paralela),
+          Boolean(vendedor?.cobra_en_paralela),
         plataformaNombre: plat?.nombre ?? "Plataforma",
         productoNombre: prod?.nombre ?? "Producto",
         perfilNombre: unidad?.nombre_visible ?? null,
@@ -188,8 +188,7 @@ export async function obtenerDatosOperaciones(): Promise<DatosOperaciones> {
     nombre: vendedor.nombre,
     alias: vendedor.alias,
     tipo: vendedor.tipo,
-    cobraEnParalela:
-      vendedor.tipo === "revendedor" && Boolean(vendedor.cobra_en_paralela),
+    cobraEnParalela: Boolean(vendedor.cobra_en_paralela),
   }));
 
   return {
