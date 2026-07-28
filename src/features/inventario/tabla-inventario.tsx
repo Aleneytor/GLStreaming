@@ -287,6 +287,7 @@ export function TablaInventario({
   const [modoSeleccionPagos, setModoSeleccionPagos] = useState(false);
   const [cuentasPagoSeleccionadas, setCuentasPagoSeleccionadas] = useState<string[]>([]);
   const [mostrarPagoLote, setMostrarPagoLote] = useState(false);
+  const [todasColapsadasMovil, setTodasColapsadasMovil] = useState(false);
 
   // Modo BORRAR: seleccionar varias cuentas y eliminarlas de una (corrección de
   // cargas masivas). Cualquiera es elegible; el borrado es optimista.
@@ -526,8 +527,22 @@ export function TablaInventario({
         </div>
       )}
 
-      {/* VISTA MÓVIL (Tarjetas apiladas por cuenta) */}
-      <div className="block space-y-4 md:hidden">
+      {/* VISTA MÓVIL (Tarjetas colapsables por cuenta) */}
+      <div className="block space-y-3.5 md:hidden">
+        {cuentasState.length > 1 && (
+          <div className="flex items-center justify-between px-1 py-1">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+              {cuentasState.length} {cuentasState.length === 1 ? "cuenta" : "cuentas"}
+            </span>
+            <button
+              type="button"
+              onClick={() => setTodasColapsadasMovil(!todasColapsadasMovil)}
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-indigo-600 shadow-sm transition hover:bg-slate-50 active:scale-95 dark:border-slate-800 dark:bg-zinc-900 dark:text-indigo-400 dark:hover:bg-zinc-800"
+            >
+              {todasColapsadasMovil ? "📂 Expandir todas" : "📁 Plegar todas"}
+            </button>
+          </div>
+        )}
         {cuentasState.map((cta, index) => (
           <TarjetaCuentaMovil
             key={cta.cuentaId}
@@ -556,6 +571,7 @@ export function TablaInventario({
                 renovarProveedor: cta.renovarProveedor,
               })
             }
+            forzarColapsado={todasColapsadasMovil}
           />
         ))}
       </div>
@@ -1223,6 +1239,7 @@ function TarjetaCuentaMovil({
   destinoSeleccionado,
   onGestionarVenta,
   onRenovarProveedor,
+  forzarColapsado = false,
 }: {
   cta: BloqueCuenta;
   numCuenta: number;
@@ -1245,24 +1262,34 @@ function TarjetaCuentaMovil({
   destinoSeleccionado: DestinoTraslado | null;
   onGestionarVenta: (fila: CupoFila) => void;
   onRenovarProveedor: () => void;
+  forzarColapsado?: boolean;
 }) {
+  const [colapsada, setColapsada] = useState(forzarColapsado);
   const [mostrarCredenciales, setMostrarCredenciales] = useState(false);
-  // En escritorio se conservan las cinco líneas físicas del bloque Excel; en
-  // móvil una cuenta completa es una sola venta y no debe repetirse cinco veces.
+
+  useEffect(() => {
+    setColapsada(forzarColapsado);
+  }, [forzarColapsado]);
+
   const filasMovil = cta.esCuentaCompleta ? cta.filas.slice(0, 1) : cta.filas;
+  const libres = cta.filas.filter((f) => !f.cliente).length;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-zinc-900">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition dark:border-slate-800 dark:bg-zinc-900">
       {/* Encabezado de la cuenta */}
-      <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 dark:border-slate-800">
-        <div className="flex items-center gap-2">
+      <div
+        className={`flex items-center justify-between gap-2 ${
+          colapsada ? "" : "border-b border-slate-100 pb-2.5 dark:border-slate-800"
+        }`}
+      >
+        <div className="flex items-center gap-2 overflow-hidden">
           {modoBorrar && (
             <input
               type="checkbox"
               checked={borrarMarcada}
               onChange={onToggleBorrar}
               aria-label={`Seleccionar para borrar ${cta.correo}`}
-              className="size-4 accent-red-600"
+              className="size-4 shrink-0 accent-red-600"
             />
           )}
           {modoSeleccionPago && !modoBorrar && (
@@ -1272,241 +1299,267 @@ function TarjetaCuentaMovil({
               disabled={!seleccionHabilitada && !seleccionada}
               onChange={onSeleccionarPago}
               aria-label={`Seleccionar pago de ${cta.correo}`}
-              className="size-4 accent-purple-600"
+              className="size-4 shrink-0 accent-purple-600"
             />
           )}
-          <span className="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 font-mono text-xs font-bold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950 dark:text-indigo-300">
+          <span className="shrink-0 rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 font-mono text-xs font-bold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950 dark:text-indigo-300">
             #{numCuenta}
           </span>
-          <span className="font-mono text-xs font-bold text-slate-900 dark:text-white">
+          <span className="truncate font-mono text-xs font-bold text-slate-900 dark:text-white">
             {cta.correo}
           </span>
-        </div>
-        <button
-          type="button"
-          onClick={onEditar}
-          className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-zinc-800"
-        >
-          ⚙️ Editar
-        </button>
-      </div>
-
-      {/* Info proveedor y credenciales */}
-      <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400">
-        <div>
-          <span>Proveedor: </span>
-          <strong className="text-slate-900 dark:text-white">{cta.proveedor ?? "Directo"}</strong>
-          {cta.costo != null && (
-            <span className="ml-2 font-mono font-bold text-emerald-600 dark:text-emerald-400">
-              ${cta.costo.toFixed(2)}
-            </span>
-          )}
-          {cta.proveedorId && cta.proveedorTieneTarjeta && (
-            <BotonTarjetaProveedor proveedorId={cta.proveedorId} />
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={() => setMostrarCredenciales(!mostrarCredenciales)}
-          className="font-mono text-[11px] font-semibold text-indigo-600 underline dark:text-indigo-400"
-        >
-          {mostrarCredenciales ? "Ocultar clave" : "Ver clave"}
-        </button>
-      </div>
-
-      {cta.renovarProveedor && (
-        <button
-          type="button"
-          onClick={onRenovarProveedor}
-          className="mt-2.5 flex min-h-10 w-full items-center justify-between rounded-xl border border-purple-200 bg-purple-50/80 px-3 py-2 text-left text-xs font-semibold text-purple-900 transition hover:bg-purple-100 dark:border-purple-900 dark:bg-purple-950/30 dark:text-purple-200"
-        >
-          <span>Pago al proveedor</span>
-          <span className="font-mono">{formatearFecha(cta.renovarProveedor)}</span>
-        </button>
-      )}
-
-      {mostrarPagador && (
-        <div className="mt-2.5 rounded-xl border border-violet-200 bg-violet-50/80 px-3 py-2 text-xs dark:border-violet-900 dark:bg-violet-950/30">
-          <span className="text-violet-700 dark:text-violet-300 font-semibold">💳 Gmail pagador: </span>
-          <strong className="break-all font-mono text-violet-950 dark:text-violet-100">
-            {cta.pagador ?? "No registrado"}
-          </strong>
-          {cta.pagadorOrigen && (
-            <span className="ml-1 text-[10px] font-bold uppercase text-violet-600 dark:text-violet-400">
-              · {cta.pagadorOrigen.replaceAll("_", " ")}
-            </span>
-          )}
-        </div>
-      )}
-
-      {cta.admisionSpotifyBloqueada && (
-        <div className="mt-2.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900 dark:border-amber-800 dark:bg-amber-950/35 dark:text-amber-200">
-          ⛔ Spotify no permite incorporar miembros nuevos temporalmente.
-          {cta.motivoBloqueoSpotify && (
-            <span className="mt-0.5 block text-[10px] font-normal opacity-75">
-              {cta.motivoBloqueoSpotify}
-            </span>
-          )}
-        </div>
-      )}
-
-      {mostrarCredenciales && (
-        <div className="mt-2.5 rounded-xl border border-slate-200 bg-slate-50 p-2.5 font-mono text-xs font-semibold text-slate-800 dark:border-slate-800 dark:bg-zinc-800 dark:text-slate-200">
-          🔑 Clave: {cta.contrasena}
-        </div>
-      )}
-
-      {/* Lista de cupos/perfiles */}
-      <div className="mt-3.5 space-y-2.5">
-        {filasMovil.map((fila, indiceFila) => {
-          const estaVendido = Boolean(fila.suscripcionId);
-          const destinoCompatible = destinosTraslado?.find(
-            (destino) =>
-              destino.cuentaId === cta.cuentaId &&
-              (destino.unidadId === fila.unidadId ||
-                (destino.unidadId === null && indiceFila === 0)),
-          );
-          const esDestinoSeleccionado = Boolean(
-            destinoCompatible &&
-              destinoSeleccionado?.cuentaId === destinoCompatible.cuentaId &&
-              destinoSeleccionado?.unidadId === destinoCompatible.unidadId,
-          );
-          const whatsappLimpio = fila.celular?.replace(/[^0-9+]/g, "");
-          const alertaVencimiento = alertaVencimientoMovil(fila.dias);
-
-          return (
-            <div
-              key={fila.clave}
-              className={`flex flex-col gap-2 rounded-xl border p-3 transition ${
-                estaVendido
-                  ? "border-emerald-200 bg-emerald-50/40 dark:border-emerald-950 dark:bg-emerald-950/20"
-                  : destinosTraslado
-                    ? destinoCompatible
-                      ? esDestinoSeleccionado
-                        ? "border-amber-500 bg-amber-50 ring-2 ring-amber-300 dark:bg-amber-950/30"
-                        : "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
-                      : "border-slate-200 bg-slate-100 opacity-45 dark:border-slate-800 dark:bg-zinc-900"
-                    : "border-dashed border-slate-300 bg-slate-50/60 dark:border-slate-800 dark:bg-zinc-950/40"
+          {colapsada && (
+            <span
+              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                libres > 0
+                  ? "bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300"
+                  : "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300"
               }`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-neutral-900 dark:text-white">
-                  <span>{fila.cupo}</span>
-                  {!cta.esSpotifyFamiliar && fila.pin && (
-                    <span className="rounded bg-neutral-200 px-1 py-0.2 font-mono text-[10px] text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300">
-                      PIN: {fila.pin}
-                    </span>
-                  )}
-                </div>
+              {libres > 0 ? `${libres} libre${libres > 1 ? "s" : ""}` : "Vendida"}
+            </span>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onEditar}
+            title="Editar cuenta"
+            className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-zinc-800"
+          >
+            ⚙️
+          </button>
+          <button
+            type="button"
+            onClick={() => setColapsada(!colapsada)}
+            title={colapsada ? "Desplegar perfiles" : "Plegar cuenta"}
+            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700 transition hover:bg-slate-100 active:scale-95 dark:border-slate-700 dark:bg-zinc-800 dark:text-slate-200 dark:hover:bg-zinc-700"
+          >
+            {colapsada ? "▼ Abrir" : "▲ Plegar"}
+          </button>
+        </div>
+      </div>
 
-                {estaVendido ? (
-                  <button
-                    type="button"
-                    onClick={() => onGestionarVenta(fila)}
-                    className="rounded bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white active:scale-95"
-                  >
-                    ⚙️ Gestionar
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={Boolean(
-                      (destinosTraslado && !destinoCompatible) ||
-                      (!destinosTraslado && cta.admisionSpotifyBloqueada),
-                    )}
-                    onClick={() =>
-                      onIniciarVenta(
-                        destinosTraslado ? destinoCompatible!.unidadId : fila.unidadId,
-                        fila.cupo,
-                        fila.clienteLogin,
-                        fila.clienteClave,
-                      )
-                    }
-                    className={`rounded px-2.5 py-1 text-xs font-semibold text-white active:scale-95 disabled:cursor-not-allowed ${
-                      destinosTraslado
-                        ? esDestinoSeleccionado
-                          ? "bg-amber-500"
-                          : destinoCompatible
-                            ? "bg-emerald-600"
-                            : "bg-neutral-400"
-                        : cta.admisionSpotifyBloqueada
-                          ? "bg-amber-500"
-                          : "bg-blue-600"
-                    }`}
-                  >
-                    {destinosTraslado
-                      ? esDestinoSeleccionado
-                        ? "✓ Elegido"
-                        : destinoCompatible
-                          ? "Elegir"
-                          : "No compatible"
-                      : cta.admisionSpotifyBloqueada
-                        ? "No se puede"
-                        : "⚡ Vender"}
-                  </button>
-                )}
-              </div>
-
-              {cta.esSpotifyFamiliar && (fila.clienteLogin || fila.clienteClave) && (
-                <div className="grid gap-1 rounded-md bg-neutral-100 px-2 py-1.5 font-mono text-[11px] text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200 sm:grid-cols-2">
-                  <span className="break-all">📧 {fila.clienteLogin ?? "Sin correo"}</span>
-                  <span className="break-all">🔑 {fila.clienteClave ?? "Sin clave"}</span>
-                </div>
+      {!colapsada && (
+        <>
+          {/* Info proveedor y credenciales */}
+          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400">
+            <div>
+              <span>Proveedor: </span>
+              <strong className="text-slate-900 dark:text-white">{cta.proveedor ?? "Directo"}</strong>
+              {cta.costo != null && (
+                <span className="ml-2 font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                  ${cta.costo.toFixed(2)}
+                </span>
               )}
-
-              {estaVendido && (
-                <div className="flex items-center justify-between text-xs">
-                  <div className="space-y-0.5">
-                    <div className="font-semibold text-neutral-800 dark:text-neutral-200">
-                      👤 {fila.cliente ?? "Cliente"}
-                    </div>
-                    {fila.vendio && (
-                      <div className="text-[11px] text-neutral-500">
-                        🏷️ Vendió: {fila.vendio}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="text-right font-mono text-[11px]">
-                    {fila.ingreso != null && (
-                      <div className="font-semibold text-emerald-600 dark:text-emerald-400">
-                        ${fila.ingreso.toFixed(2)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {estaVendido && (
-                <button
-                  type="button"
-                  onClick={() => onGestionarVenta(fila)}
-                  className={`flex min-h-10 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-xs font-bold transition active:scale-[0.99] ${alertaVencimiento.clase}`}
-                  aria-label={`${alertaVencimiento.texto}. Gestionar renovación`}
-                >
-                  <span>⏰ {alertaVencimiento.texto}</span>
-                  {fila.vence && (
-                    <span className="shrink-0 font-mono text-[11px] opacity-80">
-                      {formatearFecha(fila.vence)}
-                    </span>
-                  )}
-                </button>
-              )}
-
-              {whatsappLimpio && (
-                <a
-                  href={`https://wa.me/${whatsappLimpio.replace("+", "")}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400"
-                >
-                  💬 WhatsApp ({fila.celular})
-                </a>
+              {cta.proveedorId && cta.proveedorTieneTarjeta && (
+                <BotonTarjetaProveedor proveedorId={cta.proveedorId} />
               )}
             </div>
-          );
-        })}
-      </div>
+            <button
+              type="button"
+              onClick={() => setMostrarCredenciales(!mostrarCredenciales)}
+              className="font-mono text-[11px] font-semibold text-indigo-600 underline dark:text-indigo-400"
+            >
+              {mostrarCredenciales ? "Ocultar clave" : "Ver clave"}
+            </button>
+          </div>
+
+          {cta.renovarProveedor && (
+            <button
+              type="button"
+              onClick={onRenovarProveedor}
+              className="mt-2.5 flex min-h-10 w-full items-center justify-between rounded-xl border border-purple-200 bg-purple-50/80 px-3 py-2 text-left text-xs font-semibold text-purple-900 transition hover:bg-purple-100 dark:border-purple-900 dark:bg-purple-950/30 dark:text-purple-200"
+            >
+              <span>Pago al proveedor</span>
+              <span className="font-mono">{formatearFecha(cta.renovarProveedor)}</span>
+            </button>
+          )}
+
+          {mostrarPagador && (
+            <div className="mt-2.5 rounded-xl border border-violet-200 bg-violet-50/80 px-3 py-2 text-xs dark:border-violet-900 dark:bg-violet-950/30">
+              <span className="font-semibold text-violet-700 dark:text-violet-300">💳 Gmail pagador: </span>
+              <strong className="break-all font-mono text-violet-950 dark:text-violet-100">
+                {cta.pagador ?? "No registrado"}
+              </strong>
+              {cta.pagadorOrigen && (
+                <span className="ml-1 text-[10px] font-bold uppercase text-violet-600 dark:text-violet-400">
+                  · {cta.pagadorOrigen.replaceAll("_", " ")}
+                </span>
+              )}
+            </div>
+          )}
+
+          {cta.admisionSpotifyBloqueada && (
+            <div className="mt-2.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900 dark:border-amber-800 dark:bg-amber-950/35 dark:text-amber-200">
+              ⛔ Spotify no permite incorporar miembros nuevos temporalmente.
+              {cta.motivoBloqueoSpotify && (
+                <span className="mt-0.5 block text-[10px] font-normal opacity-75">
+                  {cta.motivoBloqueoSpotify}
+                </span>
+              )}
+            </div>
+          )}
+
+          {mostrarCredenciales && (
+            <div className="mt-2.5 rounded-xl border border-slate-200 bg-slate-50 p-2.5 font-mono text-xs font-semibold text-slate-800 dark:border-slate-800 dark:bg-zinc-800 dark:text-slate-200">
+              🔑 Clave: {cta.contrasena}
+            </div>
+          )}
+
+          {/* Lista de cupos/perfiles */}
+          <div className="mt-3.5 space-y-2.5">
+            {filasMovil.map((fila, indiceFila) => {
+              const estaVendido = Boolean(fila.suscripcionId);
+              const destinoCompatible = destinosTraslado?.find(
+                (destino) =>
+                  destino.cuentaId === cta.cuentaId &&
+                  (destino.unidadId === fila.unidadId ||
+                    (destino.unidadId === null && indiceFila === 0)),
+              );
+              const esDestinoSeleccionado = Boolean(
+                destinoCompatible &&
+                  destinoSeleccionado?.cuentaId === destinoCompatible.cuentaId &&
+                  destinoSeleccionado?.unidadId === destinoCompatible.unidadId,
+              );
+              const whatsappLimpio = fila.celular?.replace(/[^0-9+]/g, "");
+              const alertaVencimiento = alertaVencimientoMovil(fila.dias);
+
+              return (
+                <div
+                  key={fila.clave}
+                  className={`flex flex-col gap-2 rounded-xl border p-3 transition ${
+                    estaVendido
+                      ? "border-emerald-200 bg-emerald-50/40 dark:border-emerald-950 dark:bg-emerald-950/20"
+                      : destinosTraslado
+                        ? destinoCompatible
+                          ? esDestinoSeleccionado
+                            ? "border-amber-500 bg-amber-50 ring-2 ring-amber-300 dark:bg-amber-950/30"
+                            : "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
+                          : "border-slate-200 bg-slate-100 opacity-45 dark:border-slate-800 dark:bg-zinc-900"
+                        : "border-dashed border-slate-300 bg-slate-50/60 dark:border-slate-800 dark:bg-zinc-950/40"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-neutral-900 dark:text-white">
+                      <span>{fila.cupo}</span>
+                      {!cta.esSpotifyFamiliar && fila.pin && (
+                        <span className="rounded bg-neutral-200 px-1 py-0.2 font-mono text-[10px] text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300">
+                          PIN: {fila.pin}
+                        </span>
+                      )}
+                    </div>
+
+                    {estaVendido ? (
+                      <button
+                        type="button"
+                        onClick={() => onGestionarVenta(fila)}
+                        className="rounded bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white active:scale-95"
+                      >
+                        ⚙️ Gestionar
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={Boolean(
+                          (destinosTraslado && !destinoCompatible) ||
+                          (!destinosTraslado && cta.admisionSpotifyBloqueada),
+                        )}
+                        onClick={() =>
+                          onIniciarVenta(
+                            destinosTraslado ? destinoCompatible!.unidadId : fila.unidadId,
+                            fila.cupo,
+                            fila.clienteLogin,
+                            fila.clienteClave,
+                          )
+                        }
+                        className={`rounded px-2.5 py-1 text-xs font-semibold text-white active:scale-95 disabled:cursor-not-allowed ${
+                          destinosTraslado
+                            ? esDestinoSeleccionado
+                              ? "bg-amber-500"
+                              : destinoCompatible
+                                ? "bg-emerald-600"
+                                : "bg-neutral-400"
+                            : cta.admisionSpotifyBloqueada
+                              ? "bg-amber-500"
+                              : "bg-blue-600"
+                        }`}
+                      >
+                        {destinosTraslado
+                          ? esDestinoSeleccionado
+                            ? "✓ Elegido"
+                            : destinoCompatible
+                              ? "Elegir"
+                              : "No compatible"
+                          : cta.admisionSpotifyBloqueada
+                            ? "No se puede"
+                            : "⚡ Vender"}
+                      </button>
+                    )}
+                  </div>
+
+                  {cta.esSpotifyFamiliar && (fila.clienteLogin || fila.clienteClave) && (
+                    <div className="grid gap-1 rounded-md bg-neutral-100 px-2 py-1.5 font-mono text-[11px] text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200 sm:grid-cols-2">
+                      <span className="break-all">📧 {fila.clienteLogin ?? "Sin correo"}</span>
+                      <span className="break-all">🔑 {fila.clienteClave ?? "Sin clave"}</span>
+                    </div>
+                  )}
+
+                  {estaVendido && (
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="space-y-0.5">
+                        <div className="font-semibold text-neutral-800 dark:text-neutral-200">
+                          👤 {fila.cliente ?? "Cliente"}
+                        </div>
+                        {fila.vendio && (
+                          <div className="text-[11px] text-neutral-500">
+                            🏷️ Vendió: {fila.vendio}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="text-right font-mono text-[11px]">
+                        {fila.ingreso != null && (
+                          <div className="font-semibold text-emerald-600 dark:text-emerald-400">
+                            ${fila.ingreso.toFixed(2)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {estaVendido && (
+                    <button
+                      type="button"
+                      onClick={() => onGestionarVenta(fila)}
+                      className={`flex min-h-10 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-xs font-bold transition active:scale-[0.99] ${alertaVencimiento.clase}`}
+                      aria-label={`${alertaVencimiento.texto}. Gestionar renovación`}
+                    >
+                      <span>⏰ {alertaVencimiento.texto}</span>
+                      {fila.vence && (
+                        <span className="shrink-0 font-mono text-[11px] opacity-80">
+                          {formatearFecha(fila.vence)}
+                        </span>
+                      )}
+                    </button>
+                  )}
+
+                  {whatsappLimpio && (
+                    <a
+                      href={`https://wa.me/${whatsappLimpio.replace("+", "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400"
+                    >
+                      💬 WhatsApp ({fila.celular})
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
