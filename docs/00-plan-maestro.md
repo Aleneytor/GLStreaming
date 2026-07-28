@@ -439,23 +439,58 @@ cupo, una venta completa consume todas sus unidades y un uso principal que no
 consume capacidad no reduce los cupos familiares. Esto corrige el falso 100 %
 de Spotify producido al sumar individuales y familiares en la misma tarjeta.
 
+## Cierre de sesión — 2026-07-28
+
+Trabajo consolidado de la jornada:
+
+- traslado por falla terminado: selector visual de destinos, limpieza del nombre
+  en el origen, compatibilidad real y preservación de venta/período/cobro;
+- renovación de clientes entre 1 y 12 meses, tarifas sugeridas de Spotify y
+  corrección auditable de ingresos importados desde Inventario;
+- estados de vencimiento corregidos y sincronización entre cuenta en
+  mantenimiento/reactivada y sus unidades;
+- inventario Spotify estabilizado para cientos de IDs mediante consultas en
+  lotes, sin el error `URI too long`;
+- importador corregido para conservar `Renovar` con inversión `0` en todas las
+  plataformas, incluidas las rutas especiales familiar/individual de Spotify;
+- Spotify familiar alineado con el dominio: miembro = correo/clave, identidades
+  preparadas, elección entre dominio GL/correo personal, edición versionada,
+  bloqueo familiar `no se puede` y protección SQL contra altas accidentales;
+- editor de familias especializado, sin “Perfil” ni “PIN”, y alta manual Spotify
+  actualizada con cinco miembros, cobertura, madre y Gmail pagador opcional;
+- borrado desde el panel reparado al eliminar el formulario React anidado; la
+  cuenta manual incompleta usada para la prueba se eliminó de forma controlada;
+- panel de revendedor recibió una primera simplificación/rediseño en paralelo;
+  queda pendiente su revisión visual y funcional final contra el resto de los
+  cambios de esta sesión.
+
+Estado real al cierre: migraciones aplicadas hasta **`0047`**, **244 cuentas**,
+**476 unidades** y **432 suscripciones** en la base local.
+
 Validación acumulada: **159 pruebas unitarias**, **21 suites SQL** y typecheck en
 verde. La suite de traslado comprueba el cambio de asignación, preservación del
 período, mantenimiento, entrega, auditoría, cuenta completa y rechazo a
 revendedores. El usuario confirmó la recuperación de la app y la reimportación;
-la base local contiene nuevamente la cartera operativa (298 cuentas y 629
-suscripciones al cerrar esta sesión).
+la base local contiene nuevamente la cartera operativa; el conteo exacto del
+cierre está consignado arriba para no conservar cifras históricas contradictorias.
 
 ## 5. Próxima sesión — lista acordada con el usuario
 
-1. **Trabajar el panel de revendedor con los cambios recientes.** Adaptar la
+1. **Rediseñar “Nueva cuenta” para todas las plataformas.** Sustituir el formulario
+   genérico y largo por pasos contextuales según el producto, con identidad visual
+   coherente y responsive. Mostrar solo campos útiles. En proveedor, pedir una
+   fecha exacta y derivar internamente el día ancla; no volver a pedir “Día de
+   renovación” e “Inicio del ciclo” como datos separados. Revisar modalidades,
+   capacidad, credenciales, costo, proveedor, renovación y excepciones propias de
+   Netflix, Spotify y el resto antes de implementar.
+2. **Terminar de revisar el panel de revendedor con los cambios recientes.** Adaptar la
    experiencia responsive, variantes Netflix/Spotify, renovaciones, traslado y
    paquete de acceso. No ampliar permisos: el revendedor solo ve sus ventas y
    nunca recibe inventario, proveedor, costo o tarjetas propias.
-2. **Probar visualmente el traslado con un caso real controlado.** Elegir una
+3. **Probar visualmente el traslado con un caso real controlado.** Elegir una
    venta respaldada, moverla a un cupo libre y comprobar el paquete de acceso en
    escritorio y móvil. La prueba SQL ya cubre la atomicidad sin tocar datos.
-3. **Agregar los siguientes pasos junto con el usuario.** No asumir todavía
+4. **Agregar los siguientes pasos junto con el usuario.** No asumir todavía
    funcionalidades posteriores a estas prioridades.
 
 ## 6. Qué hacer si hay que reiniciar desde cero

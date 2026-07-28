@@ -350,6 +350,7 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 
 ### ⚠️ Pendiente para el próximo agente
 
+- **Rediseñar por completo “Nueva cuenta” para TODAS las plataformas (prioridad indicada por el usuario al cerrar 2026-07-28).** El formulario actual sigue siendo genérico, largo y visualmente pobre. Debe convertirse en un flujo corto y contextual por producto/plataforma, mostrando únicamente datos que el negocio realmente usa. Eliminar pasos redundantes como pedir a la vez `Día de renovación` e `Inicio del ciclo actual`: una fecha exacta debe bastar y el ancla se deriva. Revisar especialmente modalidades, capacidad fija, proveedor/costo/renovación, credenciales, Gmail pagador, cuenta completa/extra/individual/familiar y responsive móvil. No copiar sin criterio el importador; ambos flujos comparten dominio pero “Nueva cuenta” es una alta operativa individual.
 - **Actualizar el panel de revendedor.** Revisarlo contra todos los cambios
   recientes: variantes Netflix/Spotify, vendedor afiliado, base BCV/paralela,
   renovaciones, nuevas vistas responsive, traslados y paquete de acceso. Mantener
@@ -378,10 +379,11 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
   en `resolverVendedorId`.
 
 ---
-*Pendiente destacado: probar visualmente un traslado real controlado y actualizar
-el panel de revendedor.*
+*Pendiente destacado: rediseñar “Nueva cuenta” para todas las plataformas,
+probar visualmente un traslado real controlado y terminar la revisión del panel
+de revendedor.*
 
-*Última actualización: 2026-07-28 (Spotify familiar modelado como identidad por
-miembro, credenciales preparadas en cupos libres y ocupación corregida; traslado
-por falla transaccional; corrección auditable de cobros; tarifas multimes editables; 159 unitarias y suites
-SQL en verde).*
+*Última actualización: 2026-07-28 (cierre de sesión: migraciones hasta `0047`;
+Spotify familiar con bloqueos, identidades editables y alta manual coherente;
+renovaciones con costo cero reparables; traslado/estados/inventario corregidos;
+159 unitarias y 21 suites SQL en verde).*
