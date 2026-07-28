@@ -470,3 +470,11 @@ suites SQL en verde).*
   titularidad incluso si el servicio está pausado o vencido.
 - La persistencia usa el RPC `editar_acceso_miembro_spotify`, comparando primero
   contra los valores originales para no recrear la venta ni tocar el período.
+### Nota de sesión 2026-07-28: formularios sin rebote visual
+
+- Se bloqueó el `reset` automático que React dispara tras varios `server actions`
+  con `useActionState`. Era la causa de que, al guardar, muchos modales
+  volvieran a pintar por un instante los `defaultValue` viejos.
+- `ModalGestionVenta` además quedó con estado local para nombre, perfil y acceso
+  Spotify. Tras guardar conserva en pantalla el dato nuevo y actualiza su base
+  "guardada" para que un segundo submit no compare contra el valor anterior.

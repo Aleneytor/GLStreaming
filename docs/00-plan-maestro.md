@@ -593,3 +593,12 @@ cierre está consignado arriba para no conservar cifras históricas contradictor
 clave y titularidad del acceso aunque la suscripción esté pausada o vencida.
 La acción reutiliza `editar_acceso_miembro_spotify` y solo persiste cuando hay
 cambios reales contra el valor original.
+### Nota de sesión 2026-07-28: evitar rebote de valores al guardar
+
+Se bloqueó el `reset` automático posterior a `server actions` en los formularios
+de edición más usados. Ese reset era el que rehidrataba momentáneamente los
+`defaultValue` viejos y hacía visible el "parpadeo" tras guardar.
+
+`ModalGestionVenta` recibió además estado local para los datos editables y para
+la base comparada de Spotify; así, el modal ya no vuelve a mostrar la edición
+anterior ni siquiera entre dos guardados seguidos sin cerrarlo.

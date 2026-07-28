@@ -57,7 +57,11 @@ export function EditorPlataforma({
   }
 
   return (
-    <form action={action} className="space-y-3 rounded-xl border border-violet-300 bg-white p-4 dark:border-violet-800 dark:bg-neutral-900">
+    <form
+      action={action}
+      onReset={(evento) => evento.preventDefault()}
+      className="space-y-3 rounded-xl border border-violet-300 bg-white p-4 dark:border-violet-800 dark:bg-neutral-900"
+    >
       <input type="hidden" name="id" value={plataforma.id} />
       <input
         name="nombre"
@@ -135,6 +139,7 @@ export function EditorProducto({
   return (
     <form
       action={action}
+      onReset={(evento) => evento.preventDefault()}
       className="space-y-3 rounded-xl border border-violet-300 bg-white p-4 dark:border-violet-800 dark:bg-neutral-900"
     >
       <input type="hidden" name="id" value={producto.id} />
@@ -265,6 +270,7 @@ export function EditorVendedor({
   return (
     <form
       action={action}
+      onReset={(evento) => evento.preventDefault()}
       className="space-y-3 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
     >
       {vendedor && <input type="hidden" name="id" value={vendedor.id} />}
@@ -405,6 +411,7 @@ export function EditorProveedor({ proveedor }: { proveedor?: ProveedorFila }) {
   return (
     <form
       action={action}
+      onReset={(evento) => evento.preventDefault()}
       className="space-y-3 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
     >
       {proveedor && <input type="hidden" name="id" value={proveedor.id} />}

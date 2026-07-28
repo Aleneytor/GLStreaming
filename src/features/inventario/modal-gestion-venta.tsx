@@ -80,6 +80,31 @@ export function ModalGestionVenta({
     clienteLogin,
     clienteTipoCorreo,
   );
+  const [clienteNombreForm, setClienteNombreForm] = useState(clienteNombre);
+  const [clienteWhatsappForm, setClienteWhatsappForm] = useState(clienteCelular ?? "");
+  const [nombrePerfilForm, setNombrePerfilForm] = useState(nombrePerfil);
+  const [pinPerfilForm, setPinPerfilForm] = useState(pinPerfil ?? "");
+  const [spotifyLoginForm, setSpotifyLoginForm] = useState(clienteLogin ?? "");
+  const [spotifyClaveForm, setSpotifyClaveForm] = useState(clienteClave ?? "");
+  const [spotifyTipoCorreoForm, setSpotifyTipoCorreoForm] = useState<
+    "dominio_gl" | "gmail_propio" | "correo_cliente"
+  >(
+    clienteTipoCorreo === "dominio_gl" ||
+      clienteTipoCorreo === "gmail_propio" ||
+      clienteTipoCorreo === "correo_cliente"
+      ? clienteTipoCorreo
+      : "correo_cliente",
+  );
+  const [spotifyGuardado, setSpotifyGuardado] = useState({
+    login: clienteLogin ?? "",
+    clave: clienteClave ?? "",
+    tipo:
+      clienteTipoCorreo === "dominio_gl" ||
+      clienteTipoCorreo === "gmail_propio" ||
+      clienteTipoCorreo === "correo_cliente"
+        ? clienteTipoCorreo
+        : "correo_cliente",
+  });
   const [modo, setModo] = useState<"ver" | "renovar" | "eliminar" | "trasladar">("ver");
   const [seleccionVendedor, setSeleccionVendedor] = useState(vendedorActualId ?? "");
   const [tipoVendedor, setTipoVendedor] = useState<"revendedor" | "intermediario">(
@@ -170,8 +195,51 @@ export function ModalGestionVenta({
         tipo: tipoVendedor,
         cobraParalela,
       });
+      setSpotifyGuardado({
+        login: spotifyLoginForm,
+        clave: spotifyClaveForm,
+        tipo: spotifyTipoCorreoForm,
+      });
     }
-  }, [estadoEdicion, seleccionVendedor, tipoVendedor, cobraParalela]);
+  }, [
+    estadoEdicion,
+    seleccionVendedor,
+    tipoVendedor,
+    cobraParalela,
+    spotifyLoginForm,
+    spotifyClaveForm,
+    spotifyTipoCorreoForm,
+  ]);
+
+  useEffect(() => {
+    const tipoActual =
+      clienteTipoCorreo === "dominio_gl" ||
+      clienteTipoCorreo === "gmail_propio" ||
+      clienteTipoCorreo === "correo_cliente"
+        ? clienteTipoCorreo
+        : "correo_cliente";
+    setClienteNombreForm(clienteNombre);
+    setClienteWhatsappForm(clienteCelular ?? "");
+    setNombrePerfilForm(nombrePerfil);
+    setPinPerfilForm(pinPerfil ?? "");
+    setSpotifyLoginForm(clienteLogin ?? "");
+    setSpotifyClaveForm(clienteClave ?? "");
+    setSpotifyTipoCorreoForm(tipoActual);
+    setSpotifyGuardado({
+      login: clienteLogin ?? "",
+      clave: clienteClave ?? "",
+      tipo: tipoActual,
+    });
+  }, [
+    suscripcionId,
+    clienteNombre,
+    clienteCelular,
+    nombrePerfil,
+    pinPerfil,
+    clienteLogin,
+    clienteClave,
+    clienteTipoCorreo,
+  ]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
@@ -180,10 +248,10 @@ export function ModalGestionVenta({
         <div className="mb-4 flex items-center justify-between border-b border-neutral-200 pb-3 dark:border-neutral-800">
           <div>
             <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
-              ⚙️ Gestionar Venta: {clienteNombre}
+              ⚙️ Gestionar Venta: {clienteNombreForm}
             </h3>
             <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400">
-              {nombrePerfil} {vence ? `· Vence: ${formatearFecha(vence)}` : ""}
+              {nombrePerfilForm} {vence ? `· Vence: ${formatearFecha(vence)}` : ""}
             </p>
           </div>
           <button
@@ -197,7 +265,11 @@ export function ModalGestionVenta({
 
         {/* MODO VISTA / EDICIÓN */}
         {modo === "ver" && (
-          <form action={actionEditar} className="space-y-4">
+          <form
+            action={actionEditar}
+            onReset={(evento) => evento.preventDefault()}
+            className="space-y-4"
+          >
             <input type="hidden" name="suscripcion_id" value={suscripcionId} />
             {periodoId && <input type="hidden" name="periodo_id" value={periodoId} />}
             {unidadId && <input type="hidden" name="unidad_id" value={unidadId} />}
@@ -205,12 +277,12 @@ export function ModalGestionVenta({
             <input type="hidden" name="slug" value={slug} />
             {esSpotifyFamiliar && (
               <>
-                <input type="hidden" name="spotify_login_original" value={clienteLogin ?? ""} />
-                <input type="hidden" name="spotify_clave_original" value={clienteClave ?? ""} />
+                <input type="hidden" name="spotify_login_original" value={spotifyGuardado.login} />
+                <input type="hidden" name="spotify_clave_original" value={spotifyGuardado.clave} />
                 <input
                   type="hidden"
                   name="spotify_tipo_correo_original"
-                  value={clienteTipoCorreo ?? ""}
+                  value={spotifyGuardado.tipo}
                 />
               </>
             )}
@@ -222,7 +294,8 @@ export function ModalGestionVenta({
                 </label>
                 <input
                   name="cliente_nombre"
-                  defaultValue={clienteNombre}
+                  value={clienteNombreForm}
+                  onChange={(e) => setClienteNombreForm(e.target.value)}
                   className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                 />
               </div>
@@ -233,7 +306,8 @@ export function ModalGestionVenta({
                 </label>
                 <input
                   name="cliente_whatsapp"
-                  defaultValue={clienteCelular ?? ""}
+                  value={clienteWhatsappForm}
+                  onChange={(e) => setClienteWhatsappForm(e.target.value)}
                   placeholder="+58412..."
                   className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-mono text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                 />
@@ -248,7 +322,8 @@ export function ModalGestionVenta({
                     <input
                       name="spotify_login"
                       type="email"
-                      defaultValue={clienteLogin ?? ""}
+                      value={spotifyLoginForm}
+                      onChange={(e) => setSpotifyLoginForm(e.target.value)}
                       placeholder="spotify123@glstreaming.org"
                       className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 font-mono text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                     />
@@ -259,7 +334,8 @@ export function ModalGestionVenta({
                     </label>
                     <input
                       name="spotify_clave"
-                      defaultValue={clienteClave ?? ""}
+                      value={spotifyClaveForm}
+                      onChange={(e) => setSpotifyClaveForm(e.target.value)}
                       placeholder="Clave actual"
                       className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 font-mono text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                     />
@@ -270,11 +346,11 @@ export function ModalGestionVenta({
                     </label>
                     <select
                       name="spotify_tipo_correo"
-                      defaultValue={
-                        clienteTipoCorreo === "dominio_gl" ||
-                        clienteTipoCorreo === "gmail_propio"
-                          ? clienteTipoCorreo
-                          : "correo_cliente"
+                      value={spotifyTipoCorreoForm}
+                      onChange={(e) =>
+                        setSpotifyTipoCorreoForm(
+                          e.target.value as "dominio_gl" | "gmail_propio" | "correo_cliente",
+                        )
                       }
                       className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                     >
@@ -295,7 +371,8 @@ export function ModalGestionVenta({
                     </label>
                     <input
                       name="nombre_perfil"
-                      defaultValue={nombrePerfil}
+                      value={nombrePerfilForm}
+                      onChange={(e) => setNombrePerfilForm(e.target.value)}
                       placeholder="Ej. Perfil 1"
                       className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                     />
@@ -307,7 +384,8 @@ export function ModalGestionVenta({
                     </label>
                     <input
                       name="pin_perfil"
-                      defaultValue={pinPerfil ?? ""}
+                      value={pinPerfilForm}
+                      onChange={(e) => setPinPerfilForm(e.target.value)}
                       placeholder="sin PIN"
                       className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-mono text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                     />

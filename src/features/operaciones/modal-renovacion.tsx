@@ -120,7 +120,11 @@ export function ModalRenovacion({
             </button>
           </div>
         ) : (
-          <form action={accionRenovar} className="mt-4 space-y-4">
+          <form
+            action={accionRenovar}
+            onReset={(evento) => evento.preventDefault()}
+            className="mt-4 space-y-4"
+          >
             <input type="hidden" name="suscripcion_id" value={suscripcionId} />
             <input
               type="hidden"

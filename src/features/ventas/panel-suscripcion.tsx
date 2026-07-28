@@ -86,7 +86,11 @@ export function PanelSuscripcion({
   return (
     <div className="space-y-4">
       {/* Renovar */}
-      <form action={accionRenovar} className="space-y-2">
+      <form
+        action={accionRenovar}
+        onReset={(evento) => evento.preventDefault()}
+        className="space-y-2"
+      >
         <input type="hidden" name="suscripcion_id" value={suscripcionId} />
         <p className="text-sm font-medium">Renovar y cobrar</p>
         <div className="grid grid-cols-2 gap-2">
@@ -128,7 +132,11 @@ export function PanelSuscripcion({
       </form>
 
       {/* Pausar / reactivar */}
-      <form action={accionCambiar} className="flex flex-wrap items-center gap-2">
+      <form
+        action={accionCambiar}
+        onReset={(evento) => evento.preventDefault()}
+        className="flex flex-wrap items-center gap-2"
+      >
         <input type="hidden" name="suscripcion_id" value={suscripcionId} />
         <input
           type="hidden"
@@ -145,7 +153,11 @@ export function PanelSuscripcion({
       </form>
 
       {/* Recordatorio */}
-      <form action={accionRecordar} className="space-y-2">
+      <form
+        action={accionRecordar}
+        onReset={(evento) => evento.preventDefault()}
+        className="space-y-2"
+      >
         <input type="hidden" name="suscripcion_id" value={suscripcionId} />
         <p className="text-sm font-medium">Recontactar</p>
         <div className="grid grid-cols-2 gap-2">
@@ -174,7 +186,11 @@ export function PanelSuscripcion({
       </form>
 
       {/* Cancelar */}
-      <form action={accionCancelar} className="space-y-2 border-t border-neutral-200 pt-4 dark:border-neutral-800">
+      <form
+        action={accionCancelar}
+        onReset={(evento) => evento.preventDefault()}
+        className="space-y-2 border-t border-neutral-200 pt-4 dark:border-neutral-800"
+      >
         <input type="hidden" name="suscripcion_id" value={suscripcionId} />
         {!confirmarCancelar ? (
           <button

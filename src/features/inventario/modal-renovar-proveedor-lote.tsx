@@ -76,7 +76,11 @@ export function ModalRenovarProveedorLote({
           <button type="button" onClick={onCerrar} className="px-2 text-xl text-neutral-400">×</button>
         </div>
 
-        <form action={action} className="flex min-h-0 flex-1 flex-col">
+        <form
+          action={action}
+          onReset={(evento) => evento.preventDefault()}
+          className="flex min-h-0 flex-1 flex-col"
+        >
           <input type="hidden" name="slug" value={slug} />
           <input type="hidden" name="items" value={JSON.stringify(items)} />
 

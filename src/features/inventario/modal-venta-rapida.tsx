@@ -107,7 +107,11 @@ export function ModalVentaRapida({
           </button>
         </div>
 
-        <form action={action} className="space-y-4">
+        <form
+          action={action}
+          onReset={(evento) => evento.preventDefault()}
+          className="space-y-4"
+        >
           <input type="hidden" name="cuenta_id" value={cuentaId} />
           {unidadId && <input type="hidden" name="unidad_id" value={unidadId} />}
           <input type="hidden" name="slug" value={slug} />

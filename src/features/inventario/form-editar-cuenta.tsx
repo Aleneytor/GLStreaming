@@ -32,7 +32,11 @@ export function FormEditarCuenta({
   );
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form
+      action={formAction}
+      onReset={(evento) => evento.preventDefault()}
+      className="space-y-5"
+    >
       <input type="hidden" name="cuenta_id" value={cuenta.id} />
 
       {/* Producto y capacidad no se editan: son identidad histórica. */}

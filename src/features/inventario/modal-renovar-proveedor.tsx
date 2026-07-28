@@ -52,7 +52,11 @@ export function ModalRenovarProveedorRapido({
           </button>
         </div>
 
-        <form action={action} className="space-y-4">
+        <form
+          action={action}
+          onReset={(evento) => evento.preventDefault()}
+          className="space-y-4"
+        >
           <input type="hidden" name="cuenta_id" value={cuentaId} />
           <input type="hidden" name="slug" value={slug} />
 

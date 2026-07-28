@@ -113,7 +113,11 @@ export function EditorCliente({ cliente }: { cliente?: ClienteFila }) {
   }
 
   return (
-    <form action={action} className="space-y-4 rounded-2xl border border-emerald-300 bg-white p-4 shadow-sm dark:border-emerald-900 dark:bg-neutral-900">
+    <form
+      action={action}
+      onReset={(evento) => evento.preventDefault()}
+      className="space-y-4 rounded-2xl border border-emerald-300 bg-white p-4 shadow-sm dark:border-emerald-900 dark:bg-neutral-900"
+    >
       {cliente && <input type="hidden" name="id" value={cliente.id} />}
 
       {cliente && (
