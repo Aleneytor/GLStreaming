@@ -64,6 +64,9 @@ export type BloqueCuenta = {
   diasProveedor: number | null;
   esCuentaCompleta?: boolean;
   esSpotifyFamiliar?: boolean;
+  /** El "perfil" es el correo con el que ese integrante entra al panel (Canva:
+   * cada miembro se invita con su propio correo, no hay clave compartida). */
+  esCorreoIntegrante?: boolean;
   admisionSpotifyBloqueada?: boolean;
   motivoBloqueoSpotify?: string | null;
   filas: CupoFila[];
@@ -200,6 +203,10 @@ function ControlesOrden({
   );
 }
 
+// Cuentas con muchos cupos (Canva: 500) se paginan; el resto (5-10 filas) no
+// necesita controles, se ve entera de un vistazo, como hasta ahora.
+const FILAS_POR_PAGINA = 30;
+
 function formatearFecha(fecha: string | null): string {
   if (!fecha) return "";
   const partes = fecha.split("-");
@@ -265,6 +272,9 @@ export function TablaInventario({
   const [targetIndex, setTargetIndex] = useState<number | null>(null);
   const [, startTransition] = useTransition();
 
+  // Página actual por cuenta (solo aplica a las que superan FILAS_POR_PAGINA).
+  const [paginaPorCuenta, setPaginaPorCuenta] = useState<Record<string, number>>({});
+
   // Sincronizar estado local inmediatamente al recibir nuevas cuentas del servidor
   useEffect(() => {
     setCuentasState(cuentas);
@@ -273,6 +283,9 @@ export function TablaInventario({
         ? cuentas.find((cuenta) => cuenta.cuentaId === actual.cuentaId) ?? null
         : null,
     );
+    // Un cambio de cuentas (búsqueda, filtro) puede dejar una página fuera de
+    // rango; se reinicia y cada bloque la recorta de nuevo a lo que exista.
+    setPaginaPorCuenta({});
   }, [cuentas]);
 
   useEffect(() => {
@@ -611,7 +624,9 @@ export function TablaInventario({
               <th className="whitespace-nowrap border-r border-slate-800 px-3 py-2.5">
                 {cuentasState.some((cuenta) => cuenta.esSpotifyFamiliar)
                   ? "Correo cliente"
-                  : "Perfil"}
+                  : cuentasState.some((cuenta) => cuenta.esCorreoIntegrante)
+                    ? "Correo integrante"
+                    : "Perfil"}
               </th>
               <th className="whitespace-nowrap border-r border-slate-800 px-2.5 py-2.5 text-center">
                 {cuentasState.some((cuenta) => cuenta.esSpotifyFamiliar)
@@ -701,6 +716,10 @@ export function TablaInventario({
                 onDrop={() => {
                   if (arrastrandoIndex !== null) handleDrop(arrastrandoIndex, index);
                 }}
+                pagina={paginaPorCuenta[cta.cuentaId] ?? 1}
+                onCambiarPagina={(pagina) =>
+                  setPaginaPorCuenta((actual) => ({ ...actual, [cta.cuentaId]: pagina }))
+                }
               />
             ))}
           </tbody>
@@ -843,6 +862,64 @@ function BotonPagador({
   );
 }
 
+/**
+ * Controles de paginación de una cuenta con muchos cupos (Canva: 500). Se
+ * comparte entre la tabla de escritorio (dentro de un <td colSpan>) y la
+ * tarjeta móvil (dentro de un <div>), por eso no asume su contenedor.
+ */
+function ControlesPaginacion({
+  paginaActual,
+  totalPaginas,
+  totalFilas,
+  inicioPagina,
+  filasEnPagina,
+  onCambiarPagina,
+}: {
+  paginaActual: number;
+  totalPaginas: number;
+  totalFilas: number;
+  inicioPagina: number;
+  filasEnPagina: number;
+  onCambiarPagina: (pagina: number) => void;
+}) {
+  const desde = inicioPagina + 1;
+  const hasta = inicioPagina + filasEnPagina;
+  const btn =
+    "rounded-md border border-slate-300 px-2.5 py-1 font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-zinc-800";
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400">
+      <span>
+        Mostrando{" "}
+        <strong className="text-slate-900 dark:text-white">
+          {desde}–{hasta}
+        </strong>{" "}
+        de <strong className="text-slate-900 dark:text-white">{totalFilas}</strong> cupos
+      </span>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => onCambiarPagina(paginaActual - 1)}
+          disabled={paginaActual <= 1}
+          className={btn}
+        >
+          ← Anterior
+        </button>
+        <span className="px-1 font-semibold text-slate-900 dark:text-white">
+          Página {paginaActual} de {totalPaginas}
+        </span>
+        <button
+          type="button"
+          onClick={() => onCambiarPagina(paginaActual + 1)}
+          disabled={paginaActual >= totalPaginas}
+          className={btn}
+        >
+          Siguiente →
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function BloqueCuentaExcel({
   cta,
   slug,
@@ -865,6 +942,8 @@ function BloqueCuentaExcel({
   onDragStart,
   onDragOver,
   onDrop,
+  pagina,
+  onCambiarPagina,
 }: {
   cta: BloqueCuenta;
   slug: string;
@@ -893,8 +972,20 @@ function BloqueCuentaExcel({
   onDragStart: () => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: () => void;
+  pagina: number;
+  onCambiarPagina: (pagina: number) => void;
 }) {
-  const filasARenderizar = cta.filas;
+  // Cuentas con muchos cupos (Canva: 500) se paginan para no reventar la
+  // pantalla; cuentas normales (5-10 filas) se ven enteras, sin controles.
+  const necesitaPaginar = cta.filas.length > FILAS_POR_PAGINA;
+  const totalPaginas = necesitaPaginar
+    ? Math.ceil(cta.filas.length / FILAS_POR_PAGINA)
+    : 1;
+  const paginaSegura = Math.min(Math.max(pagina, 1), totalPaginas);
+  const inicioPagina = (paginaSegura - 1) * FILAS_POR_PAGINA;
+  const filasARenderizar = necesitaPaginar
+    ? cta.filas.slice(inicioPagina, inicioPagina + FILAS_POR_PAGINA)
+    : cta.filas;
   const totalFilas = filasARenderizar.length;
 
   return (
@@ -1258,6 +1349,20 @@ function BloqueCuentaExcel({
           </tr>
         );
       })}
+      {necesitaPaginar && (
+        <tr className="border-t border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-zinc-950/40">
+          <td colSpan={19} className="px-3 py-2">
+            <ControlesPaginacion
+              paginaActual={paginaSegura}
+              totalPaginas={totalPaginas}
+              totalFilas={cta.filas.length}
+              inicioPagina={inicioPagina}
+              filasEnPagina={totalFilas}
+              onCambiarPagina={onCambiarPagina}
+            />
+          </td>
+        </tr>
+      )}
     </>
   );
 }
@@ -1305,12 +1410,22 @@ function TarjetaCuentaMovil({
 }) {
   const [colapsada, setColapsada] = useState(forzarColapsado);
   const [mostrarCredenciales, setMostrarCredenciales] = useState(false);
+  const [pagina, setPagina] = useState(1);
 
   useEffect(() => {
     setColapsada(forzarColapsado);
   }, [forzarColapsado]);
 
-  const filasMovil = cta.esCuentaCompleta ? cta.filas.slice(0, 1) : cta.filas;
+  const filasCompletas = cta.esCuentaCompleta ? cta.filas.slice(0, 1) : cta.filas;
+  const necesitaPaginar = filasCompletas.length > FILAS_POR_PAGINA;
+  const totalPaginas = necesitaPaginar
+    ? Math.ceil(filasCompletas.length / FILAS_POR_PAGINA)
+    : 1;
+  const paginaSegura = Math.min(Math.max(pagina, 1), totalPaginas);
+  const inicioPagina = (paginaSegura - 1) * FILAS_POR_PAGINA;
+  const filasMovil = necesitaPaginar
+    ? filasCompletas.slice(inicioPagina, inicioPagina + FILAS_POR_PAGINA)
+    : filasCompletas;
   const libres = cta.filas.filter((f) => !f.cliente).length;
 
   return (
@@ -1584,6 +1699,18 @@ function TarjetaCuentaMovil({
                 </div>
               );
             })}
+            {necesitaPaginar && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-2.5 dark:border-slate-800 dark:bg-zinc-950/40">
+                <ControlesPaginacion
+                  paginaActual={paginaSegura}
+                  totalPaginas={totalPaginas}
+                  totalFilas={filasCompletas.length}
+                  inicioPagina={inicioPagina}
+                  filasEnPagina={filasMovil.length}
+                  onCambiarPagina={setPagina}
+                />
+              </div>
+            )}
           </div>
         </>
       )}

@@ -459,6 +459,9 @@ export default async function PlataformaPage({
       esCuentaCompleta:
         Boolean(asignacionCompleta) && prod.tipo_inventario !== "recurso_indivisible",
       esSpotifyFamiliar: prod.codigo === "spotify-familiar",
+      // Canva: el "perfil" de cada integrante es el correo con el que se le
+      // invita al panel (no hay clave compartida como en Netflix).
+      esCorreoIntegrante: prod.codigo === "canva",
       admisionSpotifyBloqueada:
         prod.codigo === "spotify-familiar" &&
         coberturaSpotify?.estado_admision === "bloqueada_por_spotify",
