@@ -1,5 +1,7 @@
 "use client";
 
+import { parsearMontoFormulario } from "@/domain/dinero";
+
 export type Moneda = "ves" | "usd";
 
 /**
@@ -36,7 +38,7 @@ export function CampoMonto({
   required?: boolean;
   className?: string;
 }) {
-  const numero = Number(monto.replace(/\./g, "").replace(",", "."));
+  const numero = parsearMontoFormulario(monto);
   const valido = Number.isFinite(numero) && numero > 0;
   const tasa = bcv && bcv > 0 ? bcv : null;
 

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
+import { parsearMontoFormulario } from "@/domain/dinero";
 
 export type EstadoVenta = { error: string } | null;
 
@@ -60,7 +61,7 @@ export async function venderAction(
   // pendiente.
   let monto: number | null = null;
   if (d.monto) {
-    monto = Number(d.monto.replace(/\./g, "").replace(",", "."));
+    monto = parsearMontoFormulario(d.monto);
     if (!Number.isFinite(monto) || monto <= 0) {
       return { error: "El monto debe ser un número mayor que cero." };
     }

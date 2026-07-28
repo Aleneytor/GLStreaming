@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
+import { parsearMontoFormulario } from "@/domain/dinero";
 
 /**
  * Cobros del cliente en bolívares.
@@ -42,8 +43,9 @@ export async function cobrarAction(
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
   }
 
-  // Se aceptan "2.500,00" y "2500.00": la gente escribe de las dos formas.
-  const monto = Number(parsed.data.monto.replace(/\./g, "").replace(",", "."));
+  // Se aceptan "2.500,00", "2500.00" y "2.50" (USD con punto decimal): la gente
+  // escribe de varias formas, y en $ el punto suele ser decimal, no de miles.
+  const monto = parsearMontoFormulario(parsed.data.monto);
   if (!Number.isFinite(monto) || monto <= 0) {
     return { error: "El monto debe ser un número mayor que cero." };
   }
