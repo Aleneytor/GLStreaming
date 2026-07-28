@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { cifrarSecreto, descifrarSecreto, huellaSecreto } from "@/lib/crypto";
+import { formularioSolicitaRotarCredenciales } from "./contrato-formulario-cuenta";
 
 const esquemaCuenta = z.object({
   producto_id: z.string().uuid("Elige un producto."),
@@ -196,7 +197,10 @@ export async function editarCuentaAction(
   });
   if (e1) return { error: e1.message };
 
-  const rotar = formData.get("rotar_credenciales") === "on";
+  // El panel marca este campo al editar correo o contraseña. Se conserva el
+  // nombre anterior para que un formulario abierto antes del despliegue siga
+  // funcionando al enviarse después de actualizar la app.
+  const rotar = formularioSolicitaRotarCredenciales(formData);
   if (rotar) {
     const correo = String(formData.get("correo") ?? "").trim();
     const contrasena = String(formData.get("contrasena") ?? "");

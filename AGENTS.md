@@ -399,8 +399,16 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
   cliente a correo propio sin recrear cupo, suscripción, período ni cobro.
 - Un Gmail propio del negocio usa la tarifa de correo administrado por GL. La
   tarifa se decide por la titularidad registrada y no por inferir el dominio.
-- Validación: 162 unitarias y las suites `spotify.sql`,
+- Validación en ese corte: 162 unitarias y las suites `spotify.sql`,
   `spotify_identidades_preparadas.sql` y `spotify_edicion_admin.sql` en verde.
+
+### Corrección del editor genérico de credenciales (2026-07-28)
+
+- “Gestionar cuenta” enviaba `creds_cambiadas`, pero la acción esperaba
+  `rotar_credenciales`; por eso mostraba “Guardado” sin modificar correo o clave
+  en Netflix, Prime Video y cualquier plataforma que use credenciales de cuenta.
+- El contrato quedó unificado y la acción acepta también el nombre anterior por
+  compatibilidad con formularios que estuvieran abiertos durante la actualización.
 
 ### ⚠️ Pendiente para el próximo agente
 
@@ -441,5 +449,5 @@ de revendedor.*
 con bloqueos, identidades editables y alta manual coherente; renovaciones con
 costo cero reparables; traslado/estados/inventario corregidos; pausas separadas
 de urgencias, liberación explicada como retiro externo y renovación operativa
-con vendedor/base visibles; 162 unitarias y 22
+con vendedor/base visibles; 165 unitarias y 22
 suites SQL en verde).*

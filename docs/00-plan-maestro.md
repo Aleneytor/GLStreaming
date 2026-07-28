@@ -534,10 +534,17 @@ la identidad personal anterior se retira y destruye sus secretos. Las tarifas
 sugeridas se basan en la titularidad registrada, no en adivinarla por el texto
 del dominio.
 
+El editor genérico de cuentas recibió además una corrección transversal: el
+campo interno que indica cambios de correo o contraseña tenía un nombre distinto
+entre cliente y servidor. La interfaz respondía “Guardado”, pero nunca llamaba a
+`rotar_credenciales_cuenta`. El contrato quedó alineado para Netflix, Prime Video
+y todas las plataformas con credenciales de cuenta, manteniendo compatibilidad
+con formularios que ya estuvieran abiertos al actualizar la aplicación.
+
 Estado real al cierre: migraciones aplicadas hasta **`0050`**, **244 cuentas**,
 **476 unidades** y **432 suscripciones** en la base local.
 
-Validación acumulada: **162 pruebas unitarias**, **22 suites SQL** y typecheck en
+Validación acumulada: **165 pruebas unitarias**, **22 suites SQL** y typecheck en
 verde. La suite de traslado comprueba el cambio de asignación, preservación del
 período, mantenimiento, entrega, auditoría, cuenta completa y rechazo a
 revendedores. El usuario confirmó la recuperación de la app y la reimportación;

@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import { guardarCuentaInlineAction, type EstadoInline } from "./actions";
 import type { BloqueCuenta } from "./tabla-inventario";
 import { BotonEliminarCuenta } from "./boton-eliminar-cuenta";
+import { CAMPO_ROTAR_CREDENCIALES } from "./contrato-formulario-cuenta";
 
 const CAMPO =
   "w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 shadow-sm transition focus:border-neutral-500 focus:outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:focus:border-neutral-400";
@@ -29,6 +30,12 @@ export function PanelEditarCuenta({
     setEstadoCuenta(cuenta.cuentaEstado);
   }, [cuenta.cuentaEstado]);
 
+  useEffect(() => {
+    if (estado && "ok" in estado && estado.ok) {
+      setCredsCambiadas(false);
+    }
+  }, [estado]);
+
   const editables = cuenta.filas.filter((f) => f.unidadId || f.clienteId);
 
   return (
@@ -37,7 +44,11 @@ export function PanelEditarCuenta({
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="alias" value={cuenta.alias ?? ""} />
       <input type="hidden" name="notas" value={cuenta.notas ?? ""} />
-      <input type="hidden" name="creds_cambiadas" value={credsCambiadas ? "1" : "0"} />
+      <input
+        type="hidden"
+        name={CAMPO_ROTAR_CREDENCIALES}
+        value={credsCambiadas ? "on" : "off"}
+      />
 
       {/* --- SECCIÓN 1: DATOS DE LA CUENTA MADRE --- */}
       <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900/60">
