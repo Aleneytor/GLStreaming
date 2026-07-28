@@ -120,6 +120,9 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **Selector de variantes en Netflix y Spotify**: `/inventario/[slug]` expone un selector URL-first para alternar `Cuenta estándar` / `Perfil extra` y `Individual` / `Familiar`, conservando búsqueda y estado. Son productos distintos en PostgreSQL; el selector solo filtra la vista y no transforma cuentas.
 - **Gmail pagador de Spotify en móvil**: `TarjetaCuentaMovil` muestra el Gmail y su origen. La página consulta `controles_pago_spotify` directamente por `cobertura_cuenta_id`; si una cuenta no tiene control registrado, muestra «No registrado».
 - **Vencimiento visible y accionable en móvil**: cada venta de `TarjetaCuentaMovil` muestra una franja con `Vence en N días`, `Vence hoy · renovar` o `Venció hace N días`, además de la fecha formateada. La franja abre `ModalGestionVenta` al tocarla.
+- **Vencimiento coherente también en escritorio**: se eliminó una regla visual
+  heredada que mostraba los primeros 2 días vencidos en amarillo como `Tienes N
+  días`. Toda fecha pasada aparece roja como `Venció hace N días`.
 - **Renovación conserva vendedor y base de tasa**: `ModalGestionVenta` recibe el `vendedor_origen_id` real y lo preselecciona. Muestra/permite corregir `tipo` y `cobra_en_paralela`; si hay cambios sin guardar bloquea Renovar. La pantalla de renovación confirma vendedor + BCV/paralela antes de cobrar.
 - **Filtros operativos de inventario**: el desplegable de `/inventario/[slug]` ya no usa los estados técnicos poco útiles de la cuenta. Filtra cupos `Disponibles para vender` (libres y con cuenta activa), `Próximos 5 días`, `Vencen hoy`, `Vencidos` y conserva `Cuentas suspendidas`. La lógica pura vive en `src/domain/filtros-inventario.ts`.
 - **Renovación anticipada encadenada**: `ModalGestionVenta` no usa «hoy» ciegamente. Si el servicio sigue vigente, el período nuevo comienza en `fecha_renovacion` (ej. 29/07 → 29/08); si ya venció, comienza hoy y envía `tardia=on`. La regla pura es `planificarRenovacionCliente`.
@@ -305,7 +308,7 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 - El resumen de `/inventario` cuenta una unidad por recurso indivisible sin
   perfiles y usa el consumo snapshot de las ventas completas. Así ya no mezcla
   las ventas individuales de Spotify contra solo los 240 cupos familiares.
-- Validación: 153 unitarias, suite `spotify.sql` y nueva suite transaccional
+- Validación: 154 unitarias, suite `spotify.sql` y nueva suite transaccional
   `spotify_identidades_preparadas.sql` en verde.
 
 ### ⚠️ Pendiente para el próximo agente
@@ -343,4 +346,4 @@ el panel de revendedor.*
 
 *Última actualización: 2026-07-28 (Spotify familiar modelado como identidad por
 miembro, credenciales preparadas en cupos libres y ocupación corregida; traslado
-por falla transaccional; 153 unitarias y suites SQL en verde).*
+por falla transaccional; 154 unitarias y suites SQL en verde).*

@@ -692,13 +692,8 @@ function BloqueCuentaExcel({
           textoAlerta = "Vence hoy ⚙️";
         } else {
           const transcurridos = Math.abs(f.dias);
-          if (transcurridos <= 2) {
-            claseAlerta = "bg-[#eab308] text-black font-bold cursor-pointer hover:bg-[#ca8a04]";
-            textoAlerta = `Tienes ${transcurridos} ${transcurridos === 1 ? "día" : "días"} ⚙️`;
-          } else {
-            claseAlerta = "bg-[#991b1b] text-white font-bold cursor-pointer hover:bg-[#7f1d1d]";
-            textoAlerta = `Vendido hace ${transcurridos} días ⚙️`;
-          }
+          claseAlerta = "bg-[#991b1b] text-white font-bold cursor-pointer hover:bg-[#7f1d1d]";
+          textoAlerta = `Venció hace ${transcurridos} ${transcurridos === 1 ? "día" : "días"} ⚙️`;
         }
 
         let claseAvisoProv = "bg-[#16a34a] text-white hover:bg-[#15803d] cursor-pointer";

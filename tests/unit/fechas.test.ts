@@ -66,6 +66,15 @@ describe("diasParaRenovar", () => {
     expect(diasParaRenovar(renov, "2026-08-23")).toBe(-1); // vencido hace 1 día
     expect(diasParaRenovar(renov, "2026-08-16")).toBe(6); // faltan 6
   });
+
+  it("una fecha del 26/07 está vencida por 2 días el 28/07", () => {
+    const dias = diasParaRenovar("2026-07-26", "2026-07-28");
+    expect(dias).toBe(-2);
+    expect(badgeVencimiento(dias)).toEqual({
+      color: "rojo",
+      etiqueta: "Vencido hace 2 días",
+    });
+  });
 });
 
 describe("planificarRenovacionCliente", () => {

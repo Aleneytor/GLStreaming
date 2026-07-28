@@ -347,6 +347,11 @@ El selector es exclusivamente administrativo y muestra el correo completo de
 la cuenta destino, junto con su alias si existe, para evitar trasladar al cliente
 a unas credenciales equivocadas.
 
+Las alertas de vencimiento del inventario usan el signo real de la diferencia
+de fechas tanto en móvil como en escritorio: una fecha pasada siempre se muestra
+en rojo como `Venció hace N días`; ya no existe la etiqueta amarilla ambigua
+`Tienes N días` para los dos primeros días vencidos.
+
 Spotify familiar ya no se presenta como perfiles con PIN. Cada posición muestra
 el correo y la contraseña de la identidad del miembro, separados del correo de
 la madre y del Gmail pagador. La migración `0041` permite que una identidad de
@@ -363,7 +368,7 @@ cupo, una venta completa consume todas sus unidades y un uso principal que no
 consume capacidad no reduce los cupos familiares. Esto corrige el falso 100 %
 de Spotify producido al sumar individuales y familiares en la misma tarjeta.
 
-Validación acumulada: **153 pruebas unitarias**, **18 suites SQL** y typecheck en
+Validación acumulada: **154 pruebas unitarias**, **18 suites SQL** y typecheck en
 verde. La suite de traslado comprueba el cambio de asignación, preservación del
 período, mantenimiento, entrega, auditoría, cuenta completa y rechazo a
 revendedores. El usuario confirmó la recuperación de la app y la reimportación;
