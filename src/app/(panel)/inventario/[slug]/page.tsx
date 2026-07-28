@@ -459,9 +459,12 @@ export default async function PlataformaPage({
       esCuentaCompleta:
         Boolean(asignacionCompleta) && prod.tipo_inventario !== "recurso_indivisible",
       esSpotifyFamiliar: prod.codigo === "spotify-familiar",
-      // Canva: el "perfil" de cada integrante es el correo con el que se le
-      // invita al panel (no hay clave compartida como en Netflix).
-      esCorreoIntegrante: prod.codigo === "canva",
+      // Canva y Gemini/Google Cloud: el "perfil" de cada integrante es el
+      // correo con el que se le invita al panel/grupo (no hay clave compartida
+      // como en Netflix). Ambos documentados con el mismo modelo
+      // ("el cliente aporta únicamente su correo"), aunque Gemini todavía no
+      // tenga cuentas cargadas: se corrige antes de la primera venta ahí.
+      esCorreoIntegrante: prod.codigo === "canva" || prod.codigo === "gemini-google-cloud",
       admisionSpotifyBloqueada:
         prod.codigo === "spotify-familiar" &&
         coberturaSpotify?.estado_admision === "bloqueada_por_spotify",
