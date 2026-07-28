@@ -3024,6 +3024,17 @@ export type Database = {
         }
         Returns: string
       }
+      editar_acceso_miembro_spotify: {
+        Args: {
+          p_contrasena_cifrada: string
+          p_login_cifrado: string
+          p_login_fingerprint: string
+          p_suscripcion_id: string
+          p_tipo_correo: string
+          p_unidad_id: string
+        }
+        Returns: string
+      }
       eliminar_cliente: { Args: { p_cliente_id: string }; Returns: undefined }
       eliminar_cuenta: { Args: { p_cuenta_id: string }; Returns: undefined }
       eliminar_cuentas: { Args: { p_cuenta_ids: string[] }; Returns: number }
@@ -3329,6 +3340,24 @@ export type Database = {
         Returns: string
       }
       vender_miembro_spotify_con_identidad: {
+        Args: {
+          p_cliente_nombre: string
+          p_cliente_whatsapp: string
+          p_contrasena_cifrada: string
+          p_cuenta_id: string
+          p_inicio: string
+          p_login_cifrado: string
+          p_login_fingerprint: string
+          p_modalidad_id: string
+          p_monto_usd: number
+          p_precio_usd: number
+          p_tipo_correo: string
+          p_unidad_id: string
+          p_vendedor_id: string
+        }
+        Returns: string
+      }
+      vender_miembro_spotify_reemplazando_identidad: {
         Args: {
           p_cliente_nombre: string
           p_cliente_whatsapp: string

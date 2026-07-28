@@ -42,14 +42,16 @@ export function PanelEditarCuenta({
       {/* --- SECCIÓN 1: DATOS DE LA CUENTA MADRE --- */}
       <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900/60">
         <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-          Credenciales y Configuración de Cuenta
+          {cuenta.esSpotifyFamiliar
+            ? "Cuenta administradora y configuración de la familia"
+            : "Credenciales y Configuración de Cuenta"}
         </h4>
 
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Correo */}
           <div>
             <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-              Correo Electrónico
+              {cuenta.esSpotifyFamiliar ? "Correo administrador de la familia" : "Correo Electrónico"}
             </label>
             <input
               name="correo"
@@ -62,7 +64,7 @@ export function PanelEditarCuenta({
           {/* Contraseña */}
           <div>
             <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-              Contraseña
+              {cuenta.esSpotifyFamiliar ? "Clave de la cuenta familiar" : "Contraseña"}
             </label>
             <div className="relative">
               <input
@@ -139,7 +141,7 @@ export function PanelEditarCuenta({
       {editables.length > 0 && (
         <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900/60">
           <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-            Perfiles y Clientes Asignados
+            {cuenta.esSpotifyFamiliar ? "Miembros, accesos y clientes" : "Perfiles y Clientes Asignados"}
           </h4>
 
           <div className="space-y-3">
@@ -163,8 +165,73 @@ export function PanelEditarCuenta({
                   )}
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {f.unidadId && (
+                <div className={`grid gap-3 ${cuenta.esSpotifyFamiliar ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}>
+                  {cuenta.esSpotifyFamiliar && f.unidadId ? (
+                    <>
+                      <input
+                        type="hidden"
+                        name={`spotify_suscripcion_${f.unidadId}`}
+                        value={f.suscripcionId ?? ""}
+                      />
+                      <input
+                        type="hidden"
+                        name={`spotify_original_login_${f.unidadId}`}
+                        value={f.clienteLogin ?? ""}
+                      />
+                      <input
+                        type="hidden"
+                        name={`spotify_original_clave_${f.unidadId}`}
+                        value={f.clienteClave ?? ""}
+                      />
+                      <input
+                        type="hidden"
+                        name={`spotify_original_tipo_${f.unidadId}`}
+                        value={f.clienteTipoCorreo ?? ""}
+                      />
+                      <div>
+                        <label className="mb-1 block text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
+                          Correo del miembro
+                        </label>
+                        <input
+                          type="email"
+                          name={`spotify_login_${f.unidadId}`}
+                          defaultValue={f.clienteLogin ?? ""}
+                          placeholder="Sin correo preparado"
+                          className={`${CAMPO} font-mono`}
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
+                          Clave del miembro
+                        </label>
+                        <input
+                          name={`spotify_clave_${f.unidadId}`}
+                          defaultValue={f.clienteClave ?? ""}
+                          placeholder="Sin clave preparada"
+                          className={`${CAMPO} font-mono`}
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
+                          Titularidad del correo
+                        </label>
+                        <select
+                          name={`spotify_tipo_${f.unidadId}`}
+                          defaultValue={
+                            !f.clienteLogin ||
+                            f.clienteTipoCorreo === "dominio_gl" ||
+                            /@(glstreaming\.org|glcuenta\.com)$/i.test(f.clienteLogin ?? "")
+                              ? "dominio_gl"
+                              : "correo_cliente"
+                          }
+                          className={CAMPO}
+                        >
+                          <option value="dominio_gl">Correo a mi dominio</option>
+                          <option value="correo_cliente">Correo del cliente</option>
+                        </select>
+                      </div>
+                    </>
+                  ) : f.unidadId ? (
                     <>
                       <div>
                         <label className="mb-1 block text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
@@ -187,7 +254,7 @@ export function PanelEditarCuenta({
                         />
                       </div>
                     </>
-                  )}
+                  ) : null}
 
                   {f.clienteId ? (
                     <div>

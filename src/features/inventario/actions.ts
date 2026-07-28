@@ -192,6 +192,49 @@ export async function editarCuentaAction(
     });
   }
 
+  for (const [clave, valor] of formData.entries()) {
+    if (!clave.startsWith("spotify_login_")) continue;
+    const unidadId = clave.slice("spotify_login_".length);
+    const login = String(valor).trim();
+    const contrasena = String(formData.get(`spotify_clave_${unidadId}`) ?? "");
+    const tipo =
+      formData.get(`spotify_tipo_${unidadId}`) === "dominio_gl"
+        ? "dominio_gl"
+        : "correo_cliente";
+    const suscripcionId =
+      String(formData.get(`spotify_suscripcion_${unidadId}`) ?? "").trim() || null;
+    const loginAnterior = String(
+      formData.get(`spotify_original_login_${unidadId}`) ?? "",
+    ).trim();
+    const claveAnterior = String(formData.get(`spotify_original_clave_${unidadId}`) ?? "");
+    const tipoAnteriorCrudo = String(
+      formData.get(`spotify_original_tipo_${unidadId}`) ?? "",
+    );
+    const tipoAnterior = tipoAnteriorCrudo === "dominio_gl" ? "dominio_gl" : "correo_cliente";
+
+    if (!login && !contrasena && !loginAnterior && !claveAnterior) continue;
+    if (login === loginAnterior && contrasena === claveAnterior && tipo === tipoAnterior) continue;
+    if (!login || !contrasena) {
+      return { error: "Cada miembro Spotify editado necesita correo y contraseña." };
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(login)) {
+      return { error: `El correo Spotify «${login}» no tiene un formato válido.` };
+    }
+    if (tipo === "dominio_gl" && !/@(glstreaming\.org|glcuenta\.com)$/i.test(login)) {
+      return { error: "Un correo marcado como propio debe usar @glstreaming.org o @glcuenta.com." };
+    }
+
+    const { error: errorIdentidad } = await supabase.rpc("editar_acceso_miembro_spotify", {
+      p_unidad_id: unidadId,
+      p_suscripcion_id: suscripcionId,
+      p_login_cifrado: cifrarSecreto(login),
+      p_login_fingerprint: huellaSecreto(login),
+      p_contrasena_cifrada: cifrarSecreto(contrasena),
+      p_tipo_correo: tipo,
+    });
+    if (errorIdentidad) return { error: errorIdentidad.message };
+  }
+
   const ids: string[] = [];
   const nombres: string[] = [];
   const pins: (string | null)[] = [];
@@ -597,7 +640,7 @@ export async function venderUnidadRapidaAction(
   }
 
   const { error } = spotifyLogin && unidadId
-    ? await supabase.rpc("vender_miembro_spotify_con_identidad", {
+    ? await supabase.rpc("vender_miembro_spotify_reemplazando_identidad", {
         p_cuenta_id: cuentaId,
         p_unidad_id: unidadId,
         p_modalidad_id: modalidadId,

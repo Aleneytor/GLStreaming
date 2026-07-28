@@ -405,6 +405,14 @@ dominio GL, junto con su clave; después solicita cliente, teléfono, precio y
 vendedor. Todo se guarda atómicamente y un correo personal queda asociado a su
 cliente y marcado como no reutilizable.
 
+La migración `0046` reemplaza además el editor genérico de perfil/PIN para las
+familias Spotify. El panel usa “cuenta administradora” y “miembros”, expone
+correo, clave, titularidad y cliente por cupo, y permite corregir tanto una
+identidad preparada como la de una venta activa. La corrección no recrea la
+venta ni altera período, precio o cobro: cierra el vínculo de identidad anterior,
+abre el nuevo y registra auditoría. El modal de venta también permite sustituir
+el acceso preparado antes de confirmarlo, dentro de la misma transacción.
+
 La carga del inventario Spotify pagina internamente los filtros de UUID en lotes
 de 100. Con la cartera actual se validaron 471 unidades en 5 lotes y 243 cuentas
 en 3 lotes, evitando el error `URI too long` sin omitir identidades preparadas ni

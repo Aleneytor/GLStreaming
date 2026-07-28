@@ -40,10 +40,15 @@ export function ModalVentaRapida({
     "intermediario",
   );
   const [cobraParalela, setCobraParalela] = useState(false);
-  const [tipoCorreoSpotify, setTipoCorreoSpotify] = useState<"dominio_gl" | "correo_cliente">(
-    "dominio_gl",
+  const correoPreparadoEsDominio = /@(glstreaming\.org|glcuenta\.com)$/i.test(
+    clienteLogin ?? "",
   );
-  const requiereIdentidadSpotify = esSpotifyFamiliar && !clienteLogin;
+  const [tipoCorreoSpotify, setTipoCorreoSpotify] = useState<"dominio_gl" | "correo_cliente">(
+    correoPreparadoEsDominio ? "dominio_gl" : "correo_cliente",
+  );
+  const [editarIdentidadPreparada, setEditarIdentidadPreparada] = useState(false);
+  const requiereIdentidadSpotify =
+    esSpotifyFamiliar && (!clienteLogin || editarIdentidadPreparada);
 
   const revendedores = vendedores.filter((v) => v.tipo === "revendedor");
   const intermediarios = vendedores.filter((v) => v.tipo !== "revendedor");
@@ -97,6 +102,18 @@ export function ModalVentaRapida({
           {unidadId && <input type="hidden" name="unidad_id" value={unidadId} />}
           <input type="hidden" name="slug" value={slug} />
 
+          {esSpotifyFamiliar && clienteLogin && !editarIdentidadPreparada && (
+            <>
+              <input type="hidden" name="spotify_login" value={clienteLogin} />
+              <input type="hidden" name="spotify_clave" value={clienteClave ?? ""} />
+              <input
+                type="hidden"
+                name="spotify_tipo_correo"
+                value={correoPreparadoEsDominio ? "dominio_gl" : "correo_cliente"}
+              />
+            </>
+          )}
+
           {requiereIdentidadSpotify && (
             <section className="space-y-3 rounded-xl border border-green-300 bg-green-50 p-3 dark:border-green-900 dark:bg-green-950/25">
               <div>
@@ -104,13 +121,15 @@ export function ModalVentaRapida({
                   1. Acceso del miembro de Spotify
                 </p>
                 <p className="mt-0.5 text-[11px] text-green-800 dark:text-green-300">
-                  Este cupo no tiene correo preparado. Define primero el acceso que usará el cliente.
+                  {clienteLogin
+                    ? "Sustituye el correo o la clave preparados antes de vincularlos al cliente."
+                    : "Este cupo no tiene correo preparado. Define primero el acceso que usará el cliente."}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <label className={`cursor-pointer rounded-lg border p-2 text-[11px] ${
                   tipoCorreoSpotify === "dominio_gl"
-                    ? "border-green-600 bg-white text-green-950 dark:bg-green-950"
+                    ? "border-green-600 bg-white text-green-950 dark:bg-green-950 dark:text-green-100"
                     : "border-green-200 text-green-800 dark:border-green-900 dark:text-green-300"
                 }`}>
                   <input
@@ -126,7 +145,7 @@ export function ModalVentaRapida({
                 </label>
                 <label className={`cursor-pointer rounded-lg border p-2 text-[11px] ${
                   tipoCorreoSpotify === "correo_cliente"
-                    ? "border-green-600 bg-white text-green-950 dark:bg-green-950"
+                    ? "border-green-600 bg-white text-green-950 dark:bg-green-950 dark:text-green-100"
                     : "border-green-200 text-green-800 dark:border-green-900 dark:text-green-300"
                 }`}>
                   <input
@@ -150,6 +169,7 @@ export function ModalVentaRapida({
                     type="email"
                     name="spotify_login"
                     required
+                    defaultValue={clienteLogin ?? ""}
                     placeholder={tipoCorreoSpotify === "dominio_gl" ? "spotify000@glstreaming.org" : "cliente@gmail.com"}
                     className="w-full rounded-lg border border-green-300 bg-white px-3 py-1.5 text-xs text-neutral-900 dark:border-green-800 dark:bg-neutral-900 dark:text-white"
                   />
@@ -162,17 +182,36 @@ export function ModalVentaRapida({
                     type="password"
                     name="spotify_clave"
                     required
+                    defaultValue={clienteClave ?? ""}
                     autoComplete="new-password"
                     className="w-full rounded-lg border border-green-300 bg-white px-3 py-1.5 text-xs text-neutral-900 dark:border-green-800 dark:bg-neutral-900 dark:text-white"
                   />
                 </div>
               </div>
+              {clienteLogin && (
+                <button
+                  type="button"
+                  onClick={() => setEditarIdentidadPreparada(false)}
+                  className="text-[11px] font-semibold text-green-800 underline dark:text-green-300"
+                >
+                  Mantener el acceso preparado
+                </button>
+              )}
             </section>
           )}
 
-          {(clienteLogin || clienteClave) && (
+          {(clienteLogin || clienteClave) && !editarIdentidadPreparada && (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
-              <strong>Acceso Spotify preparado para este cupo</strong>
+              <div className="flex items-start justify-between gap-3">
+                <strong>Acceso Spotify preparado para este cupo</strong>
+                <button
+                  type="button"
+                  onClick={() => setEditarIdentidadPreparada(true)}
+                  className="shrink-0 rounded-md border border-emerald-500 px-2 py-1 text-[10px] font-bold text-emerald-800 dark:text-emerald-200"
+                >
+                  Cambiar correo o clave
+                </button>
+              </div>
               <div className="mt-2 grid gap-1 font-mono text-[11px]">
                 <span className="break-all">Correo: {clienteLogin ?? "Sin correo"}</span>
                 <span className="break-all">Clave: {clienteClave ?? "Sin clave"}</span>

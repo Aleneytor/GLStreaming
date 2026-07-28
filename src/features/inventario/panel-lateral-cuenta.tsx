@@ -19,7 +19,9 @@ export function PanelLateralCuenta({
         <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800">
           <div>
             <h3 className="text-base font-bold text-neutral-900 dark:text-white">
-              Gestionar Cuenta y Perfiles
+              {cuenta.esSpotifyFamiliar
+                ? "Gestionar Familia y Miembros de Spotify"
+                : "Gestionar Cuenta y Perfiles"}
             </h3>
             <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400">
               {cuenta.correo}
