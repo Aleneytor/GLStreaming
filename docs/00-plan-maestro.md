@@ -587,3 +587,9 @@ cierre está consignado arriba para no conservar cifras históricas contradictor
 - Releer este archivo y `06-decisiones-pendientes.md`.
 - Repetir la sección 3 (stack) tal cual, salvo que el usuario pida cambiarlo explícitamente.
 - No hace falta repetir ninguna de las preguntas ya resueltas (`DEC-01` a `DEC-95`): son decisiones de negocio, no de implementación, y no caducan porque el código se reescriba.
+### Nota de sesión 2026-07-28: Spotify pausado editable
+
+`Gestionar Venta` para miembros de Spotify familiar ya deja editar correo,
+clave y titularidad del acceso aunque la suscripción esté pausada o vencida.
+La acción reutiliza `editar_acceso_miembro_spotify` y solo persiste cuando hay
+cambios reales contra el valor original.

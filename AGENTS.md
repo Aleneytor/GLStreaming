@@ -464,3 +464,9 @@ costo cero reparables; traslado/estados/inventario corregidos; pausas separadas
 de urgencias, liberación explicada como retiro externo y renovación operativa
 con vendedor/base visibles; 165 unitarias y 22
 suites SQL en verde).*
+### Nota de sesión 2026-07-28
+
+- `Gestionar Venta` para Spotify familiar ahora deja editar correo, clave y
+  titularidad incluso si el servicio está pausado o vencido.
+- La persistencia usa el RPC `editar_acceso_miembro_spotify`, comparando primero
+  contra los valores originales para no recrear la venta ni tocar el período.

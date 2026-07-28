@@ -741,6 +741,26 @@ export async function editarVentaDirectaAction(
   const clienteWhatsapp = String(formData.get("cliente_whatsapp") ?? "").trim();
   const nombrePerfil = String(formData.get("nombre_perfil") ?? "").trim();
   const pinPerfil = String(formData.get("pin_perfil") ?? "").trim();
+  const spotifyLogin = String(formData.get("spotify_login") ?? "").trim();
+  const spotifyClave = String(formData.get("spotify_clave") ?? "");
+  const spotifyLoginOriginal = String(formData.get("spotify_login_original") ?? "").trim();
+  const spotifyClaveOriginal = String(formData.get("spotify_clave_original") ?? "");
+  const spotifyTipoCrudo = String(formData.get("spotify_tipo_correo") ?? "");
+  const spotifyTipoOriginalCrudo = String(
+    formData.get("spotify_tipo_correo_original") ?? "",
+  );
+  const spotifyTipoCorreo =
+    spotifyTipoCrudo === "dominio_gl" ||
+    spotifyTipoCrudo === "gmail_propio" ||
+    spotifyTipoCrudo === "correo_cliente"
+      ? spotifyTipoCrudo
+      : "correo_cliente";
+  const spotifyTipoCorreoOriginal =
+    spotifyTipoOriginalCrudo === "dominio_gl" ||
+    spotifyTipoOriginalCrudo === "gmail_propio" ||
+    spotifyTipoOriginalCrudo === "correo_cliente"
+      ? spotifyTipoOriginalCrudo
+      : "correo_cliente";
   const vendedorIdInput = String(formData.get("vendedor_id") ?? "").trim() || null;
   const vendedorNombreCustom = String(formData.get("vendedor_nombre_custom") ?? "").trim() || null;
   const vendedorTipo =
@@ -794,6 +814,38 @@ export async function editarVentaDirectaAction(
       patch.whatsapp_normalizado = clienteWhatsapp.replace(/[^0-9+]/g, "") || undefined;
     }
     await supabase.from("clientes").update(patch).eq("id", clienteId);
+  }
+
+  if (unidadId && (spotifyLogin || spotifyClave || spotifyLoginOriginal || spotifyClaveOriginal)) {
+    if (!spotifyLogin || !spotifyClave) {
+      return { error: "Indica tanto el correo como la contraseña de Spotify." };
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(spotifyLogin)) {
+      return { error: "El correo Spotify no tiene un formato válido." };
+    }
+    if (
+      spotifyTipoCorreo === "dominio_gl" &&
+      !/@(glstreaming\.org|glcuenta\.com)$/i.test(spotifyLogin)
+    ) {
+      return { error: "Un correo marcado como propio debe usar @glstreaming.org o @glcuenta.com." };
+    }
+
+    const cambioSpotify =
+      spotifyLogin !== spotifyLoginOriginal ||
+      spotifyClave !== spotifyClaveOriginal ||
+      spotifyTipoCorreo !== spotifyTipoCorreoOriginal;
+
+    if (cambioSpotify) {
+      const { error: errorSpotify } = await supabase.rpc("editar_acceso_miembro_spotify", {
+        p_unidad_id: unidadId,
+        p_suscripcion_id: suscripcionId,
+        p_login_cifrado: cifrarSecreto(spotifyLogin),
+        p_login_fingerprint: huellaSecreto(spotifyLogin),
+        p_contrasena_cifrada: cifrarSecreto(spotifyClave),
+        p_tipo_correo: spotifyTipoCorreo,
+      });
+      if (errorSpotify) return { error: errorSpotify.message };
+    }
   }
 
   if (suscripcionId) {

@@ -203,6 +203,17 @@ export function ModalGestionVenta({
             {unidadId && <input type="hidden" name="unidad_id" value={unidadId} />}
             {clienteId && <input type="hidden" name="cliente_id" value={clienteId} />}
             <input type="hidden" name="slug" value={slug} />
+            {esSpotifyFamiliar && (
+              <>
+                <input type="hidden" name="spotify_login_original" value={clienteLogin ?? ""} />
+                <input type="hidden" name="spotify_clave_original" value={clienteClave ?? ""} />
+                <input
+                  type="hidden"
+                  name="spotify_tipo_correo_original"
+                  value={clienteTipoCorreo ?? ""}
+                />
+              </>
+            )}
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
@@ -231,20 +242,49 @@ export function ModalGestionVenta({
               {esSpotifyFamiliar ? (
                 <>
                   <div>
-                    <span className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                       Correo Spotify del cliente
-                    </span>
-                    <div className="min-h-8 break-all rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 font-mono text-xs text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white">
-                      {clienteLogin ?? "No registrado"}
-                    </div>
+                    </label>
+                    <input
+                      name="spotify_login"
+                      type="email"
+                      defaultValue={clienteLogin ?? ""}
+                      placeholder="spotify123@glstreaming.org"
+                      className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 font-mono text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                    />
                   </div>
                   <div>
-                    <span className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                       Contraseña Spotify del cliente
-                    </span>
-                    <div className="min-h-8 break-all rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 font-mono text-xs text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white">
-                      {clienteClave ?? "No registrada"}
-                    </div>
+                    </label>
+                    <input
+                      name="spotify_clave"
+                      defaultValue={clienteClave ?? ""}
+                      placeholder="Clave actual"
+                      className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 font-mono text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                      Titularidad del acceso
+                    </label>
+                    <select
+                      name="spotify_tipo_correo"
+                      defaultValue={
+                        clienteTipoCorreo === "dominio_gl" ||
+                        clienteTipoCorreo === "gmail_propio"
+                          ? clienteTipoCorreo
+                          : "correo_cliente"
+                      }
+                      className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                    >
+                      <option value="dominio_gl">Correo de mi dominio</option>
+                      <option value="gmail_propio">Gmail propio del negocio</option>
+                      <option value="correo_cliente">Correo del cliente</option>
+                    </select>
+                    <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+                      Puedes corregir el acceso aunque el servicio esté pausado o vencido.
+                    </p>
                   </div>
                 </>
               ) : (
