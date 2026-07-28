@@ -400,6 +400,13 @@ de 100. Con la cartera actual se validaron 471 unidades en 5 lotes y 243 cuentas
 en 3 lotes, evitando el error `URI too long` sin omitir identidades preparadas ni
 Gmail pagadores.
 
+El importador conserva ahora la renovación del proveedor aunque la inversión sea
+`0` en todas las plataformas. Netflix y las rutas genéricas ya lo hacían, pero
+Spotify familiar e individual entraban por RPC especiales que omitían el ciclo.
+Al volver a pegar las filas originales de Spotify, la carga sincroniza el ciclo
+de la cuenta existente y no duplica la venta. La fecha debe volver a venir del
+Excel porque las 68 cuentas Spotify afectadas quedaron sin ese dato en Postgres.
+
 El resumen de plataformas calcula ahora capacidad física en vez de restar el
 número bruto de asignaciones: una cuenta indivisible sin unidades aporta un
 cupo, una venta completa consume todas sus unidades y un uso principal que no

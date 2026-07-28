@@ -70,6 +70,50 @@ function sumarUnMes(iso: string): string {
   return new Date(Date.UTC(anio, mes - 1, Math.min(d, ultimo))).toISOString().slice(0, 10);
 }
 
+async function sincronizarCicloProveedorImportado(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  cuentaId: string,
+  costoUsdt: number | null,
+  renovarProveedor: string | null,
+  inicioCliente: string,
+): Promise<string | null> {
+  if (!renovarProveedor) return null;
+
+  const { data: ciclo, error: errorCiclo } = await supabase
+    .from("ciclos_proveedor")
+    .select("id")
+    .eq("cuenta_id", cuentaId)
+    .eq("estado", "vigente")
+    .maybeSingle();
+  if (errorCiclo) return errorCiclo.message;
+
+  if (ciclo) {
+    const patch: {
+      costo_usdt?: number;
+      inicio: string;
+      proxima_renovacion: string;
+      dia_ancla: number;
+    } = {
+      inicio: restarUnMes(renovarProveedor),
+      proxima_renovacion: renovarProveedor,
+      dia_ancla: Number(renovarProveedor.slice(8, 10)),
+    };
+    if (costoUsdt !== null) patch.costo_usdt = costoUsdt;
+    const { error } = await supabase.from("ciclos_proveedor").update(patch).eq("id", ciclo.id);
+    return error?.message ?? null;
+  }
+
+  const inicioProveedor = restarUnMes(renovarProveedor) ?? inicioCliente;
+  const { error } = await supabase.rpc("registrar_ciclo_proveedor", {
+    p_cuenta_id: cuentaId,
+    p_costo_usdt: costoUsdt ?? 0,
+    p_inicio: inicioProveedor,
+    p_dia_ancla: Number(renovarProveedor.slice(8, 10)),
+    p_referencia: "migración",
+  });
+  return error?.message ?? null;
+}
+
 type VendedorExistente = {
   id: string;
   nombre: string;
@@ -295,6 +339,23 @@ export async function importarAction(
   const cuentasImportadasEnOrden: string[] = [];
   const cuentasImportadasVistas = new Set<string>();
   const tarjetasProveedorGuardadas = new Set<string>();
+  const cuentasConCicloSincronizado = new Set<string>();
+  const cuentasExistentesPorHuella = new Map<string, string>();
+  const { data: cuentasExistentes, error: errorCuentasExistentes } = await supabase
+    .from("cuentas")
+    .select("id, credenciales_cuenta ( login_fingerprint, eliminada_at )")
+    .eq("producto_plataforma_id", productoId)
+    .is("archived_at", null);
+  if (errorCuentasExistentes) {
+    return { error: `No se pudieron preparar las cuentas existentes: ${errorCuentasExistentes.message}` };
+  }
+  for (const cuenta of cuentasExistentes ?? []) {
+    for (const credencial of cuenta.credenciales_cuenta ?? []) {
+      if (credencial.login_fingerprint && !credencial.eliminada_at) {
+        cuentasExistentesPorHuella.set(credencial.login_fingerprint, cuenta.id);
+      }
+    }
+  }
 
   for (const fila of validas) {
     const d = fila.datos;
@@ -320,6 +381,27 @@ export async function importarAction(
     const provInicio = d.renovarProveedor ? restarUnMes(d.renovarProveedor) : null;
     // El costo va en USD tal cual: la base lo valoriza a PARALELA (no BCV),
     // porque los egresos nacen en USDT. Se registra una sola vez por cuenta.
+
+    // Toda fecha de «Renovar» debe producir un ciclo, incluso con costo 0.
+    // Spotify usa RPC propias que antes omitían ese caso. Sincronizar antes
+    // permite volver a pegar el Excel y reparar la fecha aunque la venta exista.
+    const huellaCuenta = huellaSecreto(d.correo);
+    const cuentaExistenteId = cuentasExistentesPorHuella.get(huellaCuenta) ?? null;
+    if (
+      cuentaExistenteId &&
+      cuentaMeta.renovarProveedor &&
+      !cuentasConCicloSincronizado.has(cuentaExistenteId)
+    ) {
+      const errorCiclo = await sincronizarCicloProveedorImportado(
+        supabase,
+        cuentaExistenteId,
+        cuentaMeta.inversion,
+        cuentaMeta.renovarProveedor,
+        inicio,
+      );
+      if (errorCiclo) advertenciasMeta.push(`ciclo del proveedor: ${errorCiclo}`);
+      else cuentasConCicloSincronizado.add(cuentaExistenteId);
+    }
 
     let data: unknown;
     let error: { message: string } | null;
@@ -412,6 +494,21 @@ export async function importarAction(
       }));
     }
 
+    // Al volver a pegar Spotify para recuperar fechas de proveedor, la venta
+    // puede existir ya. El ciclo se sincronizó arriba; tratamos ese duplicado
+    // esperado como una reparación de metadatos, no como una venta nueva.
+    if (
+      error &&
+      (esFamiliar || esIndividualSpotify) &&
+      cuentaExistenteId &&
+      cuentasConCicloSincronizado.has(cuentaExistenteId) &&
+      /ya est[aá].*(ocupad[oa]|vendid[oa])/i.test(error.message)
+    ) {
+      data = { cuenta_id: cuentaExistenteId };
+      error = null;
+      advertenciasMeta.push("la venta ya existía; se sincronizó la renovación del proveedor");
+    }
+
     // Un correo/clave de miembro sin cliente es una identidad PREPARADA para
     // un cupo todavía libre. Se conserva sin inventar una venta o suscripción.
     const resultadoBase = data as { unidad_id?: string } | null;
@@ -438,6 +535,28 @@ export async function importarAction(
       cuenta_id?: string;
       suscripcion_id?: string;
     } | null;
+    if (
+      !error &&
+      ids?.cuenta_id &&
+      cuentaMeta.renovarProveedor &&
+      !cuentasConCicloSincronizado.has(ids.cuenta_id)
+    ) {
+      const errorCiclo = await sincronizarCicloProveedorImportado(
+        supabase,
+        ids.cuenta_id,
+        cuentaMeta.inversion,
+        cuentaMeta.renovarProveedor,
+        inicio,
+      );
+      if (errorCiclo) {
+        error = { message: `No se pudo guardar la renovación del proveedor: ${errorCiclo}` };
+      } else {
+        cuentasConCicloSincronizado.add(ids.cuenta_id);
+      }
+    }
+    if (!error && ids?.cuenta_id) {
+      cuentasExistentesPorHuella.set(huellaCuenta, ids.cuenta_id);
+    }
     if (!error && ids?.cuenta_id) {
       if (!cuentasImportadasVistas.has(ids.cuenta_id)) {
         cuentasImportadasVistas.add(ids.cuenta_id);
