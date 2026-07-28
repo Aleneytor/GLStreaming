@@ -7,6 +7,7 @@ import {
   moverCuentaAction,
   reordenarListaCuentasAction,
   cancelarVentaConLimpiezaAction,
+  eliminarCuentasAction,
 } from "./actions";
 import { ModalVentaRapida } from "./modal-venta-rapida";
 import type { VendedorOp } from "./modal-venta-rapida";
@@ -181,6 +182,38 @@ export function TablaInventario({
   const [cuentasPagoSeleccionadas, setCuentasPagoSeleccionadas] = useState<string[]>([]);
   const [mostrarPagoLote, setMostrarPagoLote] = useState(false);
 
+  // Modo BORRAR: seleccionar varias cuentas y eliminarlas de una (corrección de
+  // cargas masivas). Cualquiera es elegible; el borrado es optimista.
+  const [modoBorrar, setModoBorrar] = useState(false);
+  const [cuentasBorrarSel, setCuentasBorrarSel] = useState<string[]>([]);
+  const [, startBorrar] = useTransition();
+
+  const alternarBorrar = (id: string) =>
+    setCuentasBorrarSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+
+  const salirModoBorrar = () => {
+    setModoBorrar(false);
+    setCuentasBorrarSel([]);
+  };
+
+  const confirmarBorrado = () => {
+    const ids = [...cuentasBorrarSel];
+    if (ids.length === 0) return;
+    if (
+      !window.confirm(
+        `¿Borrar ${ids.length} cuenta(s) y TODO su historial (ventas, cobros, ciclos)? No se puede deshacer.`,
+      )
+    ) {
+      return;
+    }
+    // Optimista: desaparecen al instante; el servidor confirma detrás.
+    setCuentasState((cs) => cs.filter((c) => !ids.includes(c.cuentaId)));
+    salirModoBorrar();
+    startBorrar(async () => {
+      await eliminarCuentasAction(ids, slug);
+    });
+  };
+
   const cuentasRenovables = cuentasState.filter(
     (cuenta) => Boolean(cuenta.proveedorId && cuenta.renovarProveedor),
   );
@@ -247,6 +280,49 @@ export function TablaInventario({
 
   return (
     <div className="space-y-4">
+      {/* Barra de acciones: borrar cuentas en lote */}
+      <div className="flex items-center justify-end gap-2">
+        {!modoBorrar ? (
+          <button
+            type="button"
+            onClick={() => setModoBorrar(true)}
+            className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40"
+          >
+            🗑 Borrar cuentas
+          </button>
+        ) : (
+          <div className="flex w-full flex-wrap items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 dark:border-red-900 dark:bg-red-950/40">
+            <span className="text-xs font-semibold text-red-800 dark:text-red-200">
+              {cuentasBorrarSel.length} seleccionada(s) para borrar
+            </span>
+            <button
+              type="button"
+              onClick={() => setCuentasBorrarSel(cuentasState.map((c) => c.cuentaId))}
+              className="rounded-md border border-red-300 px-2 py-1 text-[11px] text-red-700 dark:border-red-800 dark:text-red-300"
+            >
+              Seleccionar todas ({cuentasState.length})
+            </button>
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                type="button"
+                onClick={salirModoBorrar}
+                className="rounded-md border border-neutral-300 px-2.5 py-1 text-[11px] dark:border-neutral-700"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={cuentasBorrarSel.length === 0}
+                onClick={confirmarBorrado}
+                className="rounded-md bg-red-600 px-3 py-1 text-[11px] font-semibold text-white transition hover:bg-red-700 disabled:opacity-40"
+              >
+                Borrar {cuentasBorrarSel.length}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {cuentasRenovables.length > 0 && (
         <div className="rounded-xl border border-purple-200 bg-purple-50 p-3 dark:border-purple-900 dark:bg-purple-950/30">
           {!modoSeleccionPagos ? (
@@ -317,6 +393,9 @@ export function TablaInventario({
             seleccionada={cuentasPagoSeleccionadas.includes(cta.cuentaId)}
             seleccionHabilitada={puedeSeleccionarse(cta)}
             onSeleccionarPago={() => alternarCuentaPago(cta)}
+            modoBorrar={modoBorrar}
+            borrarMarcada={cuentasBorrarSel.includes(cta.cuentaId)}
+            onToggleBorrar={() => alternarBorrar(cta.cuentaId)}
             onEditar={() => setCuentaEditando(cta)}
             onIniciarVenta={(unidadId, nombrePerfil) =>
               setVentaTarget({ cuentaId: cta.cuentaId, unidadId, nombrePerfil })
@@ -416,6 +495,9 @@ export function TablaInventario({
                 seleccionada={cuentasPagoSeleccionadas.includes(cta.cuentaId)}
                 seleccionHabilitada={puedeSeleccionarse(cta)}
                 onSeleccionarPago={() => alternarCuentaPago(cta)}
+                modoBorrar={modoBorrar}
+                borrarMarcada={cuentasBorrarSel.includes(cta.cuentaId)}
+                onToggleBorrar={() => alternarBorrar(cta.cuentaId)}
                 isTarget={targetIndex === index}
                 onEditar={() => setCuentaEditando(cta)}
                 onIniciarVenta={(unidadId, nombrePerfil) =>
@@ -529,6 +611,9 @@ function BloqueCuentaExcel({
   seleccionada,
   seleccionHabilitada,
   onSeleccionarPago,
+  modoBorrar,
+  borrarMarcada,
+  onToggleBorrar,
   isTarget,
   onEditar,
   onIniciarVenta,
@@ -547,6 +632,9 @@ function BloqueCuentaExcel({
   seleccionada: boolean;
   seleccionHabilitada: boolean;
   onSeleccionarPago: () => void;
+  modoBorrar: boolean;
+  borrarMarcada: boolean;
+  onToggleBorrar: () => void;
   isTarget: boolean;
   onEditar: () => void;
   onIniciarVenta: (unidadId: string | null, nombrePerfil: string) => void;
@@ -640,7 +728,16 @@ function BloqueCuentaExcel({
             {/* 1. N° */}
             <td className="border border-neutral-300 bg-neutral-100 px-1.5 py-0.5 text-center font-bold text-neutral-700 align-middle dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
               <span className="inline-flex items-center gap-1">
-                {modoSeleccionPago && esPrimera && (
+                {modoBorrar && esPrimera && (
+                  <input
+                    type="checkbox"
+                    checked={borrarMarcada}
+                    onChange={onToggleBorrar}
+                    aria-label={`Seleccionar para borrar ${cta.correo}`}
+                    className="size-3 accent-red-600"
+                  />
+                )}
+                {modoSeleccionPago && !modoBorrar && esPrimera && (
                   <input
                     type="checkbox"
                     checked={seleccionada}
@@ -895,6 +992,9 @@ function TarjetaCuentaMovil({
   seleccionada,
   seleccionHabilitada,
   onSeleccionarPago,
+  modoBorrar,
+  borrarMarcada,
+  onToggleBorrar,
   onEditar,
   onIniciarVenta,
   onGestionarVenta,
@@ -907,6 +1007,9 @@ function TarjetaCuentaMovil({
   seleccionada: boolean;
   seleccionHabilitada: boolean;
   onSeleccionarPago: () => void;
+  modoBorrar: boolean;
+  borrarMarcada: boolean;
+  onToggleBorrar: () => void;
   onEditar: () => void;
   onIniciarVenta: (unidadId: string | null, nombrePerfil: string) => void;
   onGestionarVenta: (fila: CupoFila) => void;
@@ -922,7 +1025,16 @@ function TarjetaCuentaMovil({
       {/* Encabezado de la cuenta */}
       <div className="flex items-center justify-between border-b border-neutral-200 pb-2 dark:border-neutral-800">
         <div className="flex items-center gap-2">
-          {modoSeleccionPago && (
+          {modoBorrar && (
+            <input
+              type="checkbox"
+              checked={borrarMarcada}
+              onChange={onToggleBorrar}
+              aria-label={`Seleccionar para borrar ${cta.correo}`}
+              className="size-5 accent-red-600"
+            />
+          )}
+          {modoSeleccionPago && !modoBorrar && (
             <input
               type="checkbox"
               checked={seleccionada}

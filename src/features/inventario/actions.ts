@@ -121,6 +121,27 @@ export async function eliminarCuentaAction(
   return null;
 }
 
+/** Borra varias cuentas de una (corrección de cargas masivas). */
+export async function eliminarCuentasAction(
+  cuentaIds: string[],
+  slug: string,
+): Promise<{ error?: string; ok?: string; borradas?: number }> {
+  const usuario = await obtenerUsuarioActual();
+  if (!esAdmin(usuario)) return { error: "No autorizado." };
+  if (!cuentaIds || cuentaIds.length === 0) return { error: "No seleccionaste cuentas." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("eliminar_cuentas", {
+    p_cuenta_ids: cuentaIds,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(slug ? `/inventario/${slug}` : "/inventario");
+  revalidatePath("/inventario");
+  revalidatePath("/dashboard");
+  return { ok: `${data ?? cuentaIds.length} cuenta(s) borradas.`, borradas: Number(data ?? 0) };
+}
+
 export type EstadoEdicion = { error?: string; ok?: string } | null;
 
 export async function editarCuentaAction(
