@@ -137,12 +137,18 @@ begin
 end $$;
 
 -- Paso 2: confirmar la limpieza devuelve el perfil al stock
+select public.actualizar_unidades(
+  :'cta', array[:'u1']::uuid[], array['Ana']::text[], array['PIN_ANA']::text[]);
 select public.confirmar_limpieza(:'oper', 'perfil eliminado en la plataforma');
 
 select 'Confirmada la limpieza, el perfil vuelve a lista' as prueba,
        (select estado_preparacion from public.unidades_inventario where id = :'u1') = 'lista' as pass
 union all select 'La operacion queda confirmada',
-       (select estado from public.operaciones_remotas where id = :'oper') = 'confirmada';
+       (select estado from public.operaciones_remotas where id = :'oper') = 'confirmada'
+union all select 'El retiro borra el nombre del cliente anterior',
+       (select nombre_visible is null from public.unidades_inventario where id = :'u1')
+union all select 'El retiro destruye el PIN anterior',
+       not exists (select 1 from public.secretos_unidad where unidad_id = :'u1');
 
 -- Y ahora sí se puede vender a otro cliente
 insert into public.clientes (nombre) values ('Beto') returning id as beto \gset

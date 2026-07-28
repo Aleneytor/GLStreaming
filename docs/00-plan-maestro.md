@@ -507,7 +507,18 @@ y su confirmación manual es el evento auditable que devuelve el cupo al stock.
 Antes de mostrar el control, el servidor comprueba que la operación siga
 pendiente y pertenezca exactamente a la cuenta abierta.
 
-Estado real al cierre: migraciones aplicadas hasta **`0048`**, **244 cuentas**,
+### Retiro sin datos residuales (migración `0049`)
+
+Confirmar un retiro ya no se limita a habilitar el cupo: borra el nombre visible
+del cliente/perfil anterior y destruye su PIN cifrado, luego devuelve la unidad a
+`lista`. En una liberación de cuenta completa aplica a todas las unidades que
+estaban en saneamiento. El editor también acepta un nombre vacío como una orden
+real de borrado. Su panel sincroniza la cuenta abierta después de guardar para no
+reaparecer con un valor obsoleto de React. La migración corrigió el único residual
+histórico confirmado y sin nueva asignación (`Rossy Cohello` en GLFlujo011),
+verificando después que Mawa y Blanca continuaran asignadas sin cambios.
+
+Estado real al cierre: migraciones aplicadas hasta **`0049`**, **244 cuentas**,
 **476 unidades** y **432 suscripciones** en la base local.
 
 Validación acumulada: **159 pruebas unitarias**, **21 suites SQL** y typecheck en

@@ -268,6 +268,11 @@ export function TablaInventario({
   // Sincronizar estado local inmediatamente al recibir nuevas cuentas del servidor
   useEffect(() => {
     setCuentasState(cuentas);
+    setCuentaEditando((actual) =>
+      actual
+        ? cuentas.find((cuenta) => cuenta.cuentaId === actual.cuentaId) ?? null
+        : null,
+    );
   }, [cuentas]);
 
   useEffect(() => {
@@ -711,6 +716,9 @@ export function TablaInventario({
       {/* Modal amplio de edición de cuenta */}
       {cuentaEditando && (
         <PanelLateralCuenta
+          key={`${cuentaEditando.cuentaId}:${cuentaEditando.filas
+            .map((fila) => fila.nombreUnidad ?? "")
+            .join("|")}`}
           cuenta={cuentaEditando}
           slug={slug}
           retiroPendiente={retiroPendiente}

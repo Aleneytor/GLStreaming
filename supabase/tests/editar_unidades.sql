@@ -57,7 +57,15 @@ select 'PIN nulo conserva el guardado' as prueba,
 union all select 'Pero si actualiza el nombre',
        (select nombre_visible from public.unidades_inventario where id = :'u1') = 'Juan Perez';
 
--- 4. No se puede editar una unidad de OTRA cuenta
+-- 4. Un nombre vacío es una orden explícita de borrado
+select public.actualizar_unidades(
+  :'cta_a', array[:'u1']::uuid[], array['   ']::text[], array[null]::text[]);
+select 'Nombre vacío limpia nombre_visible' as prueba,
+       (select nombre_visible is null from public.unidades_inventario where id = :'u1') as pass
+union all select 'Limpiar el nombre no borra el PIN sin pedirlo',
+       (select pin_cifrado from public.secretos_unidad where unidad_id = :'u1') = 'PIN_CIF_NUEVO';
+
+-- 5. No se puede editar una unidad de OTRA cuenta
 do $$
 declare ok boolean := false;
 begin
