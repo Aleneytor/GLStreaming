@@ -61,5 +61,17 @@ export async function MisVentasRevendedor({ q }: { q?: string }) {
     );
   }
 
-  return <PanelRevendedor ventas={ventas} initialQ={q} nombreUsuario={nombreUsuario} />;
+  // Número de WhatsApp del negocio (admin) para que el revendedor pida la
+  // renovación. Configurable por env; por defecto, el del negocio.
+  const whatsappNegocio =
+    process.env.NEXT_PUBLIC_WHATSAPP_NEGOCIO?.trim() || "+584125628256";
+
+  return (
+    <PanelRevendedor
+      ventas={ventas}
+      initialQ={q}
+      nombreUsuario={nombreUsuario}
+      whatsappNegocio={whatsappNegocio}
+    />
+  );
 }

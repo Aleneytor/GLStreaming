@@ -18,22 +18,23 @@ export default async function DashboardPage({
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">
-            {admin ? "Centro de Operaciones" : "Mis ventas"}
-          </h1>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            Hola, {usuario?.nombre}. {admin && "Gestión rápida de clientes y renovaciones."}
-          </p>
-        </div>
-
-        {admin && datosOperaciones?.bcv && (
-          <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400">
-            Tasa BCV: <strong className="font-semibold text-neutral-900 dark:text-white">{datosOperaciones.bcv.toFixed(2)} Bs/$</strong>
+      {/* El revendedor tiene su propia cabecera en el panel; aquí solo la del admin. */}
+      {admin && (
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">Centro de Operaciones</h1>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              Hola, {usuario?.nombre}. Gestión rápida de clientes y renovaciones.
+            </p>
           </div>
-        )}
-      </div>
+
+          {datosOperaciones?.bcv && (
+            <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400">
+              Tasa BCV: <strong className="font-semibold text-neutral-900 dark:text-white">{datosOperaciones.bcv.toFixed(2)} Bs/$</strong>
+            </div>
+          )}
+        </div>
+      )}
 
       {admin && datosOperaciones ? (
         <CentroOperaciones datos={datosOperaciones} />

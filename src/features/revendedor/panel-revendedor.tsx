@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BotonAcceso } from "@/features/ventas/boton-acceso";
 
 /**
@@ -152,14 +153,15 @@ function franjaVencimiento(dias: number | null) {
     };
   if (dias > 0)
     return {
-      texto: `Vence en ${dias} ${dias === 1 ? "día" : "días"}`,
+      texto: dias === 1 ? "Vence mañana" : `Vence en ${dias} días`,
       clase:
         "border-amber-300 bg-amber-100 text-amber-950 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200",
     };
   if (dias === 0)
     return {
       texto: "Vence hoy",
-      clase: "border-red-500 bg-red-600 text-white dark:border-red-500 dark:bg-red-700 font-bold animate-pulse",
+      clase:
+        "border-red-500 bg-red-600 text-white dark:border-red-500 dark:bg-red-700 font-bold motion-safe:animate-pulse",
     };
   const hace = Math.abs(dias);
   return {
@@ -169,9 +171,77 @@ function franjaVencimiento(dias: number | null) {
   };
 }
 
-function TarjetaCliente({ v }: { v: VentaRevendedor }) {
+/** Mensaje ya redactado para pedirle al admin (el negocio) la renovación. */
+function mensajeSolicitud(v: VentaRevendedor): string {
+  const cuando =
+    v.dias === null
+      ? ""
+      : v.dias < 0
+        ? ` (venció el ${formatearFecha(v.fecha_renovacion)})`
+        : v.dias === 0
+          ? " (vence hoy)"
+          : ` (vence el ${formatearFecha(v.fecha_renovacion)})`;
+  return `Hola, necesito renovar ${v.plataforma} de ${v.cliente}${cuando}.`;
+}
+
+/**
+ * Botón para que el revendedor pida la renovación AL ADMIN (a mí), su único
+ * canal (DEC-97: pide directo). Si hay número de negocio configurado abre
+ * WhatsApp con el texto listo; si no, lo copia al portapapeles.
+ */
+function BotonSolicitud({
+  v,
+  whatsappNegocio,
+}: {
+  v: VentaRevendedor;
+  whatsappNegocio: string | null;
+}) {
+  const [copiado, setCopiado] = useState(false);
+  const msg = mensajeSolicitud(v);
+
+  if (whatsappNegocio) {
+    const num = whatsappNegocio.replace(/[^\d]/g, "");
+    return (
+      <a
+        href={`https://wa.me/${num}?text=${encodeURIComponent(msg)}`}
+        target="_blank"
+        rel="noreferrer"
+        className="flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 active:scale-[0.98]"
+      >
+        <span aria-hidden>💬</span> Solicitar renovación al admin
+      </a>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(msg);
+          setCopiado(true);
+          setTimeout(() => setCopiado(false), 1500);
+        } catch {
+          /* el navegador puede bloquear el portapapeles */
+        }
+      }}
+      className="flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition active:scale-[0.98] dark:border-neutral-700 dark:text-neutral-200"
+    >
+      {copiado ? "✓ Copiado" : "📋 Copiar solicitud de renovación"}
+    </button>
+  );
+}
+
+function TarjetaCliente({
+  v,
+  whatsappNegocio,
+}: {
+  v: VentaRevendedor;
+  whatsappNegocio: string | null;
+}) {
   const pal = paletaDe(v.plataforma);
   const franja = franjaVencimiento(v.dias);
+  const necesitaRenovar = v.dias !== null && v.dias <= 5;
 
   return (
     <div
@@ -205,7 +275,7 @@ function TarjetaCliente({ v }: { v: VentaRevendedor }) {
         {v.fecha_renovacion && (
           <div className="shrink-0 text-right">
             <span className="block font-mono text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-              📅 {formatearFecha(v.fecha_renovacion)}
+              <span aria-hidden>📅</span> {formatearFecha(v.fecha_renovacion)}
             </span>
           </div>
         )}
@@ -214,15 +284,18 @@ function TarjetaCliente({ v }: { v: VentaRevendedor }) {
       <div
         className={`mt-3 flex items-center justify-between rounded-lg border px-3 py-2 text-xs font-semibold ${franja.clase}`}
       >
-        <span>⏰ {franja.texto}</span>
+        <span>
+          <span aria-hidden>⏰</span> {franja.texto}
+        </span>
         {v.dias !== null && v.dias <= 0 && (
-          <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px] uppercase tracking-wider">
+          <span className="rounded-full border border-current px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
             Revisar
           </span>
         )}
       </div>
 
-      <div className="mt-3.5 border-t border-neutral-100 pt-3 dark:border-neutral-800">
+      <div className="mt-3.5 space-y-2 border-t border-neutral-100 pt-3 dark:border-neutral-800">
+        {necesitaRenovar && <BotonSolicitud v={v} whatsappNegocio={whatsappNegocio} />}
         <BotonAcceso suscripcionId={v.suscripcion_id} />
       </div>
     </div>
@@ -233,14 +306,47 @@ export function PanelRevendedor({
   ventas,
   initialQ,
   nombreUsuario,
+  whatsappNegocio = null,
 }: {
   ventas: VentaRevendedor[];
   initialQ?: string;
   nombreUsuario?: string;
+  whatsappNegocio?: string | null;
 }) {
-  const [vista, setVista] = useState<"operaciones" | "plataformas">("operaciones");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [vista, setVista] = useState<"operaciones" | "plataformas">(
+    searchParams.get("vista") === "plataformas" ? "plataformas" : "operaciones",
+  );
   const [q, setQ] = useState(initialQ ?? "");
-  const [filtro, setFiltro] = useState<string | null>(null);
+  const [filtro, setFiltro] = useState<string | null>(searchParams.get("filtro"));
+
+  // La vista y el filtro se reflejan en la URL para no perderlos al refrescar
+  // ni al compartir el enlace. (La búsqueda queda local: cambia muy rápido.)
+  const persistir = useCallback(
+    (cambios: { vista?: string; filtro?: string | null }) => {
+      const sp = new URLSearchParams(Array.from(searchParams.entries()));
+      if (cambios.vista) sp.set("vista", cambios.vista);
+      if ("filtro" in cambios) {
+        if (cambios.filtro) sp.set("filtro", cambios.filtro);
+        else sp.delete("filtro");
+      }
+      const qs = sp.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [router, pathname, searchParams],
+  );
+
+  const cambiarVista = (x: "operaciones" | "plataformas") => {
+    setVista(x);
+    persistir({ vista: x });
+  };
+  const cambiarFiltro = (x: string | null) => {
+    setFiltro(x);
+    persistir({ filtro: x });
+  };
 
   const busqueda = q.trim().toLowerCase();
   const filtradas = useMemo(
@@ -260,6 +366,12 @@ export function PanelRevendedor({
   const alDia = filtradas.filter((v) => v.dias !== null && v.dias > 5).length;
   const porVencer = filtradas.filter((v) => v.dias !== null && v.dias >= 0 && v.dias <= 5).length;
   const vencidas = filtradas.filter((v) => v.dias !== null && v.dias < 0).length;
+  const vencenHoy = filtradas.filter((v) => v.dias === 0).length;
+  const urgentes = vencidas + vencenHoy;
+
+  // Dentro de cada grupo, primero lo que vence antes.
+  const ordenar = (arr: VentaRevendedor[]) =>
+    [...arr].sort((a, b) => (a.dias ?? 9999) - (b.dias ?? 9999));
 
   const plataformas = useMemo(() => {
     const m = new Map<string, number>();
@@ -268,10 +380,10 @@ export function PanelRevendedor({
   }, [ventas]);
 
   const gruposVenc: { titulo: string; acento: string; items: VentaRevendedor[] }[] = [
-    { titulo: "Vencidos (Atención inmediata)", acento: "text-red-600 dark:text-red-400 font-bold", items: filtradas.filter((v) => v.dias !== null && v.dias < 0) },
+    { titulo: "Vencidos (Atención inmediata)", acento: "text-red-600 dark:text-red-400 font-bold", items: ordenar(filtradas.filter((v) => v.dias !== null && v.dias < 0)) },
     { titulo: "Vencen hoy", acento: "text-red-600 dark:text-red-400 font-bold", items: filtradas.filter((v) => v.dias === 0) },
-    { titulo: "Próximos 5 días", acento: "text-amber-600 dark:text-amber-400 font-semibold", items: filtradas.filter((v) => v.dias !== null && v.dias > 0 && v.dias <= 5) },
-    { titulo: "Vigentes / Al día", acento: "text-emerald-600 dark:text-emerald-400 font-semibold", items: filtradas.filter((v) => v.dias !== null && v.dias > 5) },
+    { titulo: "Próximos 5 días", acento: "text-amber-600 dark:text-amber-400 font-semibold", items: ordenar(filtradas.filter((v) => v.dias !== null && v.dias > 0 && v.dias <= 5)) },
+    { titulo: "Vigentes / Al día", acento: "text-emerald-600 dark:text-emerald-400 font-semibold", items: ordenar(filtradas.filter((v) => v.dias !== null && v.dias > 5)) },
     { titulo: "Sin fecha asignada", acento: "text-neutral-500 dark:text-neutral-400 font-semibold", items: filtradas.filter((v) => v.dias === null) },
   ];
 
@@ -313,12 +425,27 @@ export function PanelRevendedor({
         </div>
       </div>
 
+      {/* Aviso de acción del día */}
+      {urgentes > 0 && (
+        <div className="flex items-center gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
+          <span aria-hidden className="text-lg">🚨</span>
+          <span>
+            Tienes <strong>{urgentes}</strong>{" "}
+            {urgentes === 1 ? "servicio que necesita" : "servicios que necesitan"} renovación
+            {vencidas > 0 && vencenHoy > 0
+              ? ` (${vencidas} vencido${vencidas === 1 ? "" : "s"} y ${vencenHoy} hoy)`
+              : ""}
+            . Contacta al admin para renovarlos.
+          </span>
+        </div>
+      )}
+
       {/* Conmutador de vista */}
       <div className="flex gap-2">
-        <button type="button" onClick={() => setVista("operaciones")} className={tabBtn(vista === "operaciones")}>
+        <button type="button" onClick={() => cambiarVista("operaciones")} className={tabBtn(vista === "operaciones")}>
           🗂 Operaciones y Vencimientos
         </button>
-        <button type="button" onClick={() => setVista("plataformas")} className={tabBtn(vista === "plataformas")}>
+        <button type="button" onClick={() => cambiarVista("plataformas")} className={tabBtn(vista === "plataformas")}>
           🎨 Por Plataforma
         </button>
       </div>
@@ -326,7 +453,7 @@ export function PanelRevendedor({
       {/* Tarjetas de Métricas KPIs */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-          <p className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Total Activas</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Total</p>
           <div className="mt-2 flex items-baseline justify-between">
             <span className="text-2xl font-black tabular-nums text-neutral-900 dark:text-white">{filtradas.length}</span>
             <span className="text-lg">📦</span>
@@ -385,7 +512,7 @@ export function PanelRevendedor({
         <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
           <button
             type="button"
-            onClick={() => setFiltro(null)}
+            onClick={() => cambiarFiltro(null)}
             className={`shrink-0 rounded-full px-3.5 py-1.5 font-bold transition ${
               filtro === null
                 ? "bg-neutral-900 text-white shadow dark:bg-white dark:text-neutral-900"
@@ -401,7 +528,7 @@ export function PanelRevendedor({
               <button
                 key={p.nombre}
                 type="button"
-                onClick={() => setFiltro(activo ? null : p.nombre)}
+                onClick={() => cambiarFiltro(activo ? null : p.nombre)}
                 className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-bold transition ${
                   activo
                     ? pal.chip + " ring-2 ring-neutral-800 dark:ring-white shadow"
@@ -435,7 +562,7 @@ export function PanelRevendedor({
               </div>
               <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
                 {g.items.map((v) => (
-                  <TarjetaCliente key={v.suscripcion_id} v={v} />
+                  <TarjetaCliente key={v.suscripcion_id} v={v} whatsappNegocio={whatsappNegocio} />
                 ))}
               </div>
             </section>
@@ -458,7 +585,7 @@ export function PanelRevendedor({
               </h2>
               <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
                 {grupo.items.map((v) => (
-                  <TarjetaCliente key={v.suscripcion_id} v={v} />
+                  <TarjetaCliente key={v.suscripcion_id} v={v} whatsappNegocio={whatsappNegocio} />
                 ))}
               </div>
             </section>
