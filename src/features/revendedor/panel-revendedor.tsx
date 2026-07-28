@@ -186,7 +186,7 @@ function TarjetaCliente({ v }: { v: VentaRevendedor }) {
               <span className={`size-2 rounded-full ${pal.punto}`} />
               {v.plataforma}
             </span>
-            {v.modalidad && (
+            {v.modalidad && !v.plataforma?.toLowerCase().includes("spotify") && (
               <span className="rounded-md bg-neutral-100 px-2 py-0.5 font-mono text-[11px] font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
                 {v.modalidad}
               </span>
@@ -197,7 +197,7 @@ function TarjetaCliente({ v }: { v: VentaRevendedor }) {
             {v.cliente}
           </p>
           <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-            {v.producto}
+            {v.plataforma?.toLowerCase().includes("spotify") ? "Spotify Premium" : v.producto}
             {v.estado !== "activa" ? ` · Status: ${v.estado}` : ""}
           </p>
         </div>
