@@ -117,11 +117,13 @@ describe("Dos familias seguidas, con un cupo «no se puede»", () => {
     expect(r.filas[9].datos.correo).toBe("spotify260@glstreaming.org");
   });
 
-  it("el cupo «no se puede» conserva la madre pero queda libre", () => {
+  it("el cupo «no se puede» conserva la madre y marca el bloqueo familiar", () => {
     expect(r.filas[5].datos.correo).toBe("spotify260@glstreaming.org"); // la madre se salva
     expect(r.filas[5].datos.cliente).toBeNull(); // y nadie se llama «no se puede»
     expect(r.filas[5].datos.correoCliente).toBeNull();
     expect(r.filas[5].datos.vendio).toBeNull();
+    expect(r.filas[5].datos.bloqueoAdmisionSpotify).toBe(true);
+    expect(r.filas.slice(6, 10).every((fila) => !fila.datos.bloqueoAdmisionSpotify)).toBe(true);
   });
 
   it("un cupo con login preparado pero sin vender queda libre", () => {

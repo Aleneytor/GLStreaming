@@ -3328,6 +3328,24 @@ export type Database = {
         }
         Returns: string
       }
+      vender_miembro_spotify_con_identidad: {
+        Args: {
+          p_cliente_nombre: string
+          p_cliente_whatsapp: string
+          p_contrasena_cifrada: string
+          p_cuenta_id: string
+          p_inicio: string
+          p_login_cifrado: string
+          p_login_fingerprint: string
+          p_modalidad_id: string
+          p_monto_usd: number
+          p_precio_usd: number
+          p_tipo_correo: string
+          p_unidad_id: string
+          p_vendedor_id: string
+        }
+        Returns: string
+      }
       vender_unidad: {
         Args: {
           p_banco_destino?: string

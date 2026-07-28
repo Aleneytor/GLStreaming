@@ -59,6 +59,8 @@ export type FilaImportacion = {
   correoCliente: string | null;
   /** Spotify: contraseña de ese login («Clave Cliente»). */
   claveCliente: string | null;
+  /** Spotify familiar: la hoja marcó que Spotify no admite miembros nuevos. */
+  bloqueoAdmisionSpotify: boolean;
   /** Spotify: Gmail que paga la individual por GPay (solo referencia). */
   gmailPagador: string | null;
   /** Datos operativos opcionales que ya existen en la app. */
@@ -609,6 +611,13 @@ export function analizarFilas(
     const montoCrudo = leer(c, "monto");
     const inicioCrudo = leer(c, "inicio");
     const venceCrudo = leer(c, "vence");
+    const bloqueoAdmisionSpotify = [
+      leer(c, "correoCliente"),
+      leer(c, "claveCliente"),
+      leer(c, "cliente"),
+      leer(c, "whatsapp"),
+      leer(c, "vendio"),
+    ].some((valor) => valor.trim().toLowerCase() === "no se puede");
     const clienteCol = limpiarMarca(leer(c, "cliente")) || null;
     const whatsapp = limpiarMarca(leer(c, "whatsapp")) || null;
     const vendio = limpiarMarca(leer(c, "vendio")) || null;
@@ -802,6 +811,7 @@ export function analizarFilas(
         renovarProveedor,
         correoCliente,
         claveCliente,
+        bloqueoAdmisionSpotify,
         gmailPagador,
         aliasCuenta,
         notasCuenta,

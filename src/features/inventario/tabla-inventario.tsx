@@ -64,6 +64,8 @@ export type BloqueCuenta = {
   diasProveedor: number | null;
   esCuentaCompleta?: boolean;
   esSpotifyFamiliar?: boolean;
+  admisionSpotifyBloqueada?: boolean;
+  motivoBloqueoSpotify?: string | null;
   filas: CupoFila[];
 };
 
@@ -269,6 +271,7 @@ export function TablaInventario({
     nombrePerfil: string;
     clienteLogin: string | null;
     clienteClave: string | null;
+    esSpotifyFamiliar: boolean;
   } | null>(null);
 
   const [gestionVentaTarget, setGestionVentaTarget] = useState<CupoFila | null>(null);
@@ -388,6 +391,7 @@ export function TablaInventario({
       nombrePerfil,
       clienteLogin,
       clienteClave,
+      esSpotifyFamiliar: Boolean(cuenta.esSpotifyFamiliar),
     });
   };
 
@@ -692,6 +696,7 @@ export function TablaInventario({
           nombrePerfil={ventaTarget.nombrePerfil}
           clienteLogin={ventaTarget.clienteLogin}
           clienteClave={ventaTarget.clienteClave}
+          esSpotifyFamiliar={ventaTarget.esSpotifyFamiliar}
           slug={slug}
           vendedores={vendedores}
           onCerrar={() => setVentaTarget(null)}
@@ -856,6 +861,10 @@ function BloqueCuentaExcel({
                 ? "Destino elegido ✓"
                 : "Elegir destino"
               : "No compatible";
+          } else if (cta.admisionSpotifyBloqueada) {
+            claseAlerta =
+              "bg-amber-100 text-amber-900 font-bold dark:bg-amber-950/60 dark:text-amber-200";
+            textoAlerta = "No se puede";
           } else {
             claseAlerta =
               "bg-[#1d4ed8] hover:bg-[#1e40af] text-white cursor-pointer transition active:scale-[0.98]";
@@ -1036,6 +1045,7 @@ function BloqueCuentaExcel({
                   rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
                   onClick={() => {
                     if (esLibre) {
+                      if (cta.admisionSpotifyBloqueada && !destinosTraslado) return;
                       if (destinosTraslado && !destinoCompatible) return;
                       onIniciarVenta(
                         destinosTraslado ? destinoCompatible!.unidadId : f.unidadId,
@@ -1331,6 +1341,17 @@ function TarjetaCuentaMovil({
         </div>
       )}
 
+      {cta.admisionSpotifyBloqueada && (
+        <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-2 text-xs font-semibold text-amber-900 dark:border-amber-800 dark:bg-amber-950/35 dark:text-amber-200">
+          ⛔ Spotify no permite incorporar miembros nuevos temporalmente.
+          {cta.motivoBloqueoSpotify && (
+            <span className="mt-0.5 block text-[10px] font-normal opacity-75">
+              {cta.motivoBloqueoSpotify}
+            </span>
+          )}
+        </div>
+      )}
+
       {mostrarCredenciales && (
         <div className="mt-2 rounded bg-neutral-100 p-2 font-mono text-xs text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
           🔑 Clave: {cta.contrasena}
@@ -1391,7 +1412,10 @@ function TarjetaCuentaMovil({
                 ) : (
                   <button
                     type="button"
-                    disabled={Boolean(destinosTraslado && !destinoCompatible)}
+                    disabled={Boolean(
+                      (destinosTraslado && !destinoCompatible) ||
+                      (!destinosTraslado && cta.admisionSpotifyBloqueada),
+                    )}
                     onClick={() =>
                       onIniciarVenta(
                         destinosTraslado ? destinoCompatible!.unidadId : fila.unidadId,
@@ -1407,7 +1431,9 @@ function TarjetaCuentaMovil({
                           : destinoCompatible
                             ? "bg-emerald-600"
                             : "bg-neutral-400"
-                        : "bg-blue-600"
+                        : cta.admisionSpotifyBloqueada
+                          ? "bg-amber-500"
+                          : "bg-blue-600"
                     }`}
                   >
                     {destinosTraslado
@@ -1416,7 +1442,9 @@ function TarjetaCuentaMovil({
                         : destinoCompatible
                           ? "Elegir"
                           : "No compatible"
-                      : "⚡ Vender"}
+                      : cta.admisionSpotifyBloqueada
+                        ? "No se puede"
+                        : "⚡ Vender"}
                   </button>
                 )}
               </div>

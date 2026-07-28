@@ -79,6 +79,7 @@ export default async function PlataformaPage({
        proveedores ( id, nombre_o_alias ),
        ciclos_proveedor ( costo_usdt, estado, proxima_renovacion ),
        credenciales_cuenta ( login_cifrado, contrasena_cifrada, eliminada_at ),
+       coberturas_spotify ( estado_admision, motivo_bloqueo ),
        unidades_inventario ( id, numero_slot, nombre_visible, secretos_unidad ( pin_cifrado ) ),
        asignaciones_inventario (
          id, alcance, unidad_id, fin,
@@ -246,6 +247,7 @@ export default async function PlataformaPage({
     );
 
     const ctrl = pagadoresPorCuenta.get(c.id);
+    const coberturaSpotify = uno(c.coberturas_spotify);
     const pagador = ctrl?.gmail_cifrado ? desc(ctrl.gmail_cifrado) : null;
 
     const filas: CupoFila[] = [];
@@ -423,6 +425,10 @@ export default async function PlataformaPage({
       esCuentaCompleta:
         Boolean(asignacionCompleta) && prod.tipo_inventario !== "recurso_indivisible",
       esSpotifyFamiliar: prod.codigo === "spotify-familiar",
+      admisionSpotifyBloqueada:
+        prod.codigo === "spotify-familiar" &&
+        coberturaSpotify?.estado_admision === "bloqueada_por_spotify",
+      motivoBloqueoSpotify: coberturaSpotify?.motivo_bloqueo ?? null,
       filas,
     });
     grupos.set(prod.id, grupo);

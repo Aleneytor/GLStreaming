@@ -17,6 +17,7 @@ export function ModalVentaRapida({
   nombrePerfil,
   clienteLogin,
   clienteClave,
+  esSpotifyFamiliar = false,
   slug,
   vendedores = [],
   onCerrar,
@@ -26,6 +27,7 @@ export function ModalVentaRapida({
   nombrePerfil: string;
   clienteLogin?: string | null;
   clienteClave?: string | null;
+  esSpotifyFamiliar?: boolean;
   slug: string;
   vendedores?: VendedorOp[];
   onCerrar: () => void;
@@ -38,6 +40,10 @@ export function ModalVentaRapida({
     "intermediario",
   );
   const [cobraParalela, setCobraParalela] = useState(false);
+  const [tipoCorreoSpotify, setTipoCorreoSpotify] = useState<"dominio_gl" | "correo_cliente">(
+    "dominio_gl",
+  );
+  const requiereIdentidadSpotify = esSpotifyFamiliar && !clienteLogin;
 
   const revendedores = vendedores.filter((v) => v.tipo === "revendedor");
   const intermediarios = vendedores.filter((v) => v.tipo !== "revendedor");
@@ -67,7 +73,7 @@ export function ModalVentaRapida({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-2xl dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-xl border border-neutral-200 bg-white p-6 shadow-2xl dark:border-neutral-800 dark:bg-neutral-900">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
@@ -91,6 +97,79 @@ export function ModalVentaRapida({
           {unidadId && <input type="hidden" name="unidad_id" value={unidadId} />}
           <input type="hidden" name="slug" value={slug} />
 
+          {requiereIdentidadSpotify && (
+            <section className="space-y-3 rounded-xl border border-green-300 bg-green-50 p-3 dark:border-green-900 dark:bg-green-950/25">
+              <div>
+                <p className="text-xs font-bold text-green-950 dark:text-green-100">
+                  1. Acceso del miembro de Spotify
+                </p>
+                <p className="mt-0.5 text-[11px] text-green-800 dark:text-green-300">
+                  Este cupo no tiene correo preparado. Define primero el acceso que usará el cliente.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <label className={`cursor-pointer rounded-lg border p-2 text-[11px] ${
+                  tipoCorreoSpotify === "dominio_gl"
+                    ? "border-green-600 bg-white text-green-950 dark:bg-green-950"
+                    : "border-green-200 text-green-800 dark:border-green-900 dark:text-green-300"
+                }`}>
+                  <input
+                    type="radio"
+                    name="spotify_tipo_correo"
+                    value="dominio_gl"
+                    checked={tipoCorreoSpotify === "dominio_gl"}
+                    onChange={() => setTipoCorreoSpotify("dominio_gl")}
+                    className="mr-1.5"
+                  />
+                  <strong>Correo a mi dominio</strong>
+                  <span className="mt-0.5 block opacity-75">Reutilizable después de sanear.</span>
+                </label>
+                <label className={`cursor-pointer rounded-lg border p-2 text-[11px] ${
+                  tipoCorreoSpotify === "correo_cliente"
+                    ? "border-green-600 bg-white text-green-950 dark:bg-green-950"
+                    : "border-green-200 text-green-800 dark:border-green-900 dark:text-green-300"
+                }`}>
+                  <input
+                    type="radio"
+                    name="spotify_tipo_correo"
+                    value="correo_cliente"
+                    checked={tipoCorreoSpotify === "correo_cliente"}
+                    onChange={() => setTipoCorreoSpotify("correo_cliente")}
+                    className="mr-1.5"
+                  />
+                  <strong>Correo del cliente</strong>
+                  <span className="mt-0.5 block opacity-75">Personal y no reutilizable.</span>
+                </label>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold text-green-950 dark:text-green-100">
+                    Correo de acceso *
+                  </label>
+                  <input
+                    type="email"
+                    name="spotify_login"
+                    required
+                    placeholder={tipoCorreoSpotify === "dominio_gl" ? "spotify000@glstreaming.org" : "cliente@gmail.com"}
+                    className="w-full rounded-lg border border-green-300 bg-white px-3 py-1.5 text-xs text-neutral-900 dark:border-green-800 dark:bg-neutral-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold text-green-950 dark:text-green-100">
+                    Contraseña de acceso *
+                  </label>
+                  <input
+                    type="password"
+                    name="spotify_clave"
+                    required
+                    autoComplete="new-password"
+                    className="w-full rounded-lg border border-green-300 bg-white px-3 py-1.5 text-xs text-neutral-900 dark:border-green-800 dark:bg-neutral-900 dark:text-white"
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
           {(clienteLogin || clienteClave) && (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
               <strong>Acceso Spotify preparado para este cupo</strong>
@@ -105,6 +184,11 @@ export function ModalVentaRapida({
           )}
 
           <div>
+            {esSpotifyFamiliar && (
+              <p className="mb-2 text-xs font-bold text-neutral-900 dark:text-white">
+                {requiereIdentidadSpotify ? "2. Datos del cliente y de la venta" : "Datos del cliente y de la venta"}
+              </p>
+            )}
             <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
               Nombre del Cliente *
             </label>

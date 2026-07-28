@@ -529,6 +529,12 @@ export async function venderUnidadRapidaAction(
     formData.get("vendedor_tipo") === "revendedor" ? "revendedor" : "intermediario";
   const cobraParalela = formData.get("vendedor_cobra_paralela") === "on";
   const slug = String(formData.get("slug") ?? "");
+  const spotifyLogin = String(formData.get("spotify_login") ?? "").trim();
+  const spotifyClave = String(formData.get("spotify_clave") ?? "");
+  const spotifyTipoCorreo =
+    formData.get("spotify_tipo_correo") === "correo_cliente"
+      ? "correo_cliente"
+      : "dominio_gl";
 
   if (!cuentaId || !clienteNombre || !precioUsdTxt) {
     return { error: "Indica el cliente y el precio en USD." };
@@ -537,6 +543,19 @@ export async function venderUnidadRapidaAction(
   const precioUsd = Number(precioUsdTxt.replace(",", "."));
   if (!Number.isFinite(precioUsd) || precioUsd <= 0) {
     return { error: "El precio debe ser un monto mayor que cero." };
+  }
+  if (Boolean(spotifyLogin) !== Boolean(spotifyClave)) {
+    return { error: "Indica tanto el correo como la contraseña del miembro Spotify." };
+  }
+  if (spotifyLogin && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(spotifyLogin)) {
+    return { error: "El correo del miembro Spotify no tiene un formato válido." };
+  }
+  if (
+    spotifyLogin &&
+    spotifyTipoCorreo === "dominio_gl" &&
+    !/@(glstreaming\.org|glcuenta\.com)$/i.test(spotifyLogin)
+  ) {
+    return { error: "El correo marcado como propio debe usar @glstreaming.org o @glcuenta.com." };
   }
 
   const supabase = await createClient();
@@ -577,17 +596,33 @@ export async function venderUnidadRapidaAction(
     }
   }
 
-  const { error } = await supabase.rpc("vender_unidad", {
-    p_cuenta_id: cuentaId,
-    p_modalidad_id: modalidadId,
-    p_unidad_id: unidadId,
-    p_cliente_nombre: clienteNombre,
-    p_cliente_whatsapp: clienteWhatsapp || null,
-    p_precio_usd: precioUsd,
-    p_monto_usd: precioUsd,
-    p_inicio: fechaInicioTxt || null,
-    p_vendedor_id: vendedorId,
-  });
+  const { error } = spotifyLogin && unidadId
+    ? await supabase.rpc("vender_miembro_spotify_con_identidad", {
+        p_cuenta_id: cuentaId,
+        p_unidad_id: unidadId,
+        p_modalidad_id: modalidadId,
+        p_cliente_nombre: clienteNombre,
+        p_cliente_whatsapp: clienteWhatsapp || null,
+        p_precio_usd: precioUsd,
+        p_monto_usd: precioUsd,
+        p_inicio: fechaInicioTxt || null,
+        p_vendedor_id: vendedorId,
+        p_login_cifrado: cifrarSecreto(spotifyLogin),
+        p_login_fingerprint: huellaSecreto(spotifyLogin),
+        p_contrasena_cifrada: cifrarSecreto(spotifyClave),
+        p_tipo_correo: spotifyTipoCorreo,
+      })
+    : await supabase.rpc("vender_unidad", {
+        p_cuenta_id: cuentaId,
+        p_modalidad_id: modalidadId,
+        p_unidad_id: unidadId,
+        p_cliente_nombre: clienteNombre,
+        p_cliente_whatsapp: clienteWhatsapp || null,
+        p_precio_usd: precioUsd,
+        p_monto_usd: precioUsd,
+        p_inicio: fechaInicioTxt || null,
+        p_vendedor_id: vendedorId,
+      });
 
   if (error) return { error: error.message };
 

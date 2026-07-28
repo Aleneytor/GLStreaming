@@ -395,6 +395,16 @@ fila no tiene cliente, monto, teléfono ni vendedor. Las filas libres importadas
 antes de `0041` deben volver a pegarse desde el respaldo porque sus credenciales
 no llegaron a guardarse en la base anterior.
 
+La migración `0045` conecta el estado documentado `no se puede` con la carga y
+la venta reales. El importador lo detecta aunque aparezca repetido en las celdas
+del cupo, termina de cargar a los miembros vigentes y marca después toda la
+familia como `bloqueada_por_spotify`. Los cupos libres dejan de publicarse como
+venta o traslado y PostgreSQL rechaza cualquier alta accidental. En una familia
+abierta, un cupo sin identidad pide primero si utilizará correo del cliente o de
+dominio GL, junto con su clave; después solicita cliente, teléfono, precio y
+vendedor. Todo se guarda atómicamente y un correo personal queda asociado a su
+cliente y marcado como no reutilizable.
+
 La carga del inventario Spotify pagina internamente los filtros de UUID en lotes
 de 100. Con la cartera actual se validaron 471 unidades en 5 lotes y 243 cuentas
 en 3 lotes, evitando el error `URI too long` sin omitir identidades preparadas ni
@@ -413,7 +423,7 @@ cupo, una venta completa consume todas sus unidades y un uso principal que no
 consume capacidad no reduce los cupos familiares. Esto corrige el falso 100 %
 de Spotify producido al sumar individuales y familiares en la misma tarjeta.
 
-Validación acumulada: **159 pruebas unitarias**, **20 suites SQL** y typecheck en
+Validación acumulada: **159 pruebas unitarias**, **21 suites SQL** y typecheck en
 verde. La suite de traslado comprueba el cambio de asignación, preservación del
 período, mantenimiento, entrega, auditoría, cuenta completa y rechazo a
 revendedores. El usuario confirmó la recuperación de la app y la reimportación;

@@ -332,6 +332,8 @@ export async function importarAction(
         tipoProveedor: anterior.tipoProveedor ?? fila.datos.tipoProveedor,
         telefonoProveedor: anterior.telefonoProveedor ?? fila.datos.telefonoProveedor,
         notasProveedor: anterior.notasProveedor ?? fila.datos.notasProveedor,
+        bloqueoAdmisionSpotify:
+          anterior.bloqueoAdmisionSpotify || fila.datos.bloqueoAdmisionSpotify,
       });
     }
   }
@@ -535,6 +537,31 @@ export async function importarAction(
       cuenta_id?: string;
       suscripcion_id?: string;
     } | null;
+    const cuentaProcesadaId = ids?.cuenta_id ?? cuentaExistenteId;
+    const esUltimaFilaCuenta =
+      ultimaFilaPorCuenta.get(d.correo.toLowerCase()) === fila.numero;
+    if (
+      esFamiliar &&
+      cuentaMeta.bloqueoAdmisionSpotify &&
+      esUltimaFilaCuenta &&
+      cuentaProcesadaId
+    ) {
+      const { error: errorBloqueo } = await supabase
+        .from("coberturas_spotify")
+        .update({
+          estado_admision: "bloqueada_por_spotify",
+          bloqueada_at: new Date().toISOString(),
+          motivo_bloqueo: "Importado desde Excel: no se puede",
+          desbloqueada_at: null,
+        })
+        .eq("cuenta_id", cuentaProcesadaId)
+        .eq("tipo", "familiar");
+      if (errorBloqueo) {
+        error = { message: `No se pudo guardar el bloqueo de Spotify: ${errorBloqueo.message}` };
+      } else {
+        advertenciasMeta.push("familia bloqueada por Spotify para miembros nuevos");
+      }
+    }
     if (
       !error &&
       ids?.cuenta_id &&
