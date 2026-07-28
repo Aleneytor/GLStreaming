@@ -124,8 +124,7 @@ export function ModalRenovacion({
               />
             </div>
 
-            {esSpotify ? (
-              <div>
+            <div>
                 <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
                   Duración del paquete
                 </label>
@@ -139,12 +138,17 @@ export function ModalRenovacion({
                   }}
                   className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
                 >
-                  {[1, 3, 6, 12].map((cantidad) => (
+                  {(esSpotify
+                    ? [1, 3, 6, 12]
+                    : Array.from({ length: 12 }, (_, i) => i + 1)
+                  ).map((cantidad) => (
                     <option key={cantidad} value={cantidad}>
                       {cantidad} {cantidad === 1 ? "mes" : "meses"}
                     </option>
                   ))}
                 </select>
+              {esSpotify && (
+                <>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   {([
                     ["dominio_gl", "Correo de mi dominio"],
@@ -170,10 +174,9 @@ export function ModalRenovacion({
                 <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
                   El monto sugerido corresponde al paquete completo y puedes editarlo.
                 </p>
-              </div>
-            ) : (
-              <input type="hidden" name="meses" value="1" />
-            )}
+                </>
+              )}
+            </div>
 
             <div>
               <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">

@@ -129,6 +129,9 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **Paquetes multimes de Spotify**: al renovar desde Inventario u Operaciones se
   puede elegir `1`, `3`, `6` o `12` meses. El monto ingresado es el total del
   paquete (por ejemplo, `$13` por 3 meses), no una mensualidad que se multiplica.
+- **Renovaciones multimes generales**: Netflix, Disney+ y las demás plataformas
+  permiten elegir cualquier duración de 1 a 12 meses. No se infiere una tarifa:
+  el administrador escribe el total realmente cobrado por todo el período.
 - **Tarifas sugeridas de Spotify, siempre editables**: correo GL usa
   1/3/6/12 meses = $4/$10/$18/$32; correo del cliente usa
   $5/$13/$22/$40. Al cambiar duración o titularidad, el modal propone el total

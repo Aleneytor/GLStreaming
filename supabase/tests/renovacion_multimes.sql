@@ -73,5 +73,20 @@ union all
 select 'El paquete crea un solo cobro',
        (select count(*) from public.pagos_cliente where periodo_servicio_id = :'periodo' and tipo = 'cobro') = 1;
 
+select public.renovar_y_cobrar(
+  p_suscripcion_id => :'suscripcion',
+  p_inicio => '2026-11-06'::date,
+  p_meses => 2,
+  p_monto_usd => 8,
+  p_tardia => false
+) as periodo_dos_meses \gset
+
+select 'Acepta también un paquete de 2 meses' as prueba,
+       (select cantidad_periodos from public.periodos_servicio where id = :'periodo_dos_meses') = 2 as pass
+union all
+select 'Dos meses calendario terminan en la fecha correcta',
+       (select fecha_renovacion from public.periodos_servicio where id = :'periodo_dos_meses')
+       = '2027-01-06'::date;
+
 reset role;
 rollback;

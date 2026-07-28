@@ -362,6 +362,9 @@ Spotify admite renovaciones de `1`, `3`, `6` o `12` meses tanto desde
 Inventario como desde Operaciones. La fecha final se calcula por meses
 calendario y el monto representa el paquete completo: una promoción de 3 meses
 por `$13` crea un solo período de tres meses con ingreso total `$13`.
+Netflix, Disney+ y el resto de productos permiten igualmente renovar cualquier
+duración entre 1 y 12 meses. En ellos no hay tarifa sugerida: se escribe el monto
+total acordado y el período se encadena desde el vencimiento vigente.
 Los formularios sugieren la tabla vigente según titularidad del correo:
 dominio GL = `$4/$10/$18/$32` y correo del cliente = `$5/$13/$22/$40` para
 `1/3/6/12` meses. El total continúa editable para registrar excepciones reales.

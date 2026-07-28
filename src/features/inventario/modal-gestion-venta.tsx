@@ -114,7 +114,8 @@ export function ModalGestionVenta({
     planRenovacion.inicio,
     mesesRenovacion,
   );
-  const opcionesMeses = slug === "spotify" ? [1, 3, 6, 12] : [1];
+  const opcionesMeses =
+    slug === "spotify" ? [1, 3, 6, 12] : Array.from({ length: 12 }, (_, i) => i + 1);
 
   function aplicarTarifaSpotify(meses: number, tipo = tipoCorreoTarifa) {
     const tarifa = tarifaSpotify(tipo, meses);
@@ -462,8 +463,7 @@ export function ModalGestionVenta({
               Registrar renovación de {mesesRenovacion} {mesesRenovacion === 1 ? "mes" : "meses"} para <strong className="text-neutral-900 dark:text-white">{clienteNombre}</strong>.
             </p>
 
-            {slug === "spotify" ? (
-              <div>
+            <div>
                 <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                   Duración del nuevo paquete
                 </label>
@@ -483,6 +483,8 @@ export function ModalGestionVenta({
                     </option>
                   ))}
                 </select>
+              {slug === "spotify" && (
+                <>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   {([
                     ["dominio_gl", "Correo de mi dominio"],
@@ -508,10 +510,9 @@ export function ModalGestionVenta({
                 <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
                   Se sugiere la tarifa vigente; puedes editar el monto si acordaste una excepción.
                 </p>
-              </div>
-            ) : (
-              <input type="hidden" name="meses" value="1" />
-            )}
+                </>
+              )}
+            </div>
 
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
               <strong>
