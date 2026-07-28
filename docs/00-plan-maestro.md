@@ -490,6 +490,16 @@ se corrige, el cambio de vendedor, el período y el cobro se guardan juntos en
 comprueba el cambio, el cobro a paralela y la auditoría. OdCarmen fue verificada
 en solo lectura como `Paola Cruz · revendedor · paralela`; no se alteró su venta.
 
+### Navegación de retiros pendientes al servicio exacto
+
+Cada retiro pendiente tiene ahora `Abrir servicio`. La navegación transporta el
+UUID real de la cuenta y el slug de plataforma, muestra únicamente esa cuenta en
+Inventario y abre su panel de gestión automáticamente. Así el administrador
+puede consultar la cuenta/perfil correcto, realizar el retiro en la plataforma
+externa y regresar a confirmar la tarea sin buscar correos o clientes de memoria.
+Los 6 retiros actuales tienen cuenta y plataforma enlazables; la comprobación fue
+de solo lectura y no liberó ningún cupo.
+
 Estado real al cierre: migraciones aplicadas hasta **`0048`**, **244 cuentas**,
 **476 unidades** y **432 suscripciones** en la base local.
 

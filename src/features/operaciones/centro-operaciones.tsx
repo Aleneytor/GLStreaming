@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import type { DatosOperaciones, SuscripcionOperativa } from "./obtener-operaciones";
 import { BotonCopiarWhatsapp } from "./boton-copiar-whatsapp";
@@ -171,7 +172,17 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
                   · {o.cuentaAlias} · {o.unidadNombre}
                 </span>
               </div>
-              <BotonLimpieza operacionId={o.id} />
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                {o.cuentaId && o.plataformaSlug && (
+                  <Link
+                    href={`/inventario/${o.plataformaSlug}?cuenta=${encodeURIComponent(o.cuentaId)}`}
+                    className="rounded-lg border border-amber-400 bg-white px-3 py-2 text-center text-sm font-semibold text-amber-900 transition hover:bg-amber-100 dark:border-amber-700 dark:bg-neutral-900 dark:text-amber-200 dark:hover:bg-amber-950"
+                  >
+                    Abrir servicio
+                  </Link>
+                )}
+                <BotonLimpieza operacionId={o.id} />
+              </div>
             </div>
           ))}
         </div>

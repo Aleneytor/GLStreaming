@@ -40,7 +40,9 @@ export type LimpiezaPendiente = {
   id: string;
   tipo: string;
   iniciadaAt: string;
+  cuentaId: string;
   plataformaNombre: string;
+  plataformaSlug: string;
   cuentaAlias: string | null;
   unidadNombre: string;
 };
@@ -89,7 +91,7 @@ export async function obtenerDatosOperaciones(): Promise<DatosOperaciones> {
       .from("operaciones_remotas")
       .select(
         `id, tipo, iniciada_at,
-         cuentas ( alias, productos_plataforma ( nombre, plataformas ( nombre ) ) ),
+         cuentas ( id, alias, productos_plataforma ( nombre, plataformas ( nombre, slug ) ) ),
          unidades_inventario ( nombre_visible, numero_slot )`,
       )
       .eq("estado", "pendiente"),
@@ -173,7 +175,9 @@ export async function obtenerDatosOperaciones(): Promise<DatosOperaciones> {
       id: o.id,
       tipo: o.tipo,
       iniciadaAt: o.iniciada_at,
+      cuentaId: cta?.id ?? "",
       plataformaNombre: plat?.nombre ?? "Plataforma",
+      plataformaSlug: plat?.slug ?? "",
       cuentaAlias: cta?.alias ?? prod?.nombre ?? null,
       unidadNombre: unidad?.nombre_visible ?? `Perfil ${unidad?.numero_slot ?? ""}`,
     };

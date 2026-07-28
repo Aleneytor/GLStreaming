@@ -248,13 +248,17 @@ export function TablaInventario({
   cuentas,
   slug,
   vendedores = [],
+  cuentaInicialId,
 }: {
   cuentas: BloqueCuenta[];
   slug: string;
   vendedores?: VendedorOp[];
+  cuentaInicialId?: string;
 }) {
   const [cuentasState, setCuentasState] = useState<BloqueCuenta[]>(cuentas);
-  const [cuentaEditando, setCuentaEditando] = useState<BloqueCuenta | null>(null);
+  const [cuentaEditando, setCuentaEditando] = useState<BloqueCuenta | null>(
+    () => cuentas.find((cuenta) => cuenta.cuentaId === cuentaInicialId) ?? null,
+  );
   const [arrastrandoIndex, setArrastrandoIndex] = useState<number | null>(null);
   const [targetIndex, setTargetIndex] = useState<number | null>(null);
   const [, startTransition] = useTransition();
@@ -263,6 +267,13 @@ export function TablaInventario({
   useEffect(() => {
     setCuentasState(cuentas);
   }, [cuentas]);
+
+  useEffect(() => {
+    if (!cuentaInicialId) return;
+    setCuentaEditando(
+      cuentas.find((cuenta) => cuenta.cuentaId === cuentaInicialId) ?? null,
+    );
+  }, [cuentaInicialId, cuentas]);
 
   // Modals interactivos
   const [ventaTarget, setVentaTarget] = useState<{

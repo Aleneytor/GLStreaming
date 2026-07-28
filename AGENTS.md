@@ -132,6 +132,12 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
   transacción; un fallo no deja la suscripción modificada a medias. El cambio
   queda auditado sin datos sensibles. Caso real verificado: OdCarmen conserva a
   Paola Cruz, revendedora a paralela.
+- **Acceso directo desde Retiros pendientes**: cada tarea expone `Abrir
+  servicio`. El enlace usa el `cuenta_id` y el `slug` reales —no nombres
+  ambiguos—, filtra el inventario a esa cuenta y abre automáticamente su panel
+  de gestión para consultar credenciales y ejecutar el retiro externo antes de
+  confirmarlo. Los 6 retiros existentes fueron comprobados contra PostgreSQL y
+  todos tienen un destino válido.
 - **Corrección de sincronización de proveedor en importación (COMPLETO 2026-07-28)**: Se corrigió la columna `dia_ancla_proveedor` en `sincronizarCicloProveedorImportado` en `src/features/migracion/actions.ts` (anteriormente usaba el nombre errado `dia_ancla`). Permite importar las 120+ filas de perfiles extras y renovaciones de proveedor sin errores de caché de esquema.
 - **Rediseño estético y vista móvil colapsable del inventario (COMPLETO 2026-07-28)**: La tabla de inventario en escritorio y la vista de tarjetas en móvil recibieron un rediseño completo de espaciado (padding `py-2.5 px-3`, tipografía `text-xs` de 12px), encabezados en Slate/Zinc pulido (`bg-slate-900 text-slate-100`), bordes suavizados (`border-slate-200`) y badges de estado en tonos HSL suaves (*Emerald, Amber, Rose, Indigo*). En móviles (`< 768px`) se agregaron **botones de desplegable/plegado individual (`▲ Cerrar` / `▼ Abrir`)** con indicador de cupos libres y un botón maestro **`📁 Cerrar todas` / `📂 Abrir todas`** para navegar rápidamente entre decenas de cuentas. La funcionalidad se conservó al 100%.
 - **Panel del revendedor rediseñado visualmente (COMPLETO 2026-07-28)**: `/dashboard` para rol `revendedor` cuenta con cabecera de bienvenida personalizada (*¡Hola, Name! 👋*), 4 tarjetas KPI cromáticas (*Activas, Al día, Por vencer, Vencidas*), buscador con icono 🔍 y botón de limpieza, scroll horizontal de chips de plataforma para móviles, tarjetas de cliente con badge de modalidad (*Perfil extra*, *Familiar*, *Cuenta completa*), franja animada para vencimientos hoy/vencidos, pie con `BotonAcceso` y **simplificación de Spotify**: se presenta limpiamente como `Spotify Premium` omitiendo modalidades internas (*Familiar/Individual*).

@@ -52,13 +52,14 @@ export default async function PlataformaPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ q?: string; estado?: string; producto?: string }>;
+  searchParams: Promise<{ q?: string; estado?: string; producto?: string; cuenta?: string }>;
 }) {
   const usuario = await obtenerUsuarioActual();
   if (!esAdmin(usuario)) redirect("/dashboard");
 
   const { slug } = await params;
-  const { q, estado, producto: productoSeleccionado } = await searchParams;
+  const { q, estado, producto: productoSeleccionado, cuenta: cuentaSeleccionada } =
+    await searchParams;
   const supabase = await createClient();
 
   const { data: plataforma } = await supabase
@@ -464,6 +465,9 @@ export default async function PlataformaPage({
     .map((g) => {
       const cuentasFiltradas = g.cuentas
         .map((cta) => {
+          if (cuentaSeleccionada && cta.cuentaId !== cuentaSeleccionada) {
+            return { ...cta, filas: [] };
+          }
           const coincideCuenta =
             !busqueda ||
             cta.correo.toLowerCase().includes(busqueda) ||
@@ -549,7 +553,7 @@ export default async function PlataformaPage({
 
       {gruposFiltrados.length === 0 ? (
         <p className="rounded-xl border border-dashed border-neutral-300 p-6 text-center text-xs text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-          {q || estado || productoSeleccionado
+          {q || estado || productoSeleccionado || cuentaSeleccionada
             ? "Nada coincide con el filtro."
             : `Todavía no hay cuentas de ${plataforma.nombre}.`}
         </p>
@@ -559,7 +563,12 @@ export default async function PlataformaPage({
             <h2 className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
               {g.nombre} ({g.cuentas.length} {g.cuentas.length === 1 ? "cuenta" : "cuentas"})
             </h2>
-            <TablaInventario cuentas={g.cuentas} slug={slug} vendedores={vendedoresUI} />
+            <TablaInventario
+              cuentas={g.cuentas}
+              slug={slug}
+              vendedores={vendedoresUI}
+              cuentaInicialId={cuentaSeleccionada}
+            />
           </section>
         ))
       )}
