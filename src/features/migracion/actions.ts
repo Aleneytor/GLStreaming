@@ -92,11 +92,11 @@ async function sincronizarCicloProveedorImportado(
       costo_usdt?: number;
       inicio: string;
       proxima_renovacion: string;
-      dia_ancla: number;
+      dia_ancla_proveedor: number;
     } = {
       inicio: restarUnMes(renovarProveedor),
       proxima_renovacion: renovarProveedor,
-      dia_ancla: Number(renovarProveedor.slice(8, 10)),
+      dia_ancla_proveedor: Number(renovarProveedor.slice(8, 10)),
     };
     if (costoUsdt !== null) patch.costo_usdt = costoUsdt;
     const { error } = await supabase.from("ciclos_proveedor").update(patch).eq("id", ciclo.id);
