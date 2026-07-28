@@ -32,13 +32,16 @@ export default function RootLayout({
   // gestores de contraseñas) suelen inyectar atributos en <html> antes de que
   // React hidrate; eso provoca un falso desajuste que no afecta a la app.
   //
-  // Claro por defecto: el negocio decidió alejarse del fondo oscuro fijo (era
-  // un className="dark" a la fuerza en el <html>, sin relación con el SO del
-  // usuario ni con ningún selector — por eso ninguna paleta clara se veía
-  // nunca). No hay todavía un selector de tema en la app; cuando lo haya, debe
-  // controlar esta clase en vez de tenerla fija.
+  // Oscuro por defecto (decisión del usuario, 2026-07-28): se probó quitar el
+  // className="dark" fijo para pasar a claro por defecto, pero el usuario
+  // prefiere seguir en oscuro — lo que pedía era un oscuro MÁS CALMADO (menos
+  // saturado, sin un color de fondo distinto por plataforma), no cambiar de
+  // modo. Esa reducción de paleta ya vive en los componentes vía sus propias
+  // clases `dark:`, así que se ve igual de bien aquí. No hay todavía un
+  // selector de tema en la app; cuando lo haya, debe controlar esta clase en
+  // vez de tenerla fija.
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" className="dark" suppressHydrationWarning>
       <body className="min-h-screen bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
         {children}
       </body>

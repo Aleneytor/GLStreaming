@@ -119,10 +119,10 @@ export default async function ClientesPage({
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5">
-      <header className="overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br from-emerald-950 to-neutral-900 p-5 text-white shadow-sm dark:border-neutral-800">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300">Cartera activa</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Clientes</h1>
-        <p className="mt-1 text-sm text-emerald-100/70">Contactos, servicios y próximos vencimientos en un solo lugar.</p>
+      <header className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-700 dark:text-blue-400">Cartera activa</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white">Clientes</h1>
+        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Contactos, servicios y próximos vencimientos en un solo lugar.</p>
         <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             { valor: cartera.length, etiqueta: "clientes" },
@@ -130,9 +130,9 @@ export default async function ClientesPage({
             { valor: proximos, etiqueta: "próximos 5 días" },
             { valor: vencidos, etiqueta: "con vencidos" },
           ].map((dato) => (
-            <div key={dato.etiqueta} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
-              <p className="font-mono text-xl font-bold">{dato.valor}</p>
-              <p className="text-[11px] text-emerald-100/60">{dato.etiqueta}</p>
+            <div key={dato.etiqueta} className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 dark:border-neutral-800 dark:bg-neutral-950/60">
+              <p className="font-mono text-xl font-bold text-neutral-900 dark:text-white">{dato.valor}</p>
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400">{dato.etiqueta}</p>
             </div>
           ))}
         </div>
@@ -145,7 +145,7 @@ export default async function ClientesPage({
           defaultValue={q ?? ""}
           placeholder="Nombre, WhatsApp, plataforma o vendedor…"
           aria-label="Buscar clientes"
-          className="min-w-0 rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-base outline-none focus:border-emerald-600 dark:border-neutral-700 dark:bg-neutral-950"
+          className="min-w-0 rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-base outline-none focus:border-blue-600 dark:border-neutral-700 dark:bg-neutral-950"
         />
         <select
           name="estado"
@@ -159,7 +159,7 @@ export default async function ClientesPage({
           <option value="sin-contacto">Sin WhatsApp</option>
         </select>
         <div className="flex gap-2">
-          <button type="submit" className="flex-1 rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white">Aplicar</button>
+          <button type="submit" className="flex-1 rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200">Aplicar</button>
           {(q || filtro !== "todos") && (
             <Link href="/clientes" className="rounded-lg border px-3 py-2.5 text-sm">Limpiar</Link>
           )}
