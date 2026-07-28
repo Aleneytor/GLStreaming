@@ -384,8 +384,6 @@ export function TablaInventario({
     );
   };
 
-  const tienePagador = cuentasState.some((c) => Boolean(c.pagador)) || slug.includes("spotify");
-
   const buscarDestino = (cuentaId: string, unidadId: string | null) =>
     seleccionTraslado?.destinos.find(
       (destino) => destino.cuentaId === cuentaId && destino.unidadId === unidadId,
@@ -569,7 +567,6 @@ export function TablaInventario({
             key={cta.cuentaId}
             cta={cta}
             numCuenta={index + 1}
-            mostrarPagador={slug === "spotify"}
             modoSeleccionPago={modoSeleccionPagos}
             seleccionada={cuentasPagoSeleccionadas.includes(cta.cuentaId)}
             seleccionHabilitada={puedeSeleccionarse(cta)}
@@ -602,11 +599,6 @@ export function TablaInventario({
         <table className="w-full border-collapse text-left text-xs leading-normal">
           <thead>
             <tr className="border-b border-slate-800 bg-slate-900 text-xs font-bold uppercase tracking-wider text-slate-200 dark:bg-zinc-950 dark:text-zinc-200">
-              {tienePagador && (
-                <th className="whitespace-nowrap border-r border-slate-800 px-3 py-2.5">
-                  Pagador
-                </th>
-              )}
               <th className="whitespace-nowrap border-r border-slate-800 px-2 py-2.5 text-center">
                 N°
               </th>
@@ -678,7 +670,6 @@ export function TablaInventario({
                 slug={slug}
                 index={index}
                 numCuenta={index + 1}
-                tienePagador={tienePagador}
                 modoSeleccionPago={modoSeleccionPagos}
                 seleccionada={cuentasPagoSeleccionadas.includes(cta.cuentaId)}
                 seleccionHabilitada={puedeSeleccionarse(cta)}
@@ -817,12 +808,46 @@ export function TablaInventario({
   );
 }
 
+/**
+ * Referencia de a quién se le paga (GPay/gmail) por esta cuenta — Spotify
+ * familiar y cualquier otra plataforma pagada así. Antes era una columna/caja
+ * siempre visible que angostaba la tabla; ahora vive oculta dentro de la celda
+ * de Proveedor y se despliega con un botón, como la tarjeta cifrada. No hace
+ * falta ir al servidor: el correo ya llega descifrado como referencia, no
+ * como secreto revelado bajo demanda.
+ */
+function BotonPagador({
+  pagador,
+  origen,
+}: {
+  pagador: string;
+  origen?: string | null;
+}) {
+  const [mostrar, setMostrar] = useState(false);
+  return (
+    <span className="mt-1 inline-flex flex-wrap items-center gap-1">
+      <button
+        type="button"
+        onClick={() => setMostrar((v) => !v)}
+        className="rounded-md border border-violet-300/70 px-2 py-1 text-[10px] font-sans font-semibold text-violet-700 transition hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-950/40"
+      >
+        💳 {mostrar ? "Ocultar pagador" : "Ver pagador"}
+      </button>
+      {mostrar && (
+        <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400">
+          ({pagador}
+          {origen && ` · ${origen.replaceAll("_", " ")}`})
+        </span>
+      )}
+    </span>
+  );
+}
+
 function BloqueCuentaExcel({
   cta,
   slug,
   index,
   numCuenta,
-  tienePagador,
   modoSeleccionPago,
   seleccionada,
   seleccionHabilitada,
@@ -845,7 +870,6 @@ function BloqueCuentaExcel({
   slug: string;
   index: number;
   numCuenta: number;
-  tienePagador: boolean;
   modoSeleccionPago: boolean;
   seleccionada: boolean;
   seleccionHabilitada: boolean;
@@ -956,21 +980,6 @@ function BloqueCuentaExcel({
                 : "border-t border-slate-200 dark:border-slate-800/80"
             }`}
           >
-            {/* Pagador */}
-            {tienePagador && esPrimera && (
-              <td
-                rowSpan={totalFilas}
-                className="whitespace-nowrap border border-slate-200 bg-slate-50/60 px-3 py-2 align-middle text-slate-600 dark:border-slate-800 dark:bg-zinc-950/60 dark:text-slate-400"
-              >
-                <span className="block font-semibold">{cta.pagador ? `(${cta.pagador})` : "—"}</span>
-                {cta.pagadorOrigen && (
-                  <span className="mt-0.5 block text-[10px] uppercase font-bold text-slate-400">
-                    {cta.pagadorOrigen.replaceAll("_", " ")}
-                  </span>
-                )}
-              </td>
-            )}
-
             {/* 1. N° */}
             <td className="whitespace-nowrap border border-slate-200 bg-slate-100/70 px-2.5 py-2.5 text-center font-mono font-bold text-slate-800 align-middle dark:border-slate-800 dark:bg-zinc-800/90 dark:text-slate-200">
               <span className="inline-flex items-center gap-1.5">
@@ -1180,6 +1189,9 @@ function BloqueCuentaExcel({
                 {cta.proveedorId && cta.proveedorTieneTarjeta && (
                   <BotonTarjetaProveedor proveedorId={cta.proveedorId} />
                 )}
+                {cta.pagador && (
+                  <BotonPagador pagador={cta.pagador} origen={cta.pagadorOrigen} />
+                )}
               </td>
             )}
 
@@ -1253,7 +1265,6 @@ function BloqueCuentaExcel({
 function TarjetaCuentaMovil({
   cta,
   numCuenta,
-  mostrarPagador,
   modoSeleccionPago,
   seleccionada,
   seleccionHabilitada,
@@ -1271,7 +1282,6 @@ function TarjetaCuentaMovil({
 }: {
   cta: BloqueCuenta;
   numCuenta: number;
-  mostrarPagador: boolean;
   modoSeleccionPago: boolean;
   seleccionada: boolean;
   seleccionHabilitada: boolean;
@@ -1384,6 +1394,7 @@ function TarjetaCuentaMovil({
               {cta.proveedorId && cta.proveedorTieneTarjeta && (
                 <BotonTarjetaProveedor proveedorId={cta.proveedorId} />
               )}
+              {cta.pagador && <BotonPagador pagador={cta.pagador} origen={cta.pagadorOrigen} />}
             </div>
             <button
               type="button"
@@ -1403,20 +1414,6 @@ function TarjetaCuentaMovil({
               <span>Pago al proveedor</span>
               <span className="font-mono">{formatearFecha(cta.renovarProveedor)}</span>
             </button>
-          )}
-
-          {mostrarPagador && (
-            <div className="mt-2.5 rounded-xl border border-violet-200 bg-violet-50/80 px-3 py-2 text-xs dark:border-violet-900 dark:bg-violet-950/30">
-              <span className="font-semibold text-violet-700 dark:text-violet-300">💳 Gmail pagador: </span>
-              <strong className="break-all font-mono text-violet-950 dark:text-violet-100">
-                {cta.pagador ?? "No registrado"}
-              </strong>
-              {cta.pagadorOrigen && (
-                <span className="ml-1 text-[10px] font-bold uppercase text-violet-600 dark:text-violet-400">
-                  · {cta.pagadorOrigen.replaceAll("_", " ")}
-                </span>
-              )}
-            </div>
           )}
 
           {cta.admisionSpotifyBloqueada && (
