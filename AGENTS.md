@@ -284,6 +284,9 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 - `supabase/tests/traslado_servicio.sql` pasa dentro de transacción/rollback:
   10 verificaciones, rechazo de cuenta completa parcialmente ocupada y rechazo
   RLS para revendedor. Typecheck y las pruebas unitarias continúan en verde.
+- El selector administrativo de traslado muestra el correo completo de cada
+  cuenta destino (y su alias cuando existe). No se enmascara: la acción ya exige
+  rol admin y necesita distinguir con precisión qué credenciales se entregarán.
 
 ### Spotify familiar: identidades preparadas (migración `0041`, 2026-07-28)
 

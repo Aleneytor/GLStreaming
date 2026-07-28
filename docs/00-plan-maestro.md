@@ -343,6 +343,9 @@ asignación anterior con `traslado_falla`, abre el tramo nuevo en el mismo
 instante, deja el origen en mantenimiento, revoca la entrega anterior y crea una
 entrega nueva pendiente. No crea otra suscripción, período, cobro o movimiento
 de Caja. El evento conserva IDs de origen/destino en auditoría, nunca secretos.
+El selector es exclusivamente administrativo y muestra el correo completo de
+la cuenta destino, junto con su alias si existe, para evitar trasladar al cliente
+a unas credenciales equivocadas.
 
 Spotify familiar ya no se presenta como perfiles con PIN. Cada posición muestra
 el correo y la contraseña de la identidad del miembro, separados del correo de

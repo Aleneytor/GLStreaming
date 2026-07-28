@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { esAdmin, obtenerUsuarioActual } from "@/lib/auth";
-import { descifrarSecreto, enmascararLogin } from "@/lib/crypto";
+import { descifrarSecreto } from "@/lib/crypto";
 import { createClient } from "@/lib/supabase/server";
 
 export type DestinoTraslado = {
@@ -62,20 +62,25 @@ export async function obtenerDestinosTrasladoAction(
     );
   }
   const cuentas = [...new Set(filas.map((destino) => destino.cuenta_id))];
-  const { data: credenciales } = cuentas.length
-    ? await supabase
-        .from("credenciales_cuenta")
-        .select("cuenta_id, login_cifrado")
-        .in("cuenta_id", cuentas)
-        .is("eliminada_at", null)
-    : { data: [] };
+  let credenciales: Array<{ cuenta_id: string; login_cifrado: string | null }> = [];
+  if (cuentas.length > 0) {
+    const { data, error: errorCredenciales } = await supabase
+      .from("credenciales_cuenta")
+      .select("cuenta_id, login_cifrado")
+      .in("cuenta_id", cuentas)
+      .is("eliminada_at", null);
+    if (errorCredenciales) {
+      return { ok: false, error: errorCredenciales.message };
+    }
+    credenciales = data ?? [];
+  }
   const loginPorCuenta = new Map<string, string>();
-  for (const credencial of credenciales ?? []) {
+  for (const credencial of credenciales) {
     if (!credencial.login_cifrado) continue;
     try {
       loginPorCuenta.set(
         credencial.cuenta_id,
-        enmascararLogin(descifrarSecreto(credencial.login_cifrado)),
+        descifrarSecreto(credencial.login_cifrado),
       );
     } catch {
       // Una credencial antigua ilegible no impide usar el resto de destinos.
@@ -83,10 +88,13 @@ export async function obtenerDestinosTrasladoAction(
   }
 
   const destinos = filas.map((destino) => {
-    const alias =
-      destino.cuenta_alias?.trim() ||
-      loginPorCuenta.get(destino.cuenta_id) ||
-      `Cuenta …${destino.cuenta_id.slice(-6)}`;
+    const alias = destino.cuenta_alias?.trim();
+    const login = loginPorCuenta.get(destino.cuenta_id);
+    const partesCuenta = [alias, login].filter(
+      (valor, indice, valores): valor is string =>
+        Boolean(valor) && valores.indexOf(valor) === indice,
+    );
+    const cuenta = partesCuenta.join(" · ") || `Cuenta …${destino.cuenta_id.slice(-6)}`;
     const cupo = destino.unidad_numero
       ? ` · cupo ${destino.unidad_numero}`
       : destino.alcance === "principal"
@@ -95,7 +103,7 @@ export async function obtenerDestinosTrasladoAction(
     return {
       cuentaId: destino.cuenta_id,
       unidadId: destino.unidad_id,
-      etiqueta: `${alias}${cupo}`,
+      etiqueta: `${cuenta}${cupo}`,
       alcance: destino.alcance as DestinoTraslado["alcance"],
     };
   });
