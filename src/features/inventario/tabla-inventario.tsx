@@ -539,7 +539,7 @@ export function TablaInventario({
               onClick={() => setTodasColapsadasMovil(!todasColapsadasMovil)}
               className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-indigo-600 shadow-sm transition hover:bg-slate-50 active:scale-95 dark:border-slate-800 dark:bg-zinc-900 dark:text-indigo-400 dark:hover:bg-zinc-800"
             >
-              {todasColapsadasMovil ? "📂 Expandir todas" : "📁 Plegar todas"}
+              {todasColapsadasMovil ? "📂 Abrir todas" : "📁 Cerrar todas"}
             </button>
           </div>
         )}
@@ -1332,10 +1332,10 @@ function TarjetaCuentaMovil({
           <button
             type="button"
             onClick={() => setColapsada(!colapsada)}
-            title={colapsada ? "Desplegar perfiles" : "Plegar cuenta"}
+            title={colapsada ? "Abrir perfiles" : "Cerrar cuenta"}
             className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700 transition hover:bg-slate-100 active:scale-95 dark:border-slate-700 dark:bg-zinc-800 dark:text-slate-200 dark:hover:bg-zinc-700"
           >
-            {colapsada ? "▼ Abrir" : "▲ Plegar"}
+            {colapsada ? "▼ Abrir" : "▲ Cerrar"}
           </button>
         </div>
       </div>
