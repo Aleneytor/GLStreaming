@@ -31,8 +31,14 @@ export default function RootLayout({
   // suppressHydrationWarning: las extensiones del navegador (asistentes, VPN,
   // gestores de contraseñas) suelen inyectar atributos en <html> antes de que
   // React hidrate; eso provoca un falso desajuste que no afecta a la app.
+  //
+  // Claro por defecto: el negocio decidió alejarse del fondo oscuro fijo (era
+  // un className="dark" a la fuerza en el <html>, sin relación con el SO del
+  // usuario ni con ningún selector — por eso ninguna paleta clara se veía
+  // nunca). No hay todavía un selector de tema en la app; cuando lo haya, debe
+  // controlar esta clase en vez de tenerla fija.
   return (
-    <html lang="es" className="dark" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <body className="min-h-screen bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
         {children}
       </body>
