@@ -62,6 +62,8 @@ export function ModalGestionSuscripcion({
             recontactarEl={item.recontactar_el}
             nota={item.nota}
             bcv={bcv}
+            plataformaNombre={item.plataformaNombre}
+            onCancelada={onCerrar}
           />
         </div>
 

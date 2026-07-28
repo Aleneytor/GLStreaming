@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { CampoMonto, type Moneda } from "@/features/finanzas/campo-monto";
 import {
   cambiarEstadoAction,
@@ -35,6 +35,8 @@ export function PanelSuscripcion({
   recontactarEl,
   nota,
   bcv,
+  plataformaNombre,
+  onCancelada,
 }: {
   suscripcionId: string;
   estado: string;
@@ -43,6 +45,8 @@ export function PanelSuscripcion({
   nota: string | null;
   /** BCV vigente, solo para mostrar el equivalente en USD mientras escribes. */
   bcv?: number | null;
+  plataformaNombre: string;
+  onCancelada?: () => void;
 }) {
   const [renov, accionRenovar, renovando] = useActionState<EstadoAccion, FormData>(
     renovarAction,
@@ -66,6 +70,10 @@ export function PanelSuscripcion({
   const [moneda, setMoneda] = useState<Moneda>("ves");
   const cerrada = estado === "cancelada" || estado === "finalizada";
   const hoy = new Date().toISOString().slice(0, 10);
+
+  useEffect(() => {
+    if (canc?.ok) onCancelada?.();
+  }, [canc, onCancelada]);
 
   if (cerrada) {
     return (
@@ -174,14 +182,23 @@ export function PanelSuscripcion({
             onClick={() => setConfirmarCancelar(true)}
             className="text-sm text-red-600 underline dark:text-red-400"
           >
-            Cancelar y liberar el perfil
+            Cancelar y liberar el cupo
           </button>
         ) : (
           <div className="space-y-2 rounded-lg bg-red-50 p-3 dark:bg-red-950/40">
-            <p className="text-sm text-red-800 dark:text-red-300">
-              El perfil quedará <strong>pendiente de limpieza</strong>: no vuelve al
-              stock hasta que confirmes que lo borraste en la plataforma.
-            </p>
+            <div className="space-y-2 text-sm text-red-800 dark:text-red-300">
+              <p className="font-semibold">Cancelar inicia una liberación en 2 pasos:</p>
+              <ol className="list-decimal space-y-1 pl-5 text-xs leading-relaxed">
+                <li>GL cancela el servicio y mantiene el cupo bloqueado.</li>
+                <li>
+                  Retira el acceso del cliente en {plataformaNombre} y luego confírmalo
+                  en <strong>Operaciones → Retiros pendientes</strong>.
+                </li>
+              </ol>
+              <p className="text-xs">
+                Solo después de confirmarlo el cupo vuelve a estar disponible para vender.
+              </p>
+            </div>
             <select name="motivo" defaultValue="no_renovacion" className={campo}>
               <option value="no_renovacion">No renovó</option>
               <option value="cancelacion">Cancelación</option>

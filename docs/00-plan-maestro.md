@@ -464,6 +464,21 @@ Trabajo consolidado de la jornada:
   queda pendiente su revisión visual y funcional final contra el resto de los
   cambios de esta sesión.
 
+### Ajuste de Operaciones: pausas y retiros externos (2026-07-28)
+
+- Pausar significa **reservar el cupo para el mismo cliente sin mantenerlo como
+  alarma de renovación**. Los pausados vencidos salen de `Atención urgente` y
+  `Próximos 5 días`; se consultan en la pestaña neutral `En pausa` y continúan
+  visibles en `Todos`.
+- Cancelar/liberar cierra automáticamente el modal después del éxito. No libera
+  el stock todavía: crea un `Retiro pendiente` para recordar la acción externa.
+- `Retiros pendientes` reemplaza el rótulo ambiguo `Limpieza pendiente` y explica
+  el flujo: cancelar en GL, retirar el perfil/dispositivo/correo en la plataforma
+  y confirmar el retiro. Solo esa confirmación devuelve el cupo al inventario.
+- Validación contra PostgreSQL local: **2 suscripciones pausadas**, ambas
+  vencidas y ahora fuera de urgencias; **6 retiros pendientes** existentes. Sin
+  migración ni modificación de datos. Typecheck y **161 unitarias** en verde.
+
 Estado real al cierre: migraciones aplicadas hasta **`0047`**, **244 cuentas**,
 **476 unidades** y **432 suscripciones** en la base local.
 

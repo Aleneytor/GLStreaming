@@ -140,7 +140,7 @@ export async function cancelarAction(
   });
 
   refrescar();
-  return { ok: "Cancelado. El perfil queda pendiente de limpieza." };
+  return { ok: "Servicio cancelado. Falta confirmar el retiro en la plataforma." };
 }
 
 /** Confirma la limpieza remota: el perfil vuelve al stock (paso 2 de 2). */
@@ -170,7 +170,7 @@ export async function confirmarLimpiezaAction(
   });
 
   refrescar();
-  return { ok: "Limpieza confirmada. El perfil vuelve a estar disponible." };
+  return { ok: "Retiro confirmado. El cupo vuelve a estar disponible." };
 }
 
 export async function recordatorioAction(

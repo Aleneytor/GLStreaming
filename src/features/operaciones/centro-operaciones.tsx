@@ -7,7 +7,7 @@ import { ModalRenovacion } from "./modal-renovacion";
 import { ModalGestionSuscripcion } from "./modal-gestion-suscripcion";
 import { BotonLimpieza } from "@/features/ventas/boton-limpieza";
 
-type TabTipo = "urgente" | "proximos" | "todos" | "limpieza";
+type TabTipo = "urgente" | "proximos" | "pausados" | "todos" | "limpieza";
 
 export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
   const [busqueda, setBusqueda] = useState("");
@@ -38,6 +38,8 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
       ? filtrar(urgenteItems)
       : tab === "proximos"
         ? filtrar(datos.proximos)
+        : tab === "pausados"
+          ? filtrar(datos.pausados)
         : tab === "todos"
           ? filtrar(datos.todas)
           : [];
@@ -110,6 +112,23 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
           <span>👥 Todos ({datos.todas.length})</span>
         </button>
 
+        {datos.pausados.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setTab("pausados")}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition ${
+              tab === "pausados"
+                ? "bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200"
+                : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
+            }`}
+          >
+            <span>⏸️ En pausa</span>
+            <span className="rounded-full bg-sky-200 px-2 py-0.5 text-[11px] font-semibold dark:bg-sky-900">
+              {datos.pausados.length}
+            </span>
+          </button>
+        )}
+
         {totalLimpiezas > 0 && (
           <button
             type="button"
@@ -120,7 +139,7 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
                 : "bg-amber-50 text-amber-800 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300"
             }`}
           >
-            <span>🧹 Limpieza Pendiente</span>
+            <span>🔐 Retiros pendientes</span>
             <span className="rounded-full bg-amber-600 px-2 py-0.5 text-[11px] font-semibold text-white">
               {totalLimpiezas}
             </span>
@@ -131,13 +150,18 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
       {/* Lista de suscripciones / tareas */}
       {tab === "limpieza" ? (
         <div className="space-y-3">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            Perfiles cancelados que deben limpiarse en la plataforma antes de volver al stock:
-          </p>
+          <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-100">
+            <p className="font-semibold">¿Qué significa “retiro pendiente”?</p>
+            <ol className="mt-2 list-decimal space-y-1 pl-5 text-xs leading-relaxed">
+              <li>El servicio ya está cancelado en GL, pero el cupo sigue bloqueado por seguridad.</li>
+              <li>Entra a la plataforma y retira el perfil, dispositivo o correo del cliente.</li>
+              <li>Pulsa <strong>Confirmar retiro</strong>; entonces el cupo vuelve al inventario disponible.</li>
+            </ol>
+          </div>
           {datos.limpiezas.map((o) => (
             <div
               key={o.id}
-              className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/20"
+              className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-amber-900 dark:bg-amber-950/20"
             >
               <div>
                 <span className="font-semibold text-neutral-900 dark:text-white">
@@ -181,7 +205,11 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
                     </span>
                   )}
 
-                  {item.badge && (
+                  {item.estado === "pausada" ? (
+                    <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-medium text-sky-800 dark:bg-sky-950 dark:text-sky-300">
+                      En pausa · cupo reservado
+                    </span>
+                  ) : item.badge ? (
                     <span
                       className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                         item.badge.color === "rojo"
@@ -193,7 +221,7 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
                     >
                       {item.badge.etiqueta}
                     </span>
-                  )}
+                  ) : null}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-neutral-500 dark:text-neutral-400">
@@ -226,7 +254,7 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
                   onClick={() => setRenovandoItem(item)}
                   className="rounded-xl bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100"
                 >
-                  💳 Renovar y Cobrar
+                  {item.estado === "pausada" ? "💳 Reactivar y renovar" : "💳 Renovar y Cobrar"}
                 </button>
 
                 <BotonCopiarWhatsapp suscripcionId={item.id} />

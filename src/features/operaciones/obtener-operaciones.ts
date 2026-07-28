@@ -5,6 +5,7 @@ import { obtenerTasasVigentes } from "@/features/tasas/actions";
 import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
 import { descifrarSecreto } from "@/lib/crypto";
 import { tipoTarifaSpotifyDesdeCorreo, type TipoCorreoTarifaSpotify } from "@/domain/tarifas-spotify";
+import { clasificarServiciosOperativos } from "@/domain/operaciones";
 
 export type SuscripcionOperativa = {
   id: string;
@@ -39,6 +40,7 @@ export type DatosOperaciones = {
   hoy: SuscripcionOperativa[];
   proximos: SuscripcionOperativa[];
   resto: SuscripcionOperativa[];
+  pausados: SuscripcionOperativa[];
   todas: SuscripcionOperativa[];
   limpiezas: LimpiezaPendiente[];
 };
@@ -131,10 +133,8 @@ export async function obtenerDatosOperaciones(): Promise<DatosOperaciones> {
     })
     .sort((a, b) => (a.dias ?? 0) - (b.dias ?? 0));
 
-  const vencidos = todas.filter((f) => (f.dias ?? 0) < 0);
-  const hoyMismo = todas.filter((f) => f.dias === 0);
-  const proximos = todas.filter((f) => (f.dias ?? 0) > 0 && (f.dias ?? 0) <= 5);
-  const resto = todas.filter((f) => (f.dias ?? 0) > 5);
+  const { vencidos, hoy: hoyMismo, proximos, resto, pausados } =
+    clasificarServiciosOperativos(todas);
 
   const limpiezas: LimpiezaPendiente[] = (limpiezasData ?? []).map((o) => {
     const cta = uno(o.cuentas);
@@ -158,6 +158,7 @@ export async function obtenerDatosOperaciones(): Promise<DatosOperaciones> {
     hoy: hoyMismo,
     proximos,
     resto,
+    pausados,
     todas,
     limpiezas,
   };
