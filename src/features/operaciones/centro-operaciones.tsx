@@ -283,6 +283,9 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
           tipoCorreoTarifaSpotify={renovandoItem.tipoCorreoTarifaSpotify}
           renovacionActual={renovandoItem.renovacion}
           bcv={datos.bcv}
+          paralela={datos.paralela}
+          vendedorActualId={renovandoItem.vendedorId}
+          vendedores={datos.vendedores}
           onCerrar={() => setRenovandoItem(null)}
         />
       )}

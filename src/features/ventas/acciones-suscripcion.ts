@@ -28,6 +28,8 @@ const esquemaRenovar = z.object({
   monto: z.string().trim().optional().or(z.literal("")),
   moneda: z.enum(["ves", "usd"]).default("ves"),
   tardia: z.string().optional(),
+  vendedor_id: z.string().uuid().nullable().optional(),
+  actualizar_vendedor: z.string().optional(),
 });
 
 /**
@@ -57,6 +59,8 @@ export async function renovarAction(
     monto: formData.get("monto") ?? formData.get("monto_ves") ?? "",
     moneda: formData.get("moneda") ?? "ves",
     tardia: formData.get("tardia") ?? undefined,
+    vendedor_id: String(formData.get("vendedor_id") ?? "").trim() || null,
+    actualizar_vendedor: formData.get("actualizar_vendedor") ?? undefined,
   });
   if (!parsed.success) return { error: parsed.error.issues[0]!.message };
 
@@ -78,6 +82,8 @@ export async function renovarAction(
     p_monto_ves: enDolares ? undefined : monto ?? undefined,
     p_monto_usd: enDolares ? monto ?? undefined : undefined,
     p_tardia: parsed.data.tardia === "on",
+    p_vendedor_id: parsed.data.vendedor_id,
+    p_actualizar_vendedor: parsed.data.actualizar_vendedor === "on",
   });
   if (error) return { error: error.message };
 

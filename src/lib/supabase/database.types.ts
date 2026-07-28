@@ -3259,6 +3259,7 @@ export type Database = {
       }
       renovar_y_cobrar: {
         Args: {
+          p_actualizar_vendedor?: boolean
           p_inicio?: string
           p_meses?: number
           p_monto_usd?: number
@@ -3266,6 +3267,7 @@ export type Database = {
           p_referencia?: string
           p_suscripcion_id: string
           p_tardia?: boolean
+          p_vendedor_id?: string
         }
         Returns: string
       }

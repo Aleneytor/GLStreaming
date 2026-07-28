@@ -81,5 +81,30 @@ select 'Venta directa graba Bs a BCV (5 x 100 = 500)' as prueba,
 union all select 'Venta directa: USD comercial = Bs / BCV = 5',
        (select precio_comercial_usd from public.periodos_servicio where id = :'per_dir') = 5;
 
+-- --- 4. La renovación puede corregir el vendedor atómicamente ---
+select max(fecha_renovacion) as inicio_renovacion
+from public.periodos_servicio where suscripcion_id = :'susc_bcv' \gset
+
+select public.renovar_y_cobrar(
+  p_suscripcion_id => :'susc_bcv',
+  p_inicio => :'inicio_renovacion',
+  p_meses => 1,
+  p_monto_usd => 7,
+  p_vendedor_id => :'rev_par',
+  p_actualizar_vendedor => true
+) as per_renovado \gset
+
+select 'Renovar permite corregir el vendedor en la misma operación' as prueba,
+       (select vendedor_origen_id from public.suscripciones where id = :'susc_bcv') = :'rev_par' as pass
+union all select 'La renovación corregida cobra con la base paralela (7 x 50 = 350)',
+       (select monto_ves from public.pagos_cliente
+        where periodo_servicio_id = :'per_renovado' and tipo = 'cobro') = 350
+union all select 'El cambio de vendedor queda auditado',
+       exists (
+         select 1 from public.eventos_auditoria
+         where accion = 'cambiar_vendedor_renovacion'
+           and entidad_id = :'susc_bcv'::text
+       );
+
 reset role;
 rollback;

@@ -7,6 +7,7 @@ import {
   type TipoCorreoTarifaSpotify,
 } from "@/domain/tarifas-spotify";
 import { parsearMontoFormulario } from "@/domain/dinero";
+import type { VendedorOperacion } from "./obtener-operaciones";
 
 function hoyCaracas(): string {
   return new Intl.DateTimeFormat("en-CA", {
@@ -25,6 +26,9 @@ export function ModalRenovacion({
   tipoCorreoTarifaSpotify,
   renovacionActual,
   bcv,
+  paralela,
+  vendedorActualId,
+  vendedores,
   onCerrar,
 }: {
   suscripcionId: string;
@@ -34,6 +38,9 @@ export function ModalRenovacion({
   tipoCorreoTarifaSpotify: TipoCorreoTarifaSpotify | null;
   renovacionActual: string | null;
   bcv: number | null;
+  paralela: number | null;
+  vendedorActualId: string | null;
+  vendedores: VendedorOperacion[];
   onCerrar: () => void;
 }) {
   const esSpotify = plataformaNombre.toLowerCase() === "spotify";
@@ -48,8 +55,14 @@ export function ModalRenovacion({
   );
   const [meses, setMeses] = useState(1);
   const [tipoCorreo, setTipoCorreo] = useState<TipoCorreoTarifaSpotify>(tipoCorreoInicial);
+  const [vendedorId, setVendedorId] = useState(vendedorActualId ?? "");
   const hoy = hoyCaracas();
   const fechaDefecto = renovacionActual ?? hoy;
+  const vendedor = vendedores.find((item) => item.id === vendedorId) ?? null;
+  const cobraEnParalela =
+    vendedor?.tipo === "revendedor" && vendedor.cobraEnParalela;
+  const tasaBase = cobraEnParalela ? paralela : bcv;
+  const nombreBase = cobraEnParalela ? "paralela" : "BCV";
 
   function aplicarTarifa(cantidadMeses: number, tipo = tipoCorreo) {
     const tarifa = tarifaSpotify(tipo, cantidadMeses);
@@ -63,10 +76,10 @@ export function ModalRenovacion({
   const numMonto = parsearMontoFormulario(monto);
   const esNumValido = Number.isFinite(numMonto) && numMonto > 0;
   const equivalencia =
-    esNumValido && bcv
+    esNumValido && tasaBase
       ? moneda === "ves"
-        ? `≈ $${(numMonto / bcv).toFixed(2)} USD`
-        : `≈ ${(numMonto * bcv).toFixed(2)} Bs (BCV)`
+        ? `≈ $${(numMonto / tasaBase).toFixed(2)} USD (${nombreBase})`
+        : `≈ ${(numMonto * tasaBase).toFixed(2)} Bs (${nombreBase})`
       : null;
 
   return (
@@ -110,6 +123,43 @@ export function ModalRenovacion({
         ) : (
           <form action={accionRenovar} className="mt-4 space-y-4">
             <input type="hidden" name="suscripcion_id" value={suscripcionId} />
+            <input
+              type="hidden"
+              name="actualizar_vendedor"
+              value={vendedorId !== (vendedorActualId ?? "") ? "on" : "off"}
+            />
+
+            <div>
+              <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                Renovación vendida por
+              </label>
+              <select
+                name="vendedor_id"
+                value={vendedorId}
+                onChange={(e) => setVendedorId(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
+              >
+                <option value="">Venta directa · BCV</option>
+                {vendedores.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.nombre}{item.alias ? ` (${item.alias})` : ""} · {item.tipo} · {item.cobraEnParalela ? "paralela" : "BCV"}
+                  </option>
+                ))}
+              </select>
+              <div
+                className={`mt-2 rounded-xl border px-3 py-2 text-xs ${
+                  cobraEnParalela
+                    ? "border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                    : "border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-200"
+                }`}
+              >
+                <strong>{vendedor?.nombre ?? "Venta directa"}</strong>
+                {vendedor ? ` · ${vendedor.tipo}` : ""} · tasa <strong>{nombreBase}</strong>
+                <p className="mt-1 opacity-80">
+                  Puedes corregir el vendedor aquí; la renovación y el cambio se guardan juntos.
+                </p>
+              </div>
+            </div>
 
             <div>
               <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">

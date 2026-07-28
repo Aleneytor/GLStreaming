@@ -124,6 +124,14 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
   retirar el perfil/dispositivo/correo en la plataforma y confirmar el retiro
   para devolver el cupo al stock—. La clasificación pura tiene pruebas para
   impedir que una pausa vencida regrese a Atención urgente.
+- **Renovación de revendedor completa desde Operaciones (migración `0048`)**:
+  el modal ya no oculta el vendedor ni muestra siempre BCV. Precarga el vendedor
+  real de la suscripción, indica `revendedor/intermediario` y su base
+  `BCV/paralela`, calcula la equivalencia con esa tasa y permite corregir el
+  vendedor. Si se cambia, vendedor + período + cobro se confirman en una sola
+  transacción; un fallo no deja la suscripción modificada a medias. El cambio
+  queda auditado sin datos sensibles. Caso real verificado: OdCarmen conserva a
+  Paola Cruz, revendedora a paralela.
 - **Corrección de sincronización de proveedor en importación (COMPLETO 2026-07-28)**: Se corrigió la columna `dia_ancla_proveedor` en `sincronizarCicloProveedorImportado` en `src/features/migracion/actions.ts` (anteriormente usaba el nombre errado `dia_ancla`). Permite importar las 120+ filas de perfiles extras y renovaciones de proveedor sin errores de caché de esquema.
 - **Rediseño estético y vista móvil colapsable del inventario (COMPLETO 2026-07-28)**: La tabla de inventario en escritorio y la vista de tarjetas en móvil recibieron un rediseño completo de espaciado (padding `py-2.5 px-3`, tipografía `text-xs` de 12px), encabezados en Slate/Zinc pulido (`bg-slate-900 text-slate-100`), bordes suavizados (`border-slate-200`) y badges de estado en tonos HSL suaves (*Emerald, Amber, Rose, Indigo*). En móviles (`< 768px`) se agregaron **botones de desplegable/plegado individual (`▲ Cerrar` / `▼ Abrir`)** con indicador de cupos libres y un botón maestro **`📁 Cerrar todas` / `📂 Abrir todas`** para navegar rápidamente entre decenas de cuentas. La funcionalidad se conservó al 100%.
 - **Panel del revendedor rediseñado visualmente (COMPLETO 2026-07-28)**: `/dashboard` para rol `revendedor` cuenta con cabecera de bienvenida personalizada (*¡Hola, Name! 👋*), 4 tarjetas KPI cromáticas (*Activas, Al día, Por vencer, Vencidas*), buscador con icono 🔍 y botón de limpieza, scroll horizontal de chips de plataforma para móviles, tarjetas de cliente con badge de modalidad (*Perfil extra*, *Familiar*, *Cuenta completa*), franja animada para vencimientos hoy/vencidos, pie con `BotonAcceso` y **simplificación de Spotify**: se presenta limpiamente como `Spotify Premium` omitiendo modalidades internas (*Familiar/Individual*).
@@ -394,8 +402,9 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 probar visualmente un traslado real controlado y terminar la revisión del panel
 de revendedor.*
 
-*Última actualización: 2026-07-28 (migraciones hasta `0047`; Spotify familiar
+*Última actualización: 2026-07-28 (migraciones hasta `0048`; Spotify familiar
 con bloqueos, identidades editables y alta manual coherente; renovaciones con
 costo cero reparables; traslado/estados/inventario corregidos; pausas separadas
-de urgencias y liberación explicada como retiro externo; 161 unitarias y 21
+de urgencias, liberación explicada como retiro externo y renovación operativa
+con vendedor/base visibles; 161 unitarias y 21
 suites SQL en verde).*

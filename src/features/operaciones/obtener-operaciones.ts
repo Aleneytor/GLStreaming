@@ -16,6 +16,9 @@ export type SuscripcionOperativa = {
   clienteNombre: string;
   clienteWhatsapp: string | null;
   vendedorNombre: string | null;
+  vendedorId: string | null;
+  vendedorTipo: "revendedor" | "intermediario" | null;
+  vendedorCobraEnParalela: boolean;
   plataformaNombre: string;
   productoNombre: string;
   perfilNombre: string | null;
@@ -23,6 +26,14 @@ export type SuscripcionOperativa = {
   dias: number | null;
   badge: BadgeVencimiento | null;
   tipoCorreoTarifaSpotify: TipoCorreoTarifaSpotify | null;
+};
+
+export type VendedorOperacion = {
+  id: string;
+  nombre: string;
+  alias: string | null;
+  tipo: "revendedor" | "intermediario";
+  cobraEnParalela: boolean;
 };
 
 export type LimpiezaPendiente = {
@@ -36,6 +47,7 @@ export type LimpiezaPendiente = {
 
 export type DatosOperaciones = {
   bcv: number | null;
+  paralela: number | null;
   vencidos: SuscripcionOperativa[];
   hoy: SuscripcionOperativa[];
   proximos: SuscripcionOperativa[];
@@ -43,6 +55,7 @@ export type DatosOperaciones = {
   pausados: SuscripcionOperativa[];
   todas: SuscripcionOperativa[];
   limpiezas: LimpiezaPendiente[];
+  vendedores: VendedorOperacion[];
 };
 
 function hoyCaracas(): string {
@@ -58,14 +71,14 @@ export async function obtenerDatosOperaciones(): Promise<DatosOperaciones> {
   const hoy = hoyCaracas();
   const supabase = await createClient();
 
-  const [{ bcv: bcvTasa }, { data: suscripciones }, { data: limpiezasData }] = await Promise.all([
+  const [tasas, { data: suscripciones }, { data: limpiezasData }, { data: vendedoresData }] = await Promise.all([
     obtenerTasasVigentes(),
     supabase
       .from("suscripciones")
       .select(
         `id, estado, recontactar_el, nota_renovacion,
          clientes ( id, nombre, whatsapp_original ),
-         vendedores ( nombre ),
+         vendedores ( id, nombre, tipo, cobra_en_paralela ),
          productos_plataforma ( nombre, plataformas ( nombre ) ),
          periodos_servicio ( inicio, fecha_renovacion ),
          asignaciones_inventario ( unidad_id, fin, unidades_inventario ( nombre_visible ) ),
@@ -80,16 +93,26 @@ export async function obtenerDatosOperaciones(): Promise<DatosOperaciones> {
          unidades_inventario ( nombre_visible, numero_slot )`,
       )
       .eq("estado", "pendiente"),
+    supabase
+      .from("vendedores")
+      .select("id, nombre, alias, tipo, cobra_en_paralela")
+      .eq("activo", true)
+      .order("nombre"),
   ]);
 
   const bcvUsable =
-    bcvTasa && evaluarFrescura(confirmadaAt(bcvTasa)).nivel !== "inservible"
-      ? bcvTasa.bs_por_usd
+    tasas.bcv && evaluarFrescura(confirmadaAt(tasas.bcv)).nivel !== "inservible"
+      ? tasas.bcv.bs_por_usd
+      : null;
+  const paralelaUsable =
+    tasas.paralela && evaluarFrescura(confirmadaAt(tasas.paralela)).nivel !== "inservible"
+      ? tasas.paralela.bs_por_usd
       : null;
 
   const todas: SuscripcionOperativa[] = (suscripciones ?? [])
     .map((s) => {
       const cli = uno(s.clientes);
+      const vendedor = uno(s.vendedores);
       const prod = uno(s.productos_plataforma);
       const plat = uno(prod?.plataformas);
       const periodos = s.periodos_servicio ?? [];
@@ -118,7 +141,11 @@ export async function obtenerDatosOperaciones(): Promise<DatosOperaciones> {
         clienteId: cli?.id ?? null,
         clienteNombre: cli?.nombre ?? "Sin nombre",
         clienteWhatsapp: cli?.whatsapp_original ?? null,
-        vendedorNombre: uno(s.vendedores)?.nombre ?? null,
+        vendedorNombre: vendedor?.nombre ?? null,
+        vendedorId: vendedor?.id ?? null,
+        vendedorTipo: vendedor?.tipo ?? null,
+        vendedorCobraEnParalela:
+          vendedor?.tipo === "revendedor" && Boolean(vendedor.cobra_en_paralela),
         plataformaNombre: plat?.nombre ?? "Plataforma",
         productoNombre: prod?.nombre ?? "Producto",
         perfilNombre: unidad?.nombre_visible ?? null,
@@ -152,8 +179,18 @@ export async function obtenerDatosOperaciones(): Promise<DatosOperaciones> {
     };
   });
 
+  const vendedores: VendedorOperacion[] = (vendedoresData ?? []).map((vendedor) => ({
+    id: vendedor.id,
+    nombre: vendedor.nombre,
+    alias: vendedor.alias,
+    tipo: vendedor.tipo,
+    cobraEnParalela:
+      vendedor.tipo === "revendedor" && Boolean(vendedor.cobra_en_paralela),
+  }));
+
   return {
     bcv: bcvUsable,
+    paralela: paralelaUsable,
     vencidos,
     hoy: hoyMismo,
     proximos,
@@ -161,5 +198,6 @@ export async function obtenerDatosOperaciones(): Promise<DatosOperaciones> {
     pausados,
     todas,
     limpiezas,
+    vendedores,
   };
 }

@@ -479,7 +479,18 @@ Trabajo consolidado de la jornada:
   vencidas y ahora fuera de urgencias; **6 retiros pendientes** existentes. Sin
   migración ni modificación de datos. Typecheck y **161 unitarias** en verde.
 
-Estado real al cierre: migraciones aplicadas hasta **`0047`**, **244 cuentas**,
+### Renovaciones de revendedor desde Operaciones (migración `0048`)
+
+El modal rápido de `Renovar y cobrar` mostraba siempre una equivalencia BCV y no
+enseñaba el vendedor, aunque PostgreSQL sí heredaba la base guardada. Ahora
+precarga el vendedor de la suscripción, muestra su tipo y base BCV/paralela,
+convierte el monto con la tasa correcta y permite escoger otro vendedor. Cuando
+se corrige, el cambio de vendedor, el período y el cobro se guardan juntos en
+`renovar_y_cobrar`; si una parte falla, se revierte todo. La suite `base_tasa.sql`
+comprueba el cambio, el cobro a paralela y la auditoría. OdCarmen fue verificada
+en solo lectura como `Paola Cruz · revendedor · paralela`; no se alteró su venta.
+
+Estado real al cierre: migraciones aplicadas hasta **`0048`**, **244 cuentas**,
 **476 unidades** y **432 suscripciones** en la base local.
 
 Validación acumulada: **159 pruebas unitarias**, **21 suites SQL** y typecheck en
