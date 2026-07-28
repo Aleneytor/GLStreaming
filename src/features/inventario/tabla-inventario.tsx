@@ -249,11 +249,13 @@ export function TablaInventario({
   slug,
   vendedores = [],
   cuentaInicialId,
+  retiroPendiente,
 }: {
   cuentas: BloqueCuenta[];
   slug: string;
   vendedores?: VendedorOp[];
   cuentaInicialId?: string;
+  retiroPendiente?: { id: string; unidadNombre: string } | null;
 }) {
   const [cuentasState, setCuentasState] = useState<BloqueCuenta[]>(cuentas);
   const [cuentaEditando, setCuentaEditando] = useState<BloqueCuenta | null>(
@@ -711,6 +713,7 @@ export function TablaInventario({
         <PanelLateralCuenta
           cuenta={cuentaEditando}
           slug={slug}
+          retiroPendiente={retiroPendiente}
           onCerrar={() => setCuentaEditando(null)}
         />
       )}

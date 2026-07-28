@@ -500,6 +500,13 @@ externa y regresar a confirmar la tarea sin buscar correos o clientes de memoria
 Los 6 retiros actuales tienen cuenta y plataforma enlazables; la comprobación fue
 de solo lectura y no liberó ningún cupo.
 
+El panel abierto conserva además el ID de la tarea y presenta una guía contextual
+con `Confirmar retiro`. GL no pretende detectar automáticamente cambios dentro de
+Netflix, Spotify u otros proveedores: el administrador realiza la acción externa
+y su confirmación manual es el evento auditable que devuelve el cupo al stock.
+Antes de mostrar el control, el servidor comprueba que la operación siga
+pendiente y pertenezca exactamente a la cuenta abierta.
+
 Estado real al cierre: migraciones aplicadas hasta **`0048`**, **244 cuentas**,
 **476 unidades** y **432 suscripciones** en la base local.
 

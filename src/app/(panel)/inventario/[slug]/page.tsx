@@ -52,14 +52,25 @@ export default async function PlataformaPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ q?: string; estado?: string; producto?: string; cuenta?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    estado?: string;
+    producto?: string;
+    cuenta?: string;
+    retiro?: string;
+  }>;
 }) {
   const usuario = await obtenerUsuarioActual();
   if (!esAdmin(usuario)) redirect("/dashboard");
 
   const { slug } = await params;
-  const { q, estado, producto: productoSeleccionado, cuenta: cuentaSeleccionada } =
-    await searchParams;
+  const {
+    q,
+    estado,
+    producto: productoSeleccionado,
+    cuenta: cuentaSeleccionada,
+    retiro: retiroSeleccionado,
+  } = await searchParams;
   const supabase = await createClient();
 
   const { data: plataforma } = await supabase
@@ -95,6 +106,28 @@ export default async function PlataformaPage({
 
   const { data: cuentas, error: errorCuentas } = await consulta.order("orden", { ascending: false });
   if (errorCuentas) throw new Error(`No se pudo cargar el inventario: ${errorCuentas.message}`);
+
+  let retiroPendiente: { id: string; unidadNombre: string } | null = null;
+  if (cuentaSeleccionada && retiroSeleccionado) {
+    const { data: operacion, error: errorRetiro } = await supabase
+      .from("operaciones_remotas")
+      .select("id, unidades_inventario ( nombre_visible, numero_slot )")
+      .eq("id", retiroSeleccionado)
+      .eq("cuenta_id", cuentaSeleccionada)
+      .eq("estado", "pendiente")
+      .maybeSingle();
+    if (errorRetiro) {
+      throw new Error(`No se pudo cargar el retiro pendiente: ${errorRetiro.message}`);
+    }
+    const unidadRetiro = uno(operacion?.unidades_inventario);
+    if (operacion) {
+      retiroPendiente = {
+        id: operacion.id,
+        unidadNombre:
+          unidadRetiro?.nombre_visible ?? `Cupo ${unidadRetiro?.numero_slot ?? ""}`.trim(),
+      };
+    }
+  }
 
   // Un miembro familiar puede tener su correo/clave preparados antes de la
   // venta. Sigue siendo un cupo libre: esta relación solo permite mostrar el
@@ -568,6 +601,7 @@ export default async function PlataformaPage({
               slug={slug}
               vendedores={vendedoresUI}
               cuentaInicialId={cuentaSeleccionada}
+              retiroPendiente={retiroPendiente}
             />
           </section>
         ))
