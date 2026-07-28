@@ -395,6 +395,11 @@ fila no tiene cliente, monto, teléfono ni vendedor. Las filas libres importadas
 antes de `0041` deben volver a pegarse desde el respaldo porque sus credenciales
 no llegaron a guardarse en la base anterior.
 
+La carga del inventario Spotify pagina internamente los filtros de UUID en lotes
+de 100. Con la cartera actual se validaron 471 unidades en 5 lotes y 243 cuentas
+en 3 lotes, evitando el error `URI too long` sin omitir identidades preparadas ni
+Gmail pagadores.
+
 El resumen de plataformas calcula ahora capacidad física en vez de restar el
 número bruto de asignaciones: una cuenta indivisible sin unidades aporta un
 cupo, una venta completa consume todas sus unidades y un uso principal que no

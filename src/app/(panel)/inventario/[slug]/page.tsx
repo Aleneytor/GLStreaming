@@ -39,6 +39,14 @@ function desc(cifrado: string | null | undefined): string {
   }
 }
 
+function dividirEnLotes<T>(elementos: T[], tamano = 100): T[][] {
+  const lotes: T[][] = [];
+  for (let inicio = 0; inicio < elementos.length; inicio += tamano) {
+    lotes.push(elementos.slice(inicio, inicio + tamano));
+  }
+  return lotes;
+}
+
 export default async function PlataformaPage({
   params,
   searchParams,
@@ -98,16 +106,20 @@ export default async function PlataformaPage({
       (cuenta.unidades_inventario ?? []).map((unidad) => unidad.id),
     );
     if (unidadesIds.length > 0) {
-      const { data: preparadas, error: errorPreparadas } = await supabase
-        .from("identidades_spotify")
-        .select("unidad_preparada_id, login_cifrado, contrasena_cifrada")
-        .in("unidad_preparada_id", unidadesIds);
-      if (errorPreparadas) {
-        throw new Error(`No se pudieron cargar las identidades preparadas: ${errorPreparadas.message}`);
-      }
-      for (const identidad of preparadas ?? []) {
-        if (identidad.unidad_preparada_id) {
-          identidadesPreparadasPorUnidad.set(identidad.unidad_preparada_id, identidad);
+      for (const lote of dividirEnLotes(unidadesIds)) {
+        const { data: preparadas, error: errorPreparadas } = await supabase
+          .from("identidades_spotify")
+          .select("unidad_preparada_id, login_cifrado, contrasena_cifrada")
+          .in("unidad_preparada_id", lote);
+        if (errorPreparadas) {
+          throw new Error(
+            `No se pudieron cargar las identidades preparadas: ${errorPreparadas.message}`,
+          );
+        }
+        for (const identidad of preparadas ?? []) {
+          if (identidad.unidad_preparada_id) {
+            identidadesPreparadasPorUnidad.set(identidad.unidad_preparada_id, identidad);
+          }
         }
       }
     }
@@ -140,16 +152,19 @@ export default async function PlataformaPage({
     { gmail_cifrado: string; origen: string | null }
   >();
   if (slug === "spotify" && (cuentas?.length ?? 0) > 0) {
-    const { data: controles, error: errorControles } = await supabase
-      .from("controles_pago_spotify")
-      .select("cobertura_cuenta_id, gmail_cifrado, origen")
-      .in("cobertura_cuenta_id", (cuentas ?? []).map((c) => c.id));
+    const cuentasIds = (cuentas ?? []).map((cuenta) => cuenta.id);
+    for (const lote of dividirEnLotes(cuentasIds)) {
+      const { data: controles, error: errorControles } = await supabase
+        .from("controles_pago_spotify")
+        .select("cobertura_cuenta_id, gmail_cifrado, origen")
+        .in("cobertura_cuenta_id", lote);
 
-    if (errorControles) {
-      throw new Error(`No se pudo cargar el Gmail pagador: ${errorControles.message}`);
-    }
-    for (const control of controles ?? []) {
-      pagadoresPorCuenta.set(control.cobertura_cuenta_id, control);
+      if (errorControles) {
+        throw new Error(`No se pudo cargar el Gmail pagador: ${errorControles.message}`);
+      }
+      for (const control of controles ?? []) {
+        pagadoresPorCuenta.set(control.cobertura_cuenta_id, control);
+      }
     }
   }
 

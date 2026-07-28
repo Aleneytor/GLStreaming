@@ -119,6 +119,10 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **Vista Responsive en Móviles (Mobile-First)**: En teléfonos y pantallas pequeñas (`< 768px`), el inventario se muestra mediante **tarjetas apiladas por cuenta (`TarjetaCuentaMovil`)** con botones táctiles grandes (`⚡ Vender` / `⚙️ Gestionar`) y enlaces directos a WhatsApp, evitando desbordamientos horizontales de 16 columnas. En escritorio (`>= 768px`) se mantiene la densidad de tabla Excel.
 - **Selector de variantes en Netflix y Spotify**: `/inventario/[slug]` expone un selector URL-first para alternar `Cuenta estándar` / `Perfil extra` y `Individual` / `Familiar`, conservando búsqueda y estado. Son productos distintos en PostgreSQL; el selector solo filtra la vista y no transforma cuentas.
 - **Gmail pagador de Spotify en móvil**: `TarjetaCuentaMovil` muestra el Gmail y su origen. La página consulta `controles_pago_spotify` directamente por `cobertura_cuenta_id`; si una cuenta no tiene control registrado, muestra «No registrado».
+- **Consultas Spotify por lotes**: `/inventario/spotify` divide en grupos de 100
+  los UUID enviados a PostgREST para identidades preparadas y Gmail pagadores.
+  Evita `URI too long` al cargar cientos de unidades sin cambiar ni recortar el
+  inventario mostrado.
 - **Vencimiento visible y accionable en móvil**: cada venta de `TarjetaCuentaMovil` muestra una franja con `Vence en N días`, `Vence hoy · renovar` o `Venció hace N días`, además de la fecha formateada. La franja abre `ModalGestionVenta` al tocarla.
 - **Vencimiento coherente también en escritorio**: se eliminó una regla visual
   heredada que mostraba los primeros 2 días vencidos en amarillo como `Tienes N
