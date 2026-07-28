@@ -853,8 +853,8 @@ function BloqueCuentaExcel({
           if (destinosTraslado) {
             claseAlerta = destinoCompatible
               ? esDestinoSeleccionado
-                ? "bg-amber-500 text-white cursor-pointer font-bold ring-2 ring-amber-300 rounded-md px-2 py-1 shadow-sm"
-                : "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer font-bold rounded-md px-2 py-1 shadow-sm"
+                ? "bg-amber-500 text-white cursor-pointer font-bold ring-2 ring-amber-300 rounded-md px-2.5 py-1 shadow-sm"
+                : "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer font-bold rounded-md px-2.5 py-1 shadow-sm"
               : "bg-slate-100 text-slate-400 dark:bg-zinc-800 dark:text-zinc-600 rounded-md px-2 py-1";
             textoAlerta = destinoCompatible
               ? esDestinoSeleccionado
@@ -863,40 +863,40 @@ function BloqueCuentaExcel({
               : "No compatible";
           } else if (cta.admisionSpotifyBloqueada) {
             claseAlerta =
-              "bg-amber-50 text-amber-800 border border-amber-200 font-bold dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-900 rounded-md px-2 py-1";
+              "bg-amber-100 text-amber-950 border border-amber-300 font-bold dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/50 rounded-md px-2.5 py-1";
             textoAlerta = "No se puede";
           } else {
             claseAlerta =
-              "bg-indigo-600 hover:bg-indigo-700 text-white font-semibold cursor-pointer transition active:scale-[0.98] rounded-md px-2.5 py-1 shadow-sm";
+              "bg-indigo-600 hover:bg-indigo-700 text-white font-bold cursor-pointer transition active:scale-[0.98] rounded-md px-3 py-1 shadow-sm";
             textoAlerta = "Vacío (+ Vender)";
           }
         } else if (f.dias === null) {
-          claseAlerta = "bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300 rounded-md px-2 py-1";
+          claseAlerta = "bg-slate-100 text-slate-700 font-medium dark:bg-zinc-800 dark:text-zinc-300 rounded-md px-2.5 py-1";
           textoAlerta = "Sin fecha";
         } else if (f.dias > 0) {
-          claseAlerta = "bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold cursor-pointer hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-900 rounded-md px-2 py-1";
+          claseAlerta = "bg-emerald-100 text-emerald-950 border border-emerald-300 font-bold hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/50 dark:hover:bg-emerald-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
           textoAlerta = `Falta ${f.dias} días ⚙️`;
         } else if (f.dias === 0) {
-          claseAlerta = "bg-rose-500 text-white font-bold cursor-pointer hover:bg-rose-600 rounded-md px-2 py-1 animate-pulse shadow-sm";
+          claseAlerta = "bg-rose-600 text-white font-black hover:bg-rose-700 rounded-md px-2.5 py-1 animate-pulse shadow-md cursor-pointer";
           textoAlerta = "Vence hoy ⚙️";
         } else {
           const transcurridos = Math.abs(f.dias);
-          claseAlerta = "bg-rose-50 text-rose-700 border border-rose-200 font-semibold cursor-pointer hover:bg-rose-100 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-900 rounded-md px-2 py-1";
+          claseAlerta = "bg-rose-100 text-rose-950 border border-rose-300 font-bold hover:bg-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/50 dark:hover:bg-rose-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
           textoAlerta = `Venció hace ${transcurridos} ${transcurridos === 1 ? "día" : "días"} ⚙️`;
         }
 
-        let claseAvisoProv = "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 cursor-pointer rounded-md px-2 py-1 font-semibold dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900";
+        let claseAvisoProv = "bg-emerald-100 text-emerald-950 border border-emerald-300 font-bold hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/50 dark:hover:bg-emerald-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
         let textoAvisoProv = "";
         if (!cta.renovarProveedor) {
           claseAvisoProv =
-            "bg-slate-100 text-slate-500 border border-dashed border-slate-300 hover:bg-slate-200 cursor-pointer rounded-md px-2 py-1 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700";
+            "bg-slate-100 text-slate-600 border border-dashed border-slate-300 hover:bg-slate-200 cursor-pointer rounded-md px-2.5 py-1 font-medium dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700";
           textoAvisoProv = "+ Pagar";
         } else if ((cta.diasProveedor ?? 0) >= 0) {
           claseAvisoProv =
-            "bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold hover:bg-emerald-100 cursor-pointer rounded-md px-2 py-1 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900";
+            "bg-emerald-100 text-emerald-950 border border-emerald-300 font-bold hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/50 dark:hover:bg-emerald-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
           textoAvisoProv = `Falta ${cta.diasProveedor} días 🔄`;
         } else {
-          claseAvisoProv = "bg-rose-50 text-rose-700 border border-rose-200 font-semibold hover:bg-rose-100 cursor-pointer rounded-md px-2 py-1 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-900";
+          claseAvisoProv = "bg-rose-100 text-rose-950 border border-rose-300 font-bold hover:bg-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/50 dark:hover:bg-rose-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
           textoAvisoProv = `Vencido hace ${Math.abs(cta.diasProveedor ?? 0)} días 🔄`;
         }
 
@@ -905,14 +905,12 @@ function BloqueCuentaExcel({
             key={f.clave}
             onDragOver={onDragOver}
             onDrop={onDrop}
-            className={`transition-colors hover:bg-slate-50/80 dark:hover:bg-zinc-800/40 ${
-              cta.esCuentaCompleta ? "h-[28px]" : ""
-            } ${
+            className={`transition-colors hover:bg-indigo-50/40 dark:hover:bg-zinc-800/60 ${
               isTarget && esPrimera ? "ring-2 ring-indigo-500" : ""
             } ${
               esPrimera
-                ? "border-t-2 border-slate-400 dark:border-slate-600"
-                : "border-t border-slate-200 dark:border-slate-800/60"
+                ? "border-t-[6px] border-slate-900 dark:border-black"
+                : "border-t border-slate-200 dark:border-slate-800/80"
             }`}
           >
             {/* Pagador */}
@@ -931,7 +929,7 @@ function BloqueCuentaExcel({
             )}
 
             {/* 1. N° */}
-            <td className="border border-slate-200 bg-slate-100/70 px-2 py-2 text-center font-bold text-slate-700 align-middle dark:border-slate-800 dark:bg-zinc-800/80 dark:text-slate-300">
+            <td className="border border-slate-200 bg-slate-100/70 px-2.5 py-2.5 text-center font-mono font-bold text-slate-800 align-middle dark:border-slate-800 dark:bg-zinc-800/90 dark:text-slate-200">
               <span className="inline-flex items-center gap-1.5">
                 {modoBorrar && esPrimera && (
                   <input
@@ -952,7 +950,7 @@ function BloqueCuentaExcel({
                     className="size-3.5 accent-purple-600"
                   />
                 )}
-                {f.slotNumber}
+                {totalFilas > 1 ? f.slotNumber : numCuenta}
               </span>
             </td>
 
