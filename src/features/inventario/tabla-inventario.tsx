@@ -990,6 +990,36 @@ function BloqueCuentaExcel({
 
   return (
     <>
+      {/* Cuenta principal (panel Edu de Canva): fila propia arriba de sus
+          integrantes, como en el Excel del negocio — no una columna fusionada
+          corriendo al lado de cada uno. Se repite en cada página para no
+          perder de vista a qué cuenta pertenecen los cupos visibles. */}
+      {cta.esCorreoIntegrante && (
+        <tr className="border-t-[6px] border-slate-900 bg-indigo-50/70 dark:border-black dark:bg-indigo-950/25">
+          <td className="whitespace-nowrap border border-slate-200 bg-slate-100/70 px-2.5 py-2.5 text-center font-mono font-bold text-slate-800 dark:border-slate-800 dark:bg-zinc-800/90 dark:text-slate-200">
+            •
+          </td>
+          <td
+            colSpan={2}
+            className="whitespace-nowrap border border-slate-200 bg-white px-3 py-2 font-semibold text-indigo-600 dark:border-slate-800 dark:bg-zinc-900 dark:text-indigo-400"
+          >
+            <span className="underline">{cta.correo}</span>
+            {cta.alias && (
+              <span className="ml-1 text-[11px] font-normal text-slate-400">({cta.alias})</span>
+            )}
+            <span className="mx-1.5 text-slate-300 dark:text-slate-600">·</span>
+            <span className="font-mono font-medium text-slate-800 dark:text-slate-200">
+              {cta.contrasena}
+            </span>
+          </td>
+          <td
+            colSpan={16}
+            className="whitespace-nowrap border border-slate-200 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-indigo-500/80 dark:border-slate-800 dark:text-indigo-400/70"
+          >
+            Cuenta principal (panel)
+          </td>
+        </tr>
+      )}
       {filasARenderizar.map((f, i) => {
         const esPrimera = i === 0;
 
@@ -1066,7 +1096,7 @@ function BloqueCuentaExcel({
             className={`transition-colors hover:bg-indigo-50/40 dark:hover:bg-zinc-800/60 ${
               isTarget && esPrimera ? "ring-2 ring-indigo-500" : ""
             } ${
-              esPrimera
+              esPrimera && !cta.esCorreoIntegrante
                 ? "border-t-[6px] border-slate-900 dark:border-black"
                 : "border-t border-slate-200 dark:border-slate-800/80"
             }`}
@@ -1097,8 +1127,8 @@ function BloqueCuentaExcel({
               </span>
             </td>
 
-            {/* 2. Correo (Fusionado) */}
-            {esPrimera && (
+            {/* 2. Correo (Fusionado; en cuentas con integrantes va arriba, no aquí) */}
+            {esPrimera && !cta.esCorreoIntegrante && (
               <td
                 rowSpan={totalFilas}
                 className="whitespace-nowrap border border-slate-200 bg-white px-3 py-2 align-middle font-semibold text-indigo-600 underline dark:border-slate-800 dark:bg-zinc-900 dark:text-indigo-400"
@@ -1107,15 +1137,21 @@ function BloqueCuentaExcel({
                 {cta.alias && <span className="ml-1 text-[11px] text-slate-400 font-normal">({cta.alias})</span>}
               </td>
             )}
+            {cta.esCorreoIntegrante && (
+              <td className="border border-slate-200 bg-white dark:border-slate-800 dark:bg-zinc-900" />
+            )}
 
-            {/* 3. Contraseña (Fusionada) */}
-            {esPrimera && (
+            {/* 3. Contraseña (Fusionada; idem) */}
+            {esPrimera && !cta.esCorreoIntegrante && (
               <td
                 rowSpan={totalFilas}
                 className="whitespace-nowrap border border-slate-200 bg-white px-3 py-2 align-middle font-medium text-slate-800 dark:border-slate-800 dark:bg-zinc-900 dark:text-slate-200"
               >
                 {cta.contrasena}
               </td>
+            )}
+            {cta.esCorreoIntegrante && (
+              <td className="border border-slate-200 bg-white dark:border-slate-800 dark:bg-zinc-900" />
             )}
 
             {/* 4. Perfil */}
