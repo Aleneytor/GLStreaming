@@ -613,68 +613,68 @@ export function TablaInventario({
       <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-zinc-900 md:block">
         <table className="w-full border-collapse text-left text-xs leading-normal">
           <thead>
-            <tr className="border-b border-slate-800 bg-slate-900 text-xs font-bold uppercase tracking-wider text-slate-200 dark:bg-zinc-950 dark:text-zinc-200">
-              <th className="whitespace-nowrap border-r border-slate-800 px-2 py-2.5 text-center">
+            <tr className="border-b border-neutral-200 bg-neutral-50 text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-400">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-2 py-2.5 text-center dark:border-neutral-800">
                 N°
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 px-3 py-2.5">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-3 py-2.5 dark:border-neutral-800">
                 Correo
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 px-3 py-2.5">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-3 py-2.5 dark:border-neutral-800">
                 Contraseña
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 px-3 py-2.5">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-3 py-2.5 dark:border-neutral-800">
                 {cuentasState.some((cuenta) => cuenta.esSpotifyFamiliar)
                   ? "Correo cliente"
                   : cuentasState.some((cuenta) => cuenta.esCorreoIntegrante)
                     ? "Correo integrante"
                     : "Perfil"}
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 px-2.5 py-2.5 text-center">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-2.5 py-2.5 text-center dark:border-neutral-800">
                 {cuentasState.some((cuenta) => cuenta.esSpotifyFamiliar)
                   ? "Clave cliente"
                   : "Pin"}
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 px-3 py-2.5 text-right">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-3 py-2.5 text-right dark:border-neutral-800">
                 Ingresos
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 px-2.5 py-2.5 text-center">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-2.5 py-2.5 text-center dark:border-neutral-800">
                 Inicio
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 px-2 py-2.5 text-center">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-2 py-2.5 text-center dark:border-neutral-800">
                 Días
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 px-2.5 py-2.5 text-center">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-2.5 py-2.5 text-center dark:border-neutral-800">
                 Vence
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 px-3 py-2.5 text-center">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-3 py-2.5 text-center dark:border-neutral-800">
                 Alerta
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 px-3 py-2.5">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-3 py-2.5 dark:border-neutral-800">
                 Cliente
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 px-3 py-2.5">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-3 py-2.5 dark:border-neutral-800">
                 N° Celular
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 px-3 py-2.5">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-3 py-2.5 dark:border-neutral-800">
                 Vendió
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 bg-slate-950 px-3 py-2.5 text-right text-indigo-300">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-3 py-2.5 text-right dark:border-neutral-800">
                 Inversión
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 bg-slate-950 px-3 py-2.5 text-indigo-300">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-3 py-2.5 dark:border-neutral-800">
                 Proveedor
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 bg-slate-950 px-2.5 py-2.5 text-center text-indigo-300">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-2.5 py-2.5 text-center dark:border-neutral-800">
                 Renovar
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 bg-slate-950 px-3 py-2.5 text-center text-indigo-300">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-3 py-2.5 text-center dark:border-neutral-800">
                 Aviso
               </th>
-              <th className="whitespace-nowrap border-r border-slate-800 bg-slate-950 px-2 py-2.5 text-center text-indigo-300">
+              <th className="whitespace-nowrap border-r border-neutral-200 px-2 py-2.5 text-center dark:border-neutral-800">
                 N° Ctas
               </th>
-              <th className="whitespace-nowrap bg-slate-950 px-2.5 py-2.5 text-center text-slate-300">
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-center">
                 ⚙️
               </th>
             </tr>

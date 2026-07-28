@@ -7,12 +7,14 @@ import { BotonAcceso } from "@/features/ventas/boton-acceso";
 /**
  * Panel del revendedor (cliente): dos vistas sobre SUS ventas.
  *   · «Operaciones»: resumen + clientes agrupados por vencimiento.
- *   · «Por plataforma»: los mismos clientes repartidos por plataforma, a color.
+ *   · «Por plataforma»: los mismos clientes repartidos por plataforma.
  *
- * Cada cliente lleva un chip de plataforma a color y un borde lateral del mismo
- * color, para que se vea de un golpe QUÉ servicio tiene. Los datos llegan ya
- * resueltos desde el servidor (solo sus ventas, DEC-97); aquí solo se presentan
- * y se filtran en memoria.
+ * La plataforma se identifica por TEXTO (como en el Excel), no por un color de
+ * fondo distinto para cada una — evita que compitan diez colores decorativos a
+ * la vez. El único color que aparece siempre significa lo mismo: el estado de
+ * vencimiento (al día / por vencer / vencido), en la franja de cada tarjeta y
+ * en el borde lateral. Los datos llegan ya resueltos desde el servidor (solo
+ * sus ventas, DEC-97); aquí solo se presentan y se filtran en memoria.
  */
 
 export type VentaRevendedor = {
@@ -26,110 +28,21 @@ export type VentaRevendedor = {
   dias: number | null;
 };
 
-type Paleta = { chip: string; borde: string; punto: string; barra: string };
-const NEUTRAL: Paleta = {
-  chip: "bg-neutral-200 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200",
-  borde: "border-l-neutral-400",
-  punto: "bg-neutral-400",
-  barra: "bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200",
-};
-const PALETAS: { claves: string[]; paleta: Paleta }[] = [
-  {
-    claves: ["netflix"],
-    paleta: {
-      chip: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 border border-red-200 dark:border-red-900",
-      borde: "border-l-red-500",
-      punto: "bg-red-500",
-      barra: "bg-red-100 text-red-900 dark:bg-red-950/60 dark:text-red-200",
-    },
-  },
-  {
-    claves: ["spotify"],
-    paleta: {
-      chip: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900",
-      borde: "border-l-emerald-500",
-      punto: "bg-emerald-500",
-      barra: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-200",
-    },
-  },
-  {
-    claves: ["disney"],
-    paleta: {
-      chip: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-200 dark:border-sky-900",
-      borde: "border-l-sky-500",
-      punto: "bg-sky-500",
-      barra: "bg-sky-100 text-sky-900 dark:bg-sky-950/60 dark:text-sky-200",
-    },
-  },
-  {
-    claves: ["hbo", "max"],
-    paleta: {
-      chip: "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-300 border border-violet-200 dark:border-violet-900",
-      borde: "border-l-violet-500",
-      punto: "bg-violet-500",
-      barra: "bg-violet-100 text-violet-900 dark:bg-violet-950/60 dark:text-violet-200",
-    },
-  },
-  {
-    claves: ["prime", "amazon"],
-    paleta: {
-      chip: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-900",
-      borde: "border-l-cyan-500",
-      punto: "bg-cyan-500",
-      barra: "bg-cyan-100 text-cyan-900 dark:bg-cyan-950/60 dark:text-cyan-200",
-    },
-  },
-  {
-    claves: ["crunchyroll", "anime"],
-    paleta: {
-      chip: "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300 border border-orange-200 dark:border-orange-900",
-      borde: "border-l-orange-500",
-      punto: "bg-orange-500",
-      barra: "bg-orange-100 text-orange-900 dark:bg-orange-950/60 dark:text-orange-200",
-    },
-  },
-  {
-    claves: ["canva"],
-    paleta: {
-      chip: "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-950 dark:text-fuchsia-300 border border-fuchsia-200 dark:border-fuchsia-900",
-      borde: "border-l-fuchsia-500",
-      punto: "bg-fuchsia-500",
-      barra: "bg-fuchsia-100 text-fuchsia-900 dark:bg-fuchsia-950/60 dark:text-fuchsia-200",
-    },
-  },
-  {
-    claves: ["youtube"],
-    paleta: {
-      chip: "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-900",
-      borde: "border-l-rose-500",
-      punto: "bg-rose-500",
-      barra: "bg-rose-100 text-rose-900 dark:bg-rose-950/60 dark:text-rose-200",
-    },
-  },
-  {
-    claves: ["telelatino", "tele"],
-    paleta: {
-      chip: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900",
-      borde: "border-l-indigo-500",
-      punto: "bg-indigo-500",
-      barra: "bg-indigo-100 text-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-200",
-    },
-  },
-  {
-    claves: ["gemini", "google"],
-    paleta: {
-      chip: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-900",
-      borde: "border-l-amber-500",
-      punto: "bg-amber-500",
-      barra: "bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200",
-    },
-  },
-];
+type EstadoVencimiento = "ok" | "soon" | "late" | null;
 
-function paletaDe(plataforma: string): Paleta {
-  const p = (plataforma ?? "").toLowerCase();
-  return PALETAS.find((x) => x.claves.some((c) => p.includes(c)))?.paleta ?? NEUTRAL;
+/** Un solo eje de color: el estado de vencimiento, nunca la plataforma. */
+function estadoDe(dias: number | null): EstadoVencimiento {
+  if (dias === null) return null;
+  if (dias <= 0) return "late";
+  if (dias <= 5) return "soon";
+  return "ok";
 }
+
+const BORDE_ESTADO: Record<Exclude<EstadoVencimiento, null>, string> = {
+  ok: "border-l-emerald-500",
+  soon: "border-l-amber-500",
+  late: "border-l-red-500",
+};
 
 function formatearFecha(fecha: string | null): string {
   if (!fecha) return "";
@@ -239,21 +152,20 @@ function TarjetaCliente({
   v: VentaRevendedor;
   whatsappNegocio: string | null;
 }) {
-  const pal = paletaDe(v.plataforma);
+  const estado = estadoDe(v.dias);
+  const borde = estado ? BORDE_ESTADO[estado] : "border-l-neutral-300 dark:border-l-neutral-700";
   const franja = franjaVencimiento(v.dias);
   const necesitaRenovar = v.dias !== null && v.dias <= 5;
 
   return (
     <div
-      className={`rounded-xl border border-l-4 border-neutral-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 ${pal.borde}`}
+      className={`rounded-xl border border-l-4 border-neutral-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 ${borde}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${pal.chip}`}
-            >
-              <span className={`size-2 rounded-full ${pal.punto}`} />
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+              <span className="size-1.5 rounded-full bg-neutral-400 dark:bg-neutral-600" />
               {v.plataforma}
             </span>
             {v.modalidad && !v.plataforma?.toLowerCase().includes("spotify") && (
@@ -409,18 +321,21 @@ export function PanelRevendedor({
   return (
     <div className="space-y-6">
       {/* Cabecera de Bienvenida */}
-      <div className="rounded-2xl border border-neutral-200 bg-gradient-to-r from-neutral-900 via-neutral-800 to-indigo-950 p-5 text-white shadow-lg dark:border-neutral-800">
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">
+              Portal revendedor
+            </p>
+            <h1 className="mt-0.5 text-xl font-extrabold tracking-tight text-neutral-900 dark:text-white sm:text-2xl">
               ¡Hola, {nombreUsuario || "Revendedor"}! 👋
             </h1>
-            <p className="mt-1 text-xs text-neutral-300 sm:text-sm">
-              Centro de Operaciones de Revendedor · Control de tus clientes y accesos en tiempo real
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400 sm:text-sm">
+              Control de tus clientes y accesos, en un solo lugar.
             </p>
           </div>
-          <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-300 border border-emerald-500/30">
-            ● Portal Revendedor
+          <span className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
+            <span className="size-1.5 rounded-full bg-emerald-500" /> Sesión activa
           </span>
         </div>
       </div>
@@ -522,20 +437,18 @@ export function PanelRevendedor({
             Todas ({ventas.length})
           </button>
           {plataformas.map((p) => {
-            const pal = paletaDe(p.nombre);
             const activo = filtro === p.nombre;
             return (
               <button
                 key={p.nombre}
                 type="button"
                 onClick={() => cambiarFiltro(activo ? null : p.nombre)}
-                className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-bold transition ${
+                className={`shrink-0 rounded-full px-3.5 py-1.5 font-bold transition ${
                   activo
-                    ? pal.chip + " ring-2 ring-neutral-800 dark:ring-white shadow"
-                    : pal.chip
+                    ? "bg-neutral-900 text-white shadow dark:bg-white dark:text-neutral-900"
+                    : "border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
                 }`}
               >
-                <span className={`size-2 rounded-full ${pal.punto}`} />
                 {p.nombre} ({p.n})
               </button>
             );
@@ -569,20 +482,16 @@ export function PanelRevendedor({
           ))
       ) : (
         porPlataforma.map((grupo) => {
-          const pal = paletaDe(grupo.nombre);
           return (
             <section key={grupo.nombre} className="space-y-3">
-              <h2
-                className={`flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-extrabold shadow-sm ${pal.barra}`}
-              >
-                <span className="inline-flex items-center gap-2">
-                  <span className={`size-2.5 rounded-full ${pal.punto}`} />
+              <div className="flex items-center justify-between border-b border-neutral-200 pb-1.5 dark:border-neutral-800">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                   {grupo.nombre}
-                </span>
-                <span className="rounded-full bg-white/30 px-2.5 py-0.5 text-xs font-mono font-black dark:bg-black/30">
+                </h2>
+                <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-mono font-bold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
                   {grupo.items.length}
                 </span>
-              </h2>
+              </div>
               <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
                 {grupo.items.map((v) => (
                   <TarjetaCliente key={v.suscripcion_id} v={v} whatsappNegocio={whatsappNegocio} />

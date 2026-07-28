@@ -48,9 +48,11 @@ export async function MisVentasRevendedor({ q }: { q?: string }) {
   if (ventas.length === 0) {
     return (
       <div className="space-y-4">
-        <div className="rounded-2xl border border-neutral-200 bg-gradient-to-r from-neutral-900 to-neutral-800 p-6 text-white dark:border-neutral-800 shadow-md">
-          <h1 className="text-xl font-bold">¡Hola, {nombreUsuario}! 👋</h1>
-          <p className="mt-1 text-sm text-neutral-300">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+          <h1 className="text-xl font-bold text-neutral-900 dark:text-white">
+            ¡Hola, {nombreUsuario}! 👋
+          </h1>
+          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
             Bienvenido a tu panel de control de revendedor en GL Streaming.
           </p>
         </div>
