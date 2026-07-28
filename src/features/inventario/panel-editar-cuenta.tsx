@@ -13,10 +13,12 @@ export function PanelEditarCuenta({
   cuenta,
   slug,
   onCerrar,
+  onCorreoCambiar,
 }: {
   cuenta: BloqueCuenta;
   slug: string;
   onCerrar: () => void;
+  onCorreoCambiar?: (correo: string) => void;
 }) {
   const [estado, action, pendiente] = useActionState<EstadoInline, FormData>(
     guardarCuentaInlineAction,
@@ -25,10 +27,17 @@ export function PanelEditarCuenta({
   const [credsCambiadas, setCredsCambiadas] = useState(false);
   const [verClave, setVerClave] = useState(false);
   const [estadoCuenta, setEstadoCuenta] = useState(cuenta.cuentaEstado);
+  const [correoCuenta, setCorreoCuenta] = useState(cuenta.correo);
+  const [claveCuenta, setClaveCuenta] = useState(cuenta.contrasena);
 
   useEffect(() => {
     setEstadoCuenta(cuenta.cuentaEstado);
   }, [cuenta.cuentaEstado]);
+
+  useEffect(() => {
+    setCorreoCuenta(cuenta.correo);
+    setClaveCuenta(cuenta.contrasena);
+  }, [cuenta.cuentaId, cuenta.correo, cuenta.contrasena]);
 
   useEffect(() => {
     if (estado && "ok" in estado && estado.ok) {
@@ -39,7 +48,11 @@ export function PanelEditarCuenta({
   const editables = cuenta.filas.filter((f) => f.unidadId || f.clienteId);
 
   return (
-    <form action={action} className="space-y-6">
+    <form
+      action={action}
+      onReset={(evento) => evento.preventDefault()}
+      className="space-y-6"
+    >
       <input type="hidden" name="cuenta_id" value={cuenta.cuentaId} />
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="alias" value={cuenta.alias ?? ""} />
@@ -66,8 +79,12 @@ export function PanelEditarCuenta({
             </label>
             <input
               name="correo"
-              defaultValue={cuenta.correo}
-              onChange={() => setCredsCambiadas(true)}
+              value={correoCuenta}
+              onChange={(evento) => {
+                setCorreoCuenta(evento.target.value);
+                onCorreoCambiar?.(evento.target.value);
+                setCredsCambiadas(true);
+              }}
               className={`${CAMPO} font-mono`}
             />
           </div>
@@ -81,8 +98,11 @@ export function PanelEditarCuenta({
               <input
                 type={verClave ? "text" : "password"}
                 name="contrasena"
-                defaultValue={cuenta.contrasena}
-                onChange={() => setCredsCambiadas(true)}
+                value={claveCuenta}
+                onChange={(evento) => {
+                  setClaveCuenta(evento.target.value);
+                  setCredsCambiadas(true);
+                }}
                 className={`${CAMPO} font-mono pr-8`}
               />
               <button

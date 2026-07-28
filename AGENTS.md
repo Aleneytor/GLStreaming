@@ -409,6 +409,9 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
   en Netflix, Prime Video y cualquier plataforma que use credenciales de cuenta.
 - El contrato quedó unificado y la acción acepta también el nombre anterior por
   compatibilidad con formularios que estuvieran abiertos durante la actualización.
+- Correo y clave usan estado local optimista y el formulario impide el reinicio
+  automático de campos no controlados: al guardar ya no reaparecen fugazmente
+  los valores anteriores mientras llega la revalidación del servidor.
 
 ### ⚠️ Pendiente para el próximo agente
 

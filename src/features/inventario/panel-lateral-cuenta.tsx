@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { PanelEditarCuenta } from "./panel-editar-cuenta";
 import type { BloqueCuenta } from "./tabla-inventario";
 import { BotonLimpieza } from "@/features/ventas/boton-limpieza";
@@ -15,6 +16,12 @@ export function PanelLateralCuenta({
   retiroPendiente?: { id: string; unidadNombre: string } | null;
   onCerrar: () => void;
 }) {
+  const [correoEncabezado, setCorreoEncabezado] = useState(cuenta.correo);
+
+  useEffect(() => {
+    setCorreoEncabezado(cuenta.correo);
+  }, [cuenta.cuentaId, cuenta.correo]);
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm">
       <div className="flex h-full w-full max-w-2xl flex-col border-l border-neutral-300 bg-white shadow-2xl dark:border-neutral-800 dark:bg-neutral-950">
@@ -27,7 +34,7 @@ export function PanelLateralCuenta({
                 : "Gestionar Cuenta y Perfiles"}
             </h3>
             <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400">
-              {cuenta.correo}
+              {correoEncabezado}
             </p>
           </div>
           <button
@@ -57,7 +64,12 @@ export function PanelLateralCuenta({
               </div>
             </div>
           )}
-          <PanelEditarCuenta cuenta={cuenta} slug={slug} onCerrar={onCerrar} />
+          <PanelEditarCuenta
+            cuenta={cuenta}
+            slug={slug}
+            onCerrar={onCerrar}
+            onCorreoCambiar={setCorreoEncabezado}
+          />
         </div>
       </div>
     </div>

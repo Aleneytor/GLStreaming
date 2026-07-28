@@ -540,6 +540,9 @@ entre cliente y servidor. La interfaz respondía “Guardado”, pero nunca llam
 `rotar_credenciales_cuenta`. El contrato quedó alineado para Netflix, Prime Video
 y todas las plataformas con credenciales de cuenta, manteniendo compatibilidad
 con formularios que ya estuvieran abiertos al actualizar la aplicación.
+Correo, clave y el encabezado del panel se mantienen además de forma optimista
+durante el guardado. Se evita el reinicio automático del formulario para que los
+datos anteriores no parpadeen mientras llega la revalidación del servidor.
 
 Estado real al cierre: migraciones aplicadas hasta **`0050`**, **244 cuentas**,
 **476 unidades** y **432 suscripciones** en la base local.
