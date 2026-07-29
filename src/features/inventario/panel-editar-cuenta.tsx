@@ -108,7 +108,7 @@ export function PanelEditarCuenta({
               <button
                 type="button"
                 onClick={() => setVerClave(!verClave)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+                className="absolute right-2 top-1/2 -tranneutral-y-1/2 text-xs text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
               >
                 {verClave ? "🙈" : "👁️"}
               </button>
@@ -168,8 +168,8 @@ export function PanelEditarCuenta({
         </div>
 
         {cuenta.esSpotifyFamiliar && (
-          <div className="mt-4 rounded-lg border border-violet-200 bg-violet-50 p-3 dark:border-violet-900 dark:bg-violet-950/25">
-            <label className="mb-1 block text-xs font-semibold text-violet-950 dark:text-violet-100">
+          <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/25">
+            <label className="mb-1 block text-xs font-semibold text-blue-950 dark:text-blue-100">
               Admisión de nuevos miembros
             </label>
             <select
@@ -184,7 +184,7 @@ export function PanelEditarCuenta({
                 Bloqueada por Spotify · “No se puede”
               </option>
             </select>
-            <label className="mb-1 mt-3 block text-[11px] font-medium text-violet-800 dark:text-violet-200">
+            <label className="mb-1 mt-3 block text-[11px] font-medium text-blue-800 dark:text-blue-200">
               Motivo del bloqueo (opcional)
             </label>
             <input
@@ -193,7 +193,7 @@ export function PanelEditarCuenta({
               placeholder="Ej. Spotify bloqueó temporalmente nuevas incorporaciones"
               className={CAMPO}
             />
-            <p className="mt-2 text-[11px] leading-relaxed text-violet-800 dark:text-violet-200">
+            <p className="mt-2 text-[11px] leading-relaxed text-blue-800 dark:text-blue-200">
               Este estado pertenece a toda la familia, no a un Gmail específico. Puedes
               abrirla de nuevo cuando Spotify permita agregar miembros.
             </p>

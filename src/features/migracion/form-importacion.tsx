@@ -119,7 +119,7 @@ export function FormImportacion({
 
       <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
         <div className="flex items-start gap-3 border-b border-neutral-200 px-4 py-4 sm:px-5 dark:border-neutral-800">
-          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-violet-100 text-sm font-semibold text-violet-700 dark:bg-violet-950 dark:text-violet-300">1</span>
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">1</span>
           <div>
             <h2 className="font-semibold">Configura el destino</h2>
             <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">El producto define cómo se agrupan las cuentas y sus cupos.</p>
@@ -165,7 +165,7 @@ export function FormImportacion({
       <div className="border-t border-neutral-100 px-4 py-4 sm:px-5 dark:border-neutral-900">
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Moneda de los ingresos</p>
         <div className="grid gap-2 sm:grid-cols-2">
-        <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition ${moneda === "usd" ? "border-violet-400 bg-violet-50 ring-2 ring-violet-100 dark:border-violet-700 dark:bg-violet-950/30 dark:ring-violet-950" : "border-neutral-200 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"}`}>
+        <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition ${moneda === "usd" ? "border-blue-400 bg-blue-50 ring-2 ring-blue-100 dark:border-blue-700 dark:bg-blue-950/30 dark:ring-blue-950" : "border-neutral-200 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"}`}>
           <input
             type="radio"
             name="moneda-ui"
@@ -180,7 +180,7 @@ export function FormImportacion({
             </span>
           </span>
         </label>
-        <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition ${moneda === "ves" ? "border-violet-400 bg-violet-50 ring-2 ring-violet-100 dark:border-violet-700 dark:bg-violet-950/30 dark:ring-violet-950" : "border-neutral-200 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"}`}>
+        <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition ${moneda === "ves" ? "border-blue-400 bg-blue-50 ring-2 ring-blue-100 dark:border-blue-700 dark:bg-blue-950/30 dark:ring-blue-950" : "border-neutral-200 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"}`}>
           <input
             type="radio"
             name="moneda-ui"
@@ -230,7 +230,7 @@ export function FormImportacion({
           onChange={(e) => setTexto(e.target.value)}
           spellCheck={false}
           placeholder={"correo\tcontraseña\tperfil\tpin\tmonto\tinicio\tvence\tcliente\twhatsapp\tvendió"}
-          className="min-h-64 w-full resize-y rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50 p-4 font-mono text-xs leading-5 outline-none transition placeholder:text-neutral-400 focus:border-violet-500 focus:bg-white focus:ring-4 focus:ring-violet-100 dark:border-neutral-700 dark:bg-neutral-900/70 dark:focus:border-violet-600 dark:focus:bg-neutral-950 dark:focus:ring-violet-950"
+          className="min-h-64 w-full resize-y rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50 p-4 font-mono text-xs leading-5 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-neutral-700 dark:bg-neutral-900/70 dark:focus:border-blue-600 dark:focus:bg-neutral-950 dark:focus:ring-blue-950"
         />
         <details className="mt-3 rounded-xl border border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900/50">
           <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium">Guía de columnas y casos especiales</summary>
