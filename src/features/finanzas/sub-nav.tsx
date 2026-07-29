@@ -3,36 +3,36 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+// Cinco vistas del mismo hecho: el día, lo pendiente, lo que sale, el mes y la
+// tasa. Menú tipo "segmented control" neutro; el activo usa el único acento
+// (azul), sin un color por pantalla. Etiqueta corta en móvil, larga en desktop.
 const PESTANAS = [
-  { href: "/caja", etiqueta: "Resumen diario", corto: "Hoy", icono: "▣" },
-  { href: "/cobros", etiqueta: "Pagos pendientes", corto: "Pendientes", icono: "↓" },
-  { href: "/egresos", etiqueta: "Pagos y gastos", corto: "Salidas", icono: "↑" },
-  { href: "/cierre", etiqueta: "Resumen mensual", corto: "Mes", icono: "◫" },
-  { href: "/tasas", etiqueta: "Tasas de cambio", corto: "Tasas", icono: "⇄" },
+  { href: "/caja", etiqueta: "Resumen diario", corto: "Diario" },
+  { href: "/cobros", etiqueta: "Por cobrar", corto: "Cobrar" },
+  { href: "/egresos", etiqueta: "Pagos y gastos", corto: "Salidas" },
+  { href: "/cierre", etiqueta: "Resumen mensual", corto: "Mensual" },
+  { href: "/tasas", etiqueta: "Tasas", corto: "Tasas" },
 ];
 
 export function SubNavFinanzas() {
   const pathname = usePathname();
 
   return (
-    // Se desplaza en horizontal en pantallas estrechas en lugar de romper la
-    // maquetación: la página nunca debe hacer scroll lateral completo.
-    <nav aria-label="Finanzas" className="-mx-4 overflow-x-auto px-4 pb-1">
-      <ul className="flex w-max gap-2">
+    <nav aria-label="Finanzas" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+      <ul className="flex w-max gap-1 rounded-2xl border border-neutral-200 bg-neutral-100 p-1 dark:border-neutral-800 dark:bg-neutral-900 sm:w-full">
         {PESTANAS.map((p) => {
           const activo = pathname === p.href || pathname.startsWith(`${p.href}/`);
           return (
-            <li key={p.href}>
+            <li key={p.href} className="sm:flex-1">
               <Link
                 href={p.href}
                 aria-current={activo ? "page" : undefined}
-                className={`flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl border px-3 py-2 text-sm transition ${
+                className={`block whitespace-nowrap rounded-xl px-4 py-2 text-center text-xs font-semibold transition sm:text-sm ${
                   activo
-                    ? "border-neutral-900 bg-neutral-900 font-medium text-white shadow-sm dark:border-white dark:bg-white dark:text-neutral-900"
-                    : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-900"
+                    ? "bg-white text-blue-700 shadow-xs dark:bg-neutral-800 dark:text-blue-400"
+                    : "text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-100"
                 }`}
               >
-                <span aria-hidden className="text-base">{p.icono}</span>
                 <span className="sm:hidden">{p.corto}</span>
                 <span className="hidden sm:inline">{p.etiqueta}</span>
               </Link>

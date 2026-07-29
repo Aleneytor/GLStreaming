@@ -55,27 +55,23 @@ export default async function EgresosPage() {
   const totalPorPagar = porPagar.reduce((total, c) => total + Number(c.costo_usdt ?? 0), 0);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <header className="rounded-3xl border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-orange-50 p-5 shadow-sm sm:p-6 dark:border-rose-950 dark:from-rose-950/30 dark:via-neutral-950 dark:to-orange-950/20">
-        <div className="flex items-start gap-4">
-          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-rose-100 text-xl text-rose-700 dark:bg-rose-950 dark:text-rose-300">↑</span>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Pagos y gastos</h1>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-neutral-600 dark:text-neutral-300">Todo el dinero que sale del negocio: renovaciones de cuentas y otros gastos operativos.</p>
-          </div>
-        </div>
+    <div className="space-y-5">
+      <header className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-700 dark:text-blue-400">Salidas de dinero</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white">Pagos y gastos</h1>
+        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Todo lo que sale del negocio: renovaciones de cuentas y otros gastos operativos.</p>
       </header>
 
       <section className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
-          <p className="text-xs text-amber-700 dark:text-amber-300">Cuentas esperando pago</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">{porPagar.length}</p>
-          <p className="text-xs text-neutral-500">{totalPorPagar.toFixed(2)} USDT en ciclos registrados</p>
+        <div className="rounded-2xl border border-l-4 border-neutral-200 border-l-amber-500 bg-white p-4 dark:border-neutral-800 dark:border-l-amber-500 dark:bg-neutral-900">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">Cuentas esperando pago</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-neutral-900 dark:text-white">{porPagar.length}</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">{totalPorPagar.toFixed(2)} USDT en ciclos registrados</p>
         </div>
-        <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
-          <p className="text-xs text-neutral-500">Cómo se valoran</p>
-          <p className="mt-1 text-lg font-semibold">Tasa paralela</p>
-          <p className="text-xs text-neutral-500">Cada salida conserva la tasa usada ese día.</p>
+        <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">Cómo se valoran</p>
+          <p className="mt-1 text-lg font-semibold text-neutral-900 dark:text-white">Tasa paralela</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">Cada salida conserva la tasa usada ese día.</p>
         </div>
       </section>
 
@@ -112,7 +108,7 @@ export default async function EgresosPage() {
             return (
               <details
                 key={c.ciclo_id}
-                className="rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950"
+                className="rounded-2xl border border-neutral-200 bg-white shadow-xs dark:border-neutral-800 dark:bg-neutral-900"
               >
                 <summary className="cursor-pointer list-none p-4">
                   <span className="flex items-start justify-between gap-3">
@@ -170,7 +166,7 @@ export default async function EgresosPage() {
           Otros gastos del negocio
         </h2>
         <p className="text-xs text-neutral-500">Publicidad, herramientas, comisiones u otra salida que no corresponde a renovar una cuenta.</p>
-        <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
           <FormGasto
             categorias={(categorias ?? []).map((c) => c.nombre)}
             hoy={hoy}

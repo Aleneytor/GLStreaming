@@ -67,175 +67,186 @@ export default async function CajaPage({
   const num = (v: unknown) => Number(v ?? 0);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <header className="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-5 shadow-sm sm:p-6 dark:border-emerald-950 dark:from-emerald-950/30 dark:via-neutral-950 dark:to-teal-950/20">
-        <div className="flex items-start gap-4">
-          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-emerald-100 text-xl text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">▣</span>
+    <div className="space-y-5">
+      {/* Cabecera: título + navegador de día */}
+      <header className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Resumen diario</h1>
-            <p className="mt-1 text-sm leading-6 text-neutral-600 dark:text-neutral-300">Lo que realmente entró y salió de tu negocio durante el día.</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-700 dark:text-blue-400">Caja del día</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white">Resumen diario</h1>
+            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Cobros recibidos, pagos a proveedores y flujo neto del día.</p>
+          </div>
+
+          <div className="flex items-center gap-1 self-start rounded-xl border border-neutral-200 bg-neutral-50 p-1 dark:border-neutral-800 dark:bg-neutral-950/60">
+            <Link
+              href={`/caja?dia=${desplazar(dia, -1)}`}
+              aria-label="Día anterior"
+              className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-neutral-500 transition hover:bg-white hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
+            >
+              ←
+            </Link>
+            <span className="min-w-28 px-2 text-center text-xs font-semibold tabular-nums text-neutral-900 dark:text-white">
+              {dia}
+              {dia === hoy && <span className="ml-1 font-normal text-neutral-400">(hoy)</span>}
+            </span>
+            <Link
+              href={`/caja?dia=${desplazar(dia, 1)}`}
+              aria-label="Día siguiente"
+              className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-neutral-500 transition hover:bg-white hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
+            >
+              →
+            </Link>
           </div>
         </div>
       </header>
 
-      {/* Navegación por día */}
-      <div className="flex items-center justify-between gap-2">
-        <Link
-          href={`/caja?dia=${desplazar(dia, -1)}`}
-          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm dark:border-neutral-700"
-        >
-          ← Anterior
-        </Link>
-        <p className="text-sm font-medium tabular-nums">
-          {dia}
-          {dia === hoy && (
-            <span className="ml-2 text-xs font-normal text-neutral-500">(hoy, en vivo)</span>
-          )}
-        </p>
-        <Link
-          href={`/caja?dia=${desplazar(dia, 1)}`}
-          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm dark:border-neutral-700"
-        >
-          Siguiente →
-        </Link>
-      </div>
-
       {/* 1. Caja del día */}
-      <section>
-        <div className="mb-3">
-          <h2 className="font-semibold">Dinero movido</h2>
-          <p className="text-xs text-neutral-500">Cuenta solo pagos registrados, no promesas ni servicios pendientes.</p>
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">Dinero movido en caja</h2>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Lo efectivamente cobrado o pagado hoy (efectivo / banco).</p>
+          </div>
         </div>
+
         <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/30">
-          <p className="text-sm text-emerald-700 dark:text-emerald-300">Recibiste</p>
-          <p className="text-2xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-            {bs(totalEntradas)}
-          </p>
-          <p className="text-xs text-neutral-500">Bs</p>
-        </div>
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30">
-          <p className="text-sm text-red-700 dark:text-red-300">Pagaste</p>
-          <p className="text-2xl font-semibold tabular-nums text-red-600 dark:text-red-400">
-            {bs(totalSalidas)}
-          </p>
-          <p className="text-xs text-neutral-500">Bs</p>
-        </div>
-        <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Diferencia del día</p>
-          <p
-            className={`text-2xl font-semibold tabular-nums ${
-              flujo < 0 ? "text-red-600 dark:text-red-400" : ""
-            }`}
-          >
-            {bs(flujo)}
-          </p>
-          <p className="text-xs text-neutral-500">Bs</p>
-        </div>
+          <div className="rounded-2xl border border-l-4 border-neutral-200 border-l-emerald-500 bg-white p-5 shadow-xs dark:border-neutral-800 dark:border-l-emerald-500 dark:bg-neutral-900">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Recibiste (cobros)</span>
+            <p className="mt-2 text-2xl font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
+              {bs(totalEntradas)} <span className="text-xs font-medium">Bs</span>
+            </p>
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{entradas.length} cobros registrados</p>
+          </div>
+
+          <div className="rounded-2xl border border-l-4 border-neutral-200 border-l-red-500 bg-white p-5 shadow-xs dark:border-neutral-800 dark:border-l-red-500 dark:bg-neutral-900">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Pagaste (salidas)</span>
+            <p className="mt-2 text-2xl font-bold tabular-nums text-red-700 dark:text-red-400">
+              {bs(totalSalidas)} <span className="text-xs font-medium">Bs</span>
+            </p>
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{salidas.length} egresos/pagos</p>
+          </div>
+
+          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Flujo neto del día</span>
+            <p className={`mt-2 text-2xl font-bold tabular-nums ${flujo < 0 ? "text-red-700 dark:text-red-400" : "text-neutral-900 dark:text-white"}`}>
+              {bs(flujo)} <span className="text-xs font-medium text-neutral-400">Bs</span>
+            </p>
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Entradas menos salidas</p>
+          </div>
         </div>
       </section>
 
-      {/* 2. Ventas del día (hecho comercial, no caja) */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-          Actividad comercial
-        </h2>
-        <div className="flex flex-wrap gap-5 rounded-xl border border-neutral-200 p-4 text-sm dark:border-neutral-800">
+      {/* 2. Actividad Comercial */}
+      <section className="space-y-3 rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="flex items-center justify-between border-b border-neutral-100 pb-3 dark:border-neutral-800">
           <div>
-            <p className="text-neutral-500 dark:text-neutral-400">Nuevas</p>
-            <p className="text-lg font-semibold tabular-nums">{ventas?.ventas_nuevas ?? 0}</p>
+            <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">Actividad comercial del día</h2>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Ventas y renovaciones registradas hoy en el sistema.</p>
           </div>
-          <div>
-            <p className="text-neutral-500 dark:text-neutral-400">Renovaciones</p>
-            <p className="text-lg font-semibold tabular-nums">{ventas?.renovaciones ?? 0}</p>
+          <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+            Hecho comercial
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3.5 dark:border-neutral-800 dark:bg-neutral-950/40">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Nuevas ventas</span>
+            <p className="mt-1 text-lg font-bold tabular-nums text-neutral-900 dark:text-white">{ventas?.ventas_nuevas ?? 0}</p>
           </div>
-          <div>
-            <p className="text-neutral-500 dark:text-neutral-400">Precio USD</p>
-            <p className="text-lg font-semibold tabular-nums">
-              {num(ventas?.ventas_usd).toFixed(2)}
-            </p>
+
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3.5 dark:border-neutral-800 dark:bg-neutral-950/40">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Renovaciones</span>
+            <p className="mt-1 text-lg font-bold tabular-nums text-neutral-900 dark:text-white">{ventas?.renovaciones ?? 0}</p>
           </div>
-          <div>
-            <p className="text-neutral-500 dark:text-neutral-400">Esperado Bs</p>
-            <p className="text-lg font-semibold tabular-nums">
-              {bs(num(ventas?.ventas_esperadas_ves))}
-            </p>
+
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3.5 dark:border-neutral-800 dark:bg-neutral-950/40">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Precio total (USD)</span>
+            <p className="mt-1 text-lg font-bold tabular-nums text-emerald-700 dark:text-emerald-400">${num(ventas?.ventas_usd).toFixed(2)}</p>
+          </div>
+
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3.5 dark:border-neutral-800 dark:bg-neutral-950/40">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Esperado en Bs</span>
+            <p className="mt-1 text-lg font-bold tabular-nums text-neutral-900 dark:text-white">{bs(num(ventas?.ventas_esperadas_ves))}</p>
           </div>
         </div>
-        <p className="rounded-xl bg-sky-50 px-3 py-2 text-xs text-sky-800 dark:bg-sky-950/30 dark:text-sky-300">
-          Esta sección cuenta servicios vendidos o renovados hoy. Puede no coincidir con “Recibiste” si un pago quedó pendiente o si hoy cobraste algo de otro día.
+
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          Cuenta lo vendido o renovado hoy; puede no coincidir con el dinero cobrado si el pago quedó pendiente.
         </p>
       </section>
 
       {/* 3. Resultado devengado del día */}
       {r && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Ganancia generada por los servicios hoy
-          </h2>
-          <p className="text-xs text-neutral-500">Distribuye ingresos y costos según los días de servicio que corresponden a hoy; no significa efectivo recibido hoy.</p>
-          <dl className="divide-y divide-neutral-200 rounded-2xl border border-neutral-200 bg-white text-sm dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-950">
+        <section className="space-y-3 rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="border-b border-neutral-100 pb-3 dark:border-neutral-800">
+            <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">Ganancia generada hoy (devengo)</h2>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Ingresos y costos que corresponden exactamente al día de hoy.</p>
+          </div>
+
+          <dl className="divide-y divide-neutral-100 text-xs dark:divide-neutral-800">
             {[
               ["Ingreso cobrado devengado", `${bs(num(r.ingreso_cobrado_devengado_ves))} Bs`],
               ["Costo del proveedor devengado", `${bs(num(r.costo_proveedor_devengado_ves))} Bs`],
-              ["Margen bruto", `${bs(num(r.margen_bruto_ves))} Bs`],
+              ["Margen bruto del día", `${bs(num(r.margen_bruto_ves))} Bs`],
               ["Gastos operativos", `${bs(num(r.gastos_operativos_ves))} Bs`],
               ["Resultado operativo", `${bs(num(r.resultado_operativo_ves))} Bs`],
               [
                 "Resultado económico (a paralela)",
                 `${num(r.resultado_operativo_economico_usd_paralela).toFixed(2)} USD`,
               ],
-              ["Costo ocioso", `${bs(num(r.costo_ocioso_ves))} Bs`],
+              ["Costo ocioso del día", `${bs(num(r.costo_ocioso_ves))} Bs`],
             ].map(([k, v]) => (
-              <div key={k} className="flex items-center justify-between gap-3 p-3">
+              <div key={k} className="flex items-center justify-between gap-3 py-2">
                 <dt className="text-neutral-600 dark:text-neutral-400">{k}</dt>
-                <dd className="shrink-0 font-medium tabular-nums">{v}</dd>
+                <dd className="font-semibold tabular-nums text-neutral-900 dark:text-white">{v}</dd>
               </div>
             ))}
           </dl>
         </section>
       )}
 
-      {/* 4. Detalle de movimientos */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-          Detalle del dinero ({movimientos?.length ?? 0})
-        </h2>
+      {/* 4. Detalle de movimientos de caja */}
+      <section className="space-y-3 rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="border-b border-neutral-100 pb-3 dark:border-neutral-800">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">Movimientos de caja ({movimientos?.length ?? 0})</h2>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">Detalle de dinero entrante y saliente.</p>
+        </div>
+
         {(movimientos?.length ?? 0) === 0 ? (
-          <p className="rounded-xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-            Sin movimientos este día.
-          </p>
+          <div className="rounded-xl border border-dashed border-neutral-200 p-6 text-center text-xs text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
+            Sin movimientos registrados este día.
+          </div>
         ) : (
-          <ul className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+          <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
             {movimientos?.map((m) => {
               const monto = Number(m.monto_ves);
               return (
                 <li
                   key={`${m.tipo}-${m.movimiento_id}`}
-                  className="flex items-center justify-between gap-3 p-3 text-sm"
+                  className="flex items-center justify-between gap-3 py-3 text-xs"
                 >
                   <div className="min-w-0">
-                    <p className="truncate">{m.concepto}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      {ETIQUETA[m.tipo ?? ""] ?? m.tipo}
+                    <p className="font-semibold text-neutral-900 dark:text-white truncate">{m.concepto}</p>
+                    <p className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400">
+                      <span className="font-semibold text-neutral-700 dark:text-neutral-300">{ETIQUETA[m.tipo ?? ""] ?? m.tipo}</span>
                       {m.plataforma_nombre ? ` · ${m.plataforma_nombre}` : ""}
-                      {m.referencia ? ` · ${m.referencia}` : ""}
+                      {m.referencia ? ` · Ref: ${m.referencia}` : ""}
                     </p>
                   </div>
                   <div className="shrink-0 text-right tabular-nums">
                     <p
-                      className={
+                      className={`text-sm font-bold ${
                         monto < 0
-                          ? "text-red-600 dark:text-red-400"
-                          : "text-emerald-600 dark:text-emerald-400"
-                      }
+                          ? "text-red-700 dark:text-red-400"
+                          : "text-emerald-700 dark:text-emerald-400"
+                      }`}
                     >
                       {monto > 0 ? "+" : ""}
                       {bs(monto)} Bs
                     </p>
                     {m.monto_usdt != null && (
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {Number(m.monto_usdt).toFixed(2)} USDT
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                        ${Number(m.monto_usdt).toFixed(2)} USDT
                       </p>
                     )}
                     {m.tipo === "cobro_cliente" && m.movimiento_id && (

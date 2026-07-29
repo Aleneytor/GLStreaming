@@ -8,10 +8,10 @@ import { SubNavFinanzas } from "@/features/finanzas/sub-nav";
  */
 export default function FinanzasLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="space-y-5 pb-8">
-      <div className="mx-auto max-w-5xl">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">Finanzas del negocio</p>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-5 pb-8">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500">
+        Finanzas del negocio
+      </p>
       <SubNavFinanzas />
       {children}
     </div>
