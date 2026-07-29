@@ -53,7 +53,7 @@ export default async function CatalogoPage({
       .order("nombre_o_alias"),
     supabase
       .from("vendedores")
-      .select("id, nombre, alias, usuario_id, tipo, cobra_en_paralela, activo")
+      .select("id, nombre, alias, telefono_original, usuario_id, tipo, cobra_en_paralela, activo")
       .order("nombre"),
     supabase.from("usuarios").select("id, nombre, rol").eq("activo", true).order("nombre"),
   ]);
@@ -67,19 +67,19 @@ export default async function CatalogoPage({
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5">
-      <header className="overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br from-neutral-950 to-neutral-800 p-5 text-white shadow-sm dark:border-neutral-800">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-violet-300">
+      <header className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-700 dark:text-blue-400">
           Configuración del negocio
         </p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Catálogo</h1>
-        <p className="mt-1 max-w-2xl text-sm text-neutral-300">
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white">Catálogo</h1>
+        <p className="mt-1 max-w-2xl text-sm text-neutral-500 dark:text-neutral-400">
           Controla lo que vendes y las personas que participan en cada operación.
         </p>
         <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {resumen.map((dato) => (
-            <div key={dato.etiqueta} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
-              <p className="font-mono text-xl font-bold">{dato.valor}</p>
-              <p className="text-[11px] text-neutral-400">{dato.etiqueta}</p>
+            <div key={dato.etiqueta} className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 dark:border-neutral-800 dark:bg-neutral-950/60">
+              <p className="font-mono text-xl font-bold text-neutral-900 dark:text-white">{dato.valor}</p>
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400">{dato.etiqueta}</p>
             </div>
           ))}
         </div>
@@ -95,13 +95,13 @@ export default async function CatalogoPage({
               aria-current={activa ? "page" : undefined}
               className={`rounded-xl border p-3 transition active:scale-[0.99] ${
                 activa
-                  ? "border-violet-500 bg-violet-600 text-white shadow-sm"
-                  : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200"
+                  ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
+                  : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-700"
               }`}
             >
               <span className="text-lg" aria-hidden>{item.icono}</span>
               <span className="ml-2 text-sm font-semibold">{item.etiqueta}</span>
-              <span className={`mt-1 block text-[11px] ${activa ? "text-violet-100" : "text-neutral-500"}`}>
+              <span className={`mt-1 block text-[11px] ${activa ? "text-blue-600/80 dark:text-blue-400/80" : "text-neutral-500"}`}>
                 {item.descripcion}
               </span>
             </Link>
@@ -161,8 +161,8 @@ export default async function CatalogoPage({
               Distingue afiliados con portal de intermediarios ocasionales y define su base de cobro.
             </p>
           </div>
-          <details className="rounded-xl border border-dashed border-violet-300 bg-violet-50/60 p-4 dark:border-violet-900 dark:bg-violet-950/20">
-            <summary className="cursor-pointer text-sm font-semibold text-violet-800 dark:text-violet-200">+ Registrar vendedor</summary>
+          <details className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-900">
+            <summary className="cursor-pointer text-sm font-semibold text-blue-700 dark:text-blue-400">+ Registrar vendedor</summary>
             <div className="mt-4"><EditorVendedor usuarios={usuarios ?? []} /></div>
           </details>
           <div className="grid gap-3 lg:grid-cols-2">
@@ -183,8 +183,8 @@ export default async function CatalogoPage({
             <h2 className="font-semibold">Proveedores</h2>
             <p className="text-xs text-neutral-500">Contactos a quienes compras cuentas, perfiles o coberturas.</p>
           </div>
-          <details className="rounded-xl border border-dashed border-violet-300 bg-violet-50/60 p-4 dark:border-violet-900 dark:bg-violet-950/20">
-            <summary className="cursor-pointer text-sm font-semibold text-violet-800 dark:text-violet-200">+ Registrar proveedor</summary>
+          <details className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-900">
+            <summary className="cursor-pointer text-sm font-semibold text-blue-700 dark:text-blue-400">+ Registrar proveedor</summary>
             <div className="mt-4"><EditorProveedor /></div>
           </details>
           <div className="grid gap-3 lg:grid-cols-2">

@@ -45,7 +45,7 @@ export function NavPanel({ items }: { items: ItemNav[] }) {
                 aria-current={esActivo(item) ? "page" : undefined}
                 className={`flex flex-col items-center gap-0.5 px-2 py-2.5 text-xs transition ${
                   esActivo(item)
-                    ? "text-neutral-900 dark:text-white"
+                    ? "text-blue-700 dark:text-blue-400"
                     : "text-neutral-500 dark:text-neutral-400"
                 }`}
               >
@@ -62,25 +62,33 @@ export function NavPanel({ items }: { items: ItemNav[] }) {
       {/* Escritorio: columna lateral */}
       <nav
         aria-label="Navegación principal"
-        className="hidden w-52 shrink-0 border-r border-neutral-200 p-3 md:block dark:border-neutral-800"
+        className="hidden w-64 shrink-0 border-r border-neutral-200 bg-neutral-50 p-4 md:block lg:w-72 dark:border-neutral-800 dark:bg-neutral-950/40"
       >
-        <ul className="space-y-1">
-          {items.map((item) => (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                aria-current={esActivo(item) ? "page" : undefined}
-                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
-                  esActivo(item)
-                    ? "bg-neutral-100 font-medium text-neutral-900 dark:bg-neutral-800 dark:text-white"
-                    : "text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-900"
-                }`}
-              >
-                <span aria-hidden>{item.icono}</span>
-                {item.etiqueta}
-              </Link>
-            </li>
-          ))}
+        <div className="mb-2 px-2.5 text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+          Gestión operativa
+        </div>
+        <ul className="space-y-1.5">
+          {items.map((item) => {
+            const activo = esActivo(item);
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  aria-current={activo ? "page" : undefined}
+                  className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all ${
+                    activo
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-neutral-600 hover:bg-neutral-200/60 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100"
+                  }`}
+                >
+                  <span className={`text-base ${activo ? "scale-110" : "opacity-80"}`}>
+                    {item.icono}
+                  </span>
+                  <span>{item.etiqueta}</span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </nav>
     </>

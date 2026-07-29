@@ -61,18 +61,31 @@ export default async function NuevaCuentaPage({
   }));
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
-      <div>
-        <Link
-          href={slugPlataforma ? `/inventario/${slugPlataforma}` : "/inventario"}
-          className="text-sm text-neutral-500 transition hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
-        >
-          ← {opcionesProducto[0]?.plataforma ?? "Inventario"}
-        </Link>
-        <h1 className="mt-2 text-xl font-semibold tracking-tight">Nueva cuenta</h1>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          La cuenta, sus unidades y las credenciales se crean en una sola operación.
-        </p>
+    <div className="mx-auto max-w-2xl space-y-6 pb-12">
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="flex items-center gap-2">
+          <Link
+            href={slugPlataforma ? `/inventario/${slugPlataforma}` : "/inventario"}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-xs font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span>{opcionesProducto[0]?.plataforma ?? "Inventario"}</span>
+          </Link>
+          <span className="text-xs text-neutral-400 dark:text-neutral-600">/</span>
+          <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Alta de servicio</span>
+        </div>
+
+        <div className="mt-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-700 dark:text-blue-400">Alta de cuenta</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white">
+            Nueva cuenta
+          </h1>
+          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+            Registra la cuenta, sus unidades operativas y credenciales cifradas en un solo paso.
+          </p>
+        </div>
       </div>
 
       <FormCuenta productos={opcionesProducto} proveedores={opcionesProveedor} />

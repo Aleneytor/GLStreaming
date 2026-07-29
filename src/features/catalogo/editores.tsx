@@ -60,7 +60,7 @@ export function EditorPlataforma({
     <form
       action={action}
       onReset={(evento) => evento.preventDefault()}
-      className="space-y-3 rounded-xl border border-violet-300 bg-white p-4 dark:border-violet-800 dark:bg-neutral-900"
+      className="space-y-3 rounded-xl border border-neutral-300 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900"
     >
       <input type="hidden" name="id" value={plataforma.id} />
       <input
@@ -71,7 +71,7 @@ export function EditorPlataforma({
       />
       <div className="flex flex-wrap items-center gap-3">
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="activa" defaultChecked={plataforma.activa} className="size-4 accent-violet-600" />
+          <input type="checkbox" name="activa" defaultChecked={plataforma.activa} className="size-4 accent-blue-600" />
           Plataforma disponible
         </label>
         <div className="ml-auto flex gap-2">
@@ -119,7 +119,7 @@ export function EditorProducto({
       <article className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">{plataforma}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400">{plataforma}</p>
             <h3 className="mt-0.5 truncate font-semibold">{producto.nombre}</h3>
             <p className="mt-1 font-mono text-[11px] text-neutral-500">{producto.codigo}</p>
           </div>
@@ -127,7 +127,7 @@ export function EditorProducto({
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <span className={`rounded-full px-2 py-1 text-[11px] font-medium ${estadoVisual.clase}`}>{estadoVisual.texto}</span>
-          <span className="rounded-full bg-violet-50 px-2 py-1 text-[11px] text-violet-700 dark:bg-violet-950 dark:text-violet-300">
+          <span className="rounded-full bg-neutral-100 px-2 py-1 text-[11px] text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
             {producto.capacidad_vendible_predeterminada ?? producto.capacidad_fija ?? "—"}/{producto.capacidad_fija ?? "—"} cupos
           </span>
           {!producto.permite_renovaciones && <span className="text-[11px] text-neutral-500">Sin renovaciones</span>}
@@ -140,7 +140,7 @@ export function EditorProducto({
     <form
       action={action}
       onReset={(evento) => evento.preventDefault()}
-      className="space-y-3 rounded-xl border border-violet-300 bg-white p-4 dark:border-violet-800 dark:bg-neutral-900"
+      className="space-y-3 rounded-xl border border-neutral-300 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900"
     >
       <input type="hidden" name="id" value={producto.id} />
 
@@ -204,6 +204,7 @@ export type VendedorFila = {
   id: string;
   nombre: string;
   alias: string | null;
+  telefono_original: string | null;
   usuario_id: string | null;
   tipo: "revendedor" | "intermediario";
   cobra_en_paralela: boolean;
@@ -243,10 +244,15 @@ export function EditorVendedor({
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
             {vinculado ? `Entra como ${vinculado.nombre}` : "Sin acceso a la app"}
           </p>
+          {vendedor.telefono_original && (
+            <p className="mt-1 text-xs font-mono text-neutral-500 dark:text-neutral-400">
+              {vendedor.telefono_original}
+            </p>
+          )}
           <div className="mt-2 flex flex-wrap gap-1.5">
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
               vendedor.tipo === "revendedor"
-                ? "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-300"
+                ? "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
                 : "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
             }`}>
               {vendedor.tipo === "revendedor" ? "Revendedor" : "Intermediario"}
@@ -290,6 +296,14 @@ export function EditorVendedor({
           <input
             name="alias"
             defaultValue={vendedor?.alias ?? ""}
+            className={`${campo} mt-1`}
+          />
+        </label>
+        <label className="text-sm sm:col-span-2">
+          Teléfono / WhatsApp
+          <input
+            name="telefono_original"
+            defaultValue={vendedor?.telefono_original ?? ""}
             className={`${campo} mt-1`}
           />
         </label>

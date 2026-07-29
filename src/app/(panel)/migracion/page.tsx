@@ -70,14 +70,13 @@ export default async function MigracionPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-5 pb-24">
-      <header className="relative overflow-hidden rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-sky-50 p-5 shadow-sm sm:p-7 dark:border-violet-950 dark:from-violet-950/40 dark:via-neutral-950 dark:to-sky-950/30">
-        <div className="absolute -right-12 -top-16 size-44 rounded-full bg-violet-300/20 blur-3xl dark:bg-violet-600/10" />
-        <div className="relative max-w-3xl">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white/80 px-3 py-1 text-xs font-medium text-violet-700 dark:border-violet-800 dark:bg-neutral-950/70 dark:text-violet-300">
-            <span aria-hidden>↗</span> Carga inicial desde Excel
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Importar cartera</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600 dark:text-neutral-300">
+      <header className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs sm:p-7 dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="max-w-3xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-700 dark:text-blue-400">
+            Carga inicial desde Excel
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white sm:text-3xl">Importar cartera</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-500 dark:text-neutral-400">
             Configura el destino, pega las filas y revisa exactamente qué va a guardarse.
             Una fila con error no detiene las demás.
           </p>
