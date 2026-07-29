@@ -565,13 +565,13 @@ export function TablaInventario({
       <div className="block space-y-3.5 md:hidden">
         {cuentasState.length > 1 && (
           <div className="flex items-center justify-between px-1 py-1">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-bold text-neutral-500 dark:text-neutral-400">
               {cuentasState.length} {cuentasState.length === 1 ? "cuenta" : "cuentas"}
             </span>
             <button
               type="button"
               onClick={() => setTodasColapsadasMovil(!todasColapsadasMovil)}
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-indigo-600 shadow-sm transition hover:bg-slate-50 active:scale-95 dark:border-slate-800 dark:bg-zinc-900 dark:text-indigo-400 dark:hover:bg-zinc-800"
+              className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-white px-2.5 py-1 text-xs font-bold text-blue-600 shadow-sm transition hover:bg-neutral-50 active:scale-95 dark:border-neutral-800 dark:bg-neutral-900 dark:text-blue-400 dark:hover:bg-neutral-800"
             >
               {todasColapsadasMovil ? "📂 Abrir todas" : "📁 Cerrar todas"}
             </button>
@@ -610,7 +610,7 @@ export function TablaInventario({
       </div>
 
       {/* VISTA ESCRITORIO (Tabla Excel de 16 columnas pulida y respirable) */}
-      <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-zinc-900 md:block">
+      <div className="hidden overflow-x-auto rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:block">
         <table className="w-full border-collapse text-left text-xs leading-normal">
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-50 text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-400">
@@ -851,12 +851,12 @@ function BotonPagador({
       <button
         type="button"
         onClick={() => setMostrar((v) => !v)}
-        className="rounded-md border border-violet-300/70 px-2 py-1 text-[10px] font-sans font-semibold text-violet-700 transition hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-950/40"
+        className="rounded-md border border-blue-300/70 px-2 py-1 text-[10px] font-sans font-semibold text-blue-700 transition hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-950/40"
       >
         💳 {mostrar ? "Ocultar pagador" : "Ver pagador"}
       </button>
       {mostrar && (
-        <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400">
+        <span className="font-mono text-[10px] text-neutral-500 dark:text-neutral-400">
           ({pagador}
           {origen && ` · ${origen.replaceAll("_", " ")}`})
         </span>
@@ -888,15 +888,15 @@ function ControlesPaginacion({
   const desde = inicioPagina + 1;
   const hasta = inicioPagina + filasEnPagina;
   const btn =
-    "rounded-md border border-slate-300 px-2.5 py-1 font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-zinc-800";
+    "rounded-md border border-neutral-300 px-2.5 py-1 font-semibold text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800";
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400">
+    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-600 dark:text-neutral-400">
       <span>
         Mostrando{" "}
-        <strong className="text-slate-900 dark:text-white">
+        <strong className="text-neutral-900 dark:text-white">
           {desde}–{hasta}
         </strong>{" "}
-        de <strong className="text-slate-900 dark:text-white">{totalFilas}</strong> cupos
+        de <strong className="text-neutral-900 dark:text-white">{totalFilas}</strong> cupos
       </span>
       <div className="flex items-center gap-1.5">
         <button
@@ -907,7 +907,7 @@ function ControlesPaginacion({
         >
           ← Anterior
         </button>
-        <span className="px-1 font-semibold text-slate-900 dark:text-white">
+        <span className="px-1 font-semibold text-neutral-900 dark:text-white">
           Página {paginaActual} de {totalPaginas}
         </span>
         <button
@@ -998,26 +998,26 @@ function BloqueCuentaExcel({
           corriendo al lado de cada uno. Se repite en cada página para no
           perder de vista a qué cuenta pertenecen los cupos visibles. */}
       {cta.esCorreoIntegrante && (
-        <tr className="border-t-[6px] border-slate-900 bg-indigo-50/70 dark:border-black dark:bg-indigo-950/25">
-          <td className="whitespace-nowrap border border-slate-200 bg-slate-100/70 px-2.5 py-2.5 text-center font-mono font-bold text-slate-800 dark:border-slate-800 dark:bg-zinc-800/90 dark:text-slate-200">
+        <tr className="border-t-[6px] border-neutral-900 bg-blue-50/70 dark:border-black dark:bg-blue-950/25">
+          <td className="whitespace-nowrap border border-neutral-200 bg-neutral-100/70 px-2.5 py-2.5 text-center font-mono font-bold text-neutral-800 dark:border-neutral-800 dark:bg-neutral-800/90 dark:text-neutral-200">
             •
           </td>
           <td
             colSpan={2}
-            className="whitespace-nowrap border border-slate-200 bg-white px-3 py-2 font-semibold text-indigo-600 dark:border-slate-800 dark:bg-zinc-900 dark:text-indigo-400"
+            className="whitespace-nowrap border border-neutral-200 bg-white px-3 py-2 font-semibold text-blue-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-blue-400"
           >
             <span className="underline">{cta.correo}</span>
             {cta.alias && (
-              <span className="ml-1 text-[11px] font-normal text-slate-400">({cta.alias})</span>
+              <span className="ml-1 text-[11px] font-normal text-neutral-400">({cta.alias})</span>
             )}
-            <span className="mx-1.5 text-slate-300 dark:text-slate-600">·</span>
-            <span className="font-mono font-medium text-slate-800 dark:text-slate-200">
+            <span className="mx-1.5 text-neutral-300 dark:text-neutral-600">·</span>
+            <span className="font-mono font-medium text-neutral-800 dark:text-neutral-200">
               {cta.contrasena}
             </span>
           </td>
           <td
             colSpan={16}
-            className="whitespace-nowrap border border-slate-200 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-indigo-500/80 dark:border-slate-800 dark:text-indigo-400/70"
+            className="whitespace-nowrap border border-neutral-200 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-blue-500/80 dark:border-neutral-800 dark:text-blue-400/70"
           >
             Cuenta principal (panel)
           </td>
@@ -1046,7 +1046,7 @@ function BloqueCuentaExcel({
               ? esDestinoSeleccionado
                 ? "bg-amber-500 text-white cursor-pointer font-bold ring-2 ring-amber-300 rounded-md px-2.5 py-1 shadow-sm"
                 : "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer font-bold rounded-md px-2.5 py-1 shadow-sm"
-              : "bg-slate-100 text-slate-400 dark:bg-zinc-800 dark:text-zinc-600 rounded-md px-2 py-1";
+              : "bg-neutral-100 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-600 rounded-md px-2 py-1";
             textoAlerta = destinoCompatible
               ? esDestinoSeleccionado
                 ? "Destino elegido ✓"
@@ -1058,21 +1058,21 @@ function BloqueCuentaExcel({
             textoAlerta = "No se puede";
           } else {
             claseAlerta =
-              "bg-indigo-600 hover:bg-indigo-700 text-white font-bold cursor-pointer transition active:scale-[0.98] rounded-md px-3 py-1 shadow-sm";
+              "bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer transition active:scale-[0.98] rounded-md px-3 py-1 shadow-sm";
             textoAlerta = "Vacío (+ Vender)";
           }
         } else if (f.dias === null) {
-          claseAlerta = "bg-slate-100 text-slate-700 font-medium dark:bg-zinc-800 dark:text-zinc-300 rounded-md px-2.5 py-1";
+          claseAlerta = "bg-neutral-100 text-neutral-700 font-medium dark:bg-neutral-800 dark:text-neutral-300 rounded-md px-2.5 py-1";
           textoAlerta = "Sin fecha";
         } else if (f.dias > 0) {
           claseAlerta = "bg-emerald-100 text-emerald-950 border border-emerald-300 font-bold hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/50 dark:hover:bg-emerald-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
           textoAlerta = `Falta ${f.dias} días ⚙️`;
         } else if (f.dias === 0) {
-          claseAlerta = "bg-rose-600 text-white font-black hover:bg-rose-700 rounded-md px-2.5 py-1 animate-pulse shadow-md cursor-pointer";
+          claseAlerta = "bg-red-600 text-white font-black hover:bg-red-700 rounded-md px-2.5 py-1 animate-pulse shadow-md cursor-pointer";
           textoAlerta = "Vence hoy ⚙️";
         } else {
           const transcurridos = Math.abs(f.dias);
-          claseAlerta = "bg-rose-100 text-rose-950 border border-rose-300 font-bold hover:bg-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/50 dark:hover:bg-rose-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
+          claseAlerta = "bg-red-100 text-red-950 border border-red-300 font-bold hover:bg-red-200 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/50 dark:hover:bg-red-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
           textoAlerta = `Venció hace ${transcurridos} ${transcurridos === 1 ? "día" : "días"} ⚙️`;
         }
 
@@ -1080,14 +1080,14 @@ function BloqueCuentaExcel({
         let textoAvisoProv = "";
         if (!cta.renovarProveedor) {
           claseAvisoProv =
-            "bg-slate-100 text-slate-600 border border-dashed border-slate-300 hover:bg-slate-200 cursor-pointer rounded-md px-2.5 py-1 font-medium dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700";
+            "bg-neutral-100 text-neutral-600 border border-dashed border-neutral-300 hover:bg-neutral-200 cursor-pointer rounded-md px-2.5 py-1 font-medium dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700";
           textoAvisoProv = "+ Pagar";
         } else if ((cta.diasProveedor ?? 0) >= 0) {
           claseAvisoProv =
             "bg-emerald-100 text-emerald-950 border border-emerald-300 font-bold hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/50 dark:hover:bg-emerald-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
           textoAvisoProv = `Falta ${cta.diasProveedor} días 🔄`;
         } else {
-          claseAvisoProv = "bg-rose-100 text-rose-950 border border-rose-300 font-bold hover:bg-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/50 dark:hover:bg-rose-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
+          claseAvisoProv = "bg-red-100 text-red-950 border border-red-300 font-bold hover:bg-red-200 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/50 dark:hover:bg-red-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
           textoAvisoProv = `Vencido hace ${Math.abs(cta.diasProveedor ?? 0)} días 🔄`;
         }
 
@@ -1096,16 +1096,16 @@ function BloqueCuentaExcel({
             key={f.clave}
             onDragOver={onDragOver}
             onDrop={onDrop}
-            className={`transition-colors hover:bg-indigo-50/40 dark:hover:bg-zinc-800/60 ${
-              isTarget && esPrimera ? "ring-2 ring-indigo-500" : ""
+            className={`transition-colors hover:bg-blue-50/40 dark:hover:bg-neutral-800/60 ${
+              isTarget && esPrimera ? "ring-2 ring-blue-500" : ""
             } ${
               esPrimera && !cta.esCorreoIntegrante
-                ? "border-t-[6px] border-slate-900 dark:border-black"
-                : "border-t border-slate-200 dark:border-slate-800/80"
+                ? "border-t-[6px] border-neutral-900 dark:border-black"
+                : "border-t border-neutral-200 dark:border-neutral-800/80"
             }`}
           >
             {/* 1. N° */}
-            <td className="whitespace-nowrap border border-slate-200 bg-slate-100/70 px-2.5 py-2.5 text-center font-mono font-bold text-slate-800 align-middle dark:border-slate-800 dark:bg-zinc-800/90 dark:text-slate-200">
+            <td className="whitespace-nowrap border border-neutral-200 bg-neutral-100/70 px-2.5 py-2.5 text-center font-mono font-bold text-neutral-800 align-middle dark:border-neutral-800 dark:bg-neutral-800/90 dark:text-neutral-200">
               <span className="inline-flex items-center gap-1.5">
                 {modoBorrar && esPrimera && (
                   <input
@@ -1134,34 +1134,34 @@ function BloqueCuentaExcel({
             {esPrimera && !cta.esCorreoIntegrante && (
               <td
                 rowSpan={totalFilas}
-                className="whitespace-nowrap border border-slate-200 bg-white px-3 py-2 align-middle font-semibold text-indigo-600 underline dark:border-slate-800 dark:bg-zinc-900 dark:text-indigo-400"
+                className="whitespace-nowrap border border-neutral-200 bg-white px-3 py-2 align-middle font-semibold text-blue-600 underline dark:border-neutral-800 dark:bg-neutral-900 dark:text-blue-400"
               >
                 {cta.correo}
-                {cta.alias && <span className="ml-1 text-[11px] text-slate-400 font-normal">({cta.alias})</span>}
+                {cta.alias && <span className="ml-1 text-[11px] text-neutral-400 font-normal">({cta.alias})</span>}
               </td>
             )}
             {cta.esCorreoIntegrante && (
-              <td className="border border-slate-200 bg-white dark:border-slate-800 dark:bg-zinc-900" />
+              <td className="border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900" />
             )}
 
             {/* 3. Contraseña (Fusionada; idem) */}
             {esPrimera && !cta.esCorreoIntegrante && (
               <td
                 rowSpan={totalFilas}
-                className="whitespace-nowrap border border-slate-200 bg-white px-3 py-2 align-middle font-medium text-slate-800 dark:border-slate-800 dark:bg-zinc-900 dark:text-slate-200"
+                className="whitespace-nowrap border border-neutral-200 bg-white px-3 py-2 align-middle font-medium text-neutral-800 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200"
               >
                 {cta.contrasena}
               </td>
             )}
             {cta.esCorreoIntegrante && (
-              <td className="border border-slate-200 bg-white dark:border-slate-800 dark:bg-zinc-900" />
+              <td className="border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900" />
             )}
 
             {/* 4. Perfil */}
             {(!cta.esCuentaCompleta || esPrimera) && (
               <td
                 rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                className="whitespace-nowrap border border-slate-200 px-3 py-2 font-semibold text-slate-900 align-middle dark:border-slate-800 dark:text-white"
+                className="whitespace-nowrap border border-neutral-200 px-3 py-2 font-semibold text-neutral-900 align-middle dark:border-neutral-800 dark:text-white"
               >
                 {cta.esSpotifyFamiliar
                   ? f.clienteLogin ?? "Sin correo preparado"
@@ -1175,7 +1175,7 @@ function BloqueCuentaExcel({
             {(!cta.esCuentaCompleta || esPrimera) && (
               <td
                 rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                className="whitespace-nowrap border border-slate-200 px-2.5 py-2 text-center font-mono font-medium text-slate-700 align-middle dark:border-slate-800 dark:text-slate-300"
+                className="whitespace-nowrap border border-neutral-200 px-2.5 py-2 text-center font-mono font-medium text-neutral-700 align-middle dark:border-neutral-800 dark:text-neutral-300"
               >
                 {cta.esSpotifyFamiliar ? f.clienteClave ?? "" : f.pin ?? ""}
               </td>
@@ -1187,7 +1187,7 @@ function BloqueCuentaExcel({
                 {/* 6. Ingresos */}
                 <td
                   rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                  className="whitespace-nowrap border border-slate-200 px-3 py-2 text-right font-bold tabular-nums text-slate-900 align-middle dark:border-slate-800 dark:text-white"
+                  className="whitespace-nowrap border border-neutral-200 px-3 py-2 text-right font-bold tabular-nums text-neutral-900 align-middle dark:border-neutral-800 dark:text-white"
                 >
                   {f.ingreso != null
                     ? `$ ${f.ingreso.toFixed(2)}`
@@ -1199,7 +1199,7 @@ function BloqueCuentaExcel({
                 {/* 7. Inicio */}
                 <td
                   rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                  className="whitespace-nowrap border border-slate-200 px-2.5 py-2 text-center align-middle font-mono text-slate-600 dark:border-slate-800 dark:text-slate-400"
+                  className="whitespace-nowrap border border-neutral-200 px-2.5 py-2 text-center align-middle font-mono text-neutral-600 dark:border-neutral-800 dark:text-neutral-400"
                 >
                   {formatearFecha(f.inicio)}
                 </td>
@@ -1207,7 +1207,7 @@ function BloqueCuentaExcel({
                 {/* 8. Días */}
                 <td
                   rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                  className="whitespace-nowrap border border-slate-200 px-2 py-2 text-center align-middle font-mono text-slate-600 dark:border-slate-800 dark:text-slate-400"
+                  className="whitespace-nowrap border border-neutral-200 px-2 py-2 text-center align-middle font-mono text-neutral-600 dark:border-neutral-800 dark:text-neutral-400"
                 >
                   {f.cliente ? 30 : ""}
                 </td>
@@ -1215,7 +1215,7 @@ function BloqueCuentaExcel({
                 {/* 9. Vence */}
                 <td
                   rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                  className="whitespace-nowrap border border-slate-200 px-2.5 py-2 text-center font-mono font-bold text-slate-900 align-middle dark:border-slate-800 dark:text-white"
+                  className="whitespace-nowrap border border-neutral-200 px-2.5 py-2 text-center font-mono font-bold text-neutral-900 align-middle dark:border-neutral-800 dark:text-white"
                 >
                   {formatearFecha(f.vence)}
                 </td>
@@ -1238,7 +1238,7 @@ function BloqueCuentaExcel({
                       onGestionarVenta(f);
                     }
                   }}
-                  className={`whitespace-nowrap border border-slate-200 px-3 py-2 text-center align-middle ${claseAlerta}`}
+                  className={`whitespace-nowrap border border-neutral-200 px-3 py-2 text-center align-middle ${claseAlerta}`}
                   title={
                     esLibre
                       ? destinosTraslado
@@ -1258,8 +1258,8 @@ function BloqueCuentaExcel({
                   onClick={() => {
                     if (!esLibre) onGestionarVenta(f);
                   }}
-                  className={`whitespace-nowrap border border-slate-200 px-3 py-2 font-bold text-slate-900 align-middle dark:border-slate-800 dark:text-white ${
-                    !esLibre ? "cursor-pointer hover:bg-slate-100/70 hover:underline dark:hover:bg-zinc-800/80" : ""
+                  className={`whitespace-nowrap border border-neutral-200 px-3 py-2 font-bold text-neutral-900 align-middle dark:border-neutral-800 dark:text-white ${
+                    !esLibre ? "cursor-pointer hover:bg-neutral-100/70 hover:underline dark:hover:bg-neutral-800/80" : ""
                   }`}
                   title={!esLibre ? "Haz clic para renovar, editar o eliminar esta venta" : ""}
                 >
@@ -1273,7 +1273,7 @@ function BloqueCuentaExcel({
                           onGestionarVenta(f);
                         }}
                         title="Gestionar venta (renovar, editar o borrar)"
-                        className="text-xs text-slate-400 opacity-70 hover:opacity-100 hover:text-slate-900 dark:hover:text-white"
+                        className="text-xs text-neutral-400 opacity-70 hover:opacity-100 hover:text-neutral-900 dark:hover:text-white"
                       >
                         ⚙️
                       </button>
@@ -1284,7 +1284,7 @@ function BloqueCuentaExcel({
                 {/* 12. N° Celular */}
                 <td
                   rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                  className="whitespace-nowrap border border-slate-200 px-3 py-2 font-mono text-slate-800 align-middle dark:border-slate-800 dark:text-slate-200"
+                  className="whitespace-nowrap border border-neutral-200 px-3 py-2 font-mono text-neutral-800 align-middle dark:border-neutral-800 dark:text-neutral-200"
                 >
                   {f.celular ?? ""}
                 </td>
@@ -1292,7 +1292,7 @@ function BloqueCuentaExcel({
                 {/* 13. Vendió */}
                 <td
                   rowSpan={cta.esCuentaCompleta ? totalFilas : 1}
-                  className="whitespace-nowrap border border-slate-200 px-3 py-2 text-slate-700 align-middle dark:border-slate-800 dark:text-slate-300"
+                  className="whitespace-nowrap border border-neutral-200 px-3 py-2 text-neutral-700 align-middle dark:border-neutral-800 dark:text-neutral-300"
                 >
                   {f.vendio ?? ""}
                 </td>
@@ -1303,7 +1303,7 @@ function BloqueCuentaExcel({
             {esPrimera && (
               <td
                 rowSpan={totalFilas}
-                className="whitespace-nowrap border border-slate-200 px-3 py-2 text-right font-bold tabular-nums text-slate-900 align-middle dark:border-slate-800 dark:text-white"
+                className="whitespace-nowrap border border-neutral-200 px-3 py-2 text-right font-bold tabular-nums text-neutral-900 align-middle dark:border-neutral-800 dark:text-white"
               >
                 {cta.costo != null ? `$ ${cta.costo.toFixed(2)}` : ""}
               </td>
@@ -1313,7 +1313,7 @@ function BloqueCuentaExcel({
             {esPrimera && (
               <td
                 rowSpan={totalFilas}
-                className="whitespace-nowrap border border-slate-200 px-3 py-2 font-medium text-slate-800 align-middle dark:border-slate-800 dark:text-slate-200"
+                className="whitespace-nowrap border border-neutral-200 px-3 py-2 font-medium text-neutral-800 align-middle dark:border-neutral-800 dark:text-neutral-200"
               >
                 <span className="block font-semibold whitespace-nowrap">{cta.proveedor ?? ""}</span>
                 {cta.proveedorId && cta.proveedorTieneTarjeta && (
@@ -1329,7 +1329,7 @@ function BloqueCuentaExcel({
             {esPrimera && (
               <td
                 rowSpan={totalFilas}
-                className="whitespace-nowrap border border-slate-200 px-2.5 py-2 text-center font-mono font-semibold text-slate-800 align-middle dark:border-slate-800 dark:text-slate-200"
+                className="whitespace-nowrap border border-neutral-200 px-2.5 py-2 text-center font-mono font-semibold text-neutral-800 align-middle dark:border-neutral-800 dark:text-neutral-200"
               >
                 {formatearFecha(cta.renovarProveedor)}
               </td>
@@ -1340,7 +1340,7 @@ function BloqueCuentaExcel({
               <td
                 rowSpan={totalFilas}
                 onClick={onRenovarProveedor}
-                className={`whitespace-nowrap border border-slate-200 px-3 py-2 text-center align-middle ${claseAvisoProv}`}
+                className={`whitespace-nowrap border border-neutral-200 px-3 py-2 text-center align-middle ${claseAvisoProv}`}
                 title="Haz clic para extender 30 días con el proveedor"
               >
                 {textoAvisoProv}
@@ -1351,7 +1351,7 @@ function BloqueCuentaExcel({
             {esPrimera && (
               <td
                 rowSpan={totalFilas}
-                className="whitespace-nowrap border border-slate-200 bg-slate-100/70 px-2 py-2 text-center font-bold text-slate-700 align-middle dark:border-slate-800 dark:bg-zinc-800/80 dark:text-slate-300"
+                className="whitespace-nowrap border border-neutral-200 bg-neutral-100/70 px-2 py-2 text-center font-bold text-neutral-700 align-middle dark:border-neutral-800 dark:bg-neutral-800/80 dark:text-neutral-300"
               >
                 {numCuenta}
               </td>
@@ -1361,7 +1361,7 @@ function BloqueCuentaExcel({
             {esPrimera && (
               <td
                 rowSpan={totalFilas}
-                className="whitespace-nowrap border border-slate-200 px-2.5 py-2 text-center align-middle"
+                className="whitespace-nowrap border border-neutral-200 px-2.5 py-2 text-center align-middle"
               >
                 <div className="flex items-center justify-center gap-1">
                   <ControlesOrden
@@ -1389,7 +1389,7 @@ function BloqueCuentaExcel({
         );
       })}
       {necesitaPaginar && (
-        <tr className="border-t border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-zinc-950/40">
+        <tr className="border-t border-neutral-200 bg-neutral-50/80 dark:border-neutral-800 dark:bg-neutral-950/40">
           <td colSpan={19} className="px-3 py-2">
             <ControlesPaginacion
               paginaActual={paginaSegura}
@@ -1468,11 +1468,11 @@ function TarjetaCuentaMovil({
   const libres = cta.filas.filter((f) => !f.cliente).length;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition dark:border-slate-800 dark:bg-zinc-900">
+    <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm transition dark:border-neutral-800 dark:bg-neutral-900">
       {/* Encabezado de la cuenta */}
       <div
         className={`flex items-center justify-between gap-2 ${
-          colapsada ? "" : "border-b border-slate-100 pb-2.5 dark:border-slate-800"
+          colapsada ? "" : "border-b border-neutral-100 pb-2.5 dark:border-neutral-800"
         }`}
       >
         <div className="flex items-center gap-2 overflow-hidden">
@@ -1495,17 +1495,17 @@ function TarjetaCuentaMovil({
               className="size-4 shrink-0 accent-purple-600"
             />
           )}
-          <span className="shrink-0 rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 font-mono text-xs font-bold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950 dark:text-indigo-300">
+          <span className="shrink-0 rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 font-mono text-xs font-bold text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300">
             #{numCuenta}
           </span>
-          <span className="truncate font-mono text-xs font-bold text-slate-900 dark:text-white">
+          <span className="truncate font-mono text-xs font-bold text-neutral-900 dark:text-white">
             {cta.correo}
           </span>
           {colapsada && (
             <span
               className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                 libres > 0
-                  ? "bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300"
+                  ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950 dark:text-blue-300"
                   : "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300"
               }`}
             >
@@ -1518,7 +1518,7 @@ function TarjetaCuentaMovil({
             type="button"
             onClick={onEditar}
             title="Editar cuenta"
-            className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-zinc-800"
+            className="rounded-lg border border-neutral-200 px-2 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
           >
             ⚙️
           </button>
@@ -1526,7 +1526,7 @@ function TarjetaCuentaMovil({
             type="button"
             onClick={() => setColapsada(!colapsada)}
             title={colapsada ? "Abrir perfiles" : "Cerrar cuenta"}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700 transition hover:bg-slate-100 active:scale-95 dark:border-slate-700 dark:bg-zinc-800 dark:text-slate-200 dark:hover:bg-zinc-700"
+            className="rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-xs font-bold text-neutral-700 transition hover:bg-neutral-100 active:scale-95 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
           >
             {colapsada ? "▼ Abrir" : "▲ Cerrar"}
           </button>
@@ -1536,10 +1536,10 @@ function TarjetaCuentaMovil({
       {!colapsada && (
         <>
           {/* Info proveedor y credenciales */}
-          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400">
+          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-600 dark:text-neutral-400">
             <div>
               <span>Proveedor: </span>
-              <strong className="text-slate-900 dark:text-white">{cta.proveedor ?? "Directo"}</strong>
+              <strong className="text-neutral-900 dark:text-white">{cta.proveedor ?? "Directo"}</strong>
               {cta.costo != null && (
                 <span className="ml-2 font-mono font-bold text-emerald-600 dark:text-emerald-400">
                   ${cta.costo.toFixed(2)}
@@ -1553,7 +1553,7 @@ function TarjetaCuentaMovil({
             <button
               type="button"
               onClick={() => setMostrarCredenciales(!mostrarCredenciales)}
-              className="font-mono text-[11px] font-semibold text-indigo-600 underline dark:text-indigo-400"
+              className="font-mono text-[11px] font-semibold text-blue-600 underline dark:text-blue-400"
             >
               {mostrarCredenciales ? "Ocultar clave" : "Ver clave"}
             </button>
@@ -1582,7 +1582,7 @@ function TarjetaCuentaMovil({
           )}
 
           {mostrarCredenciales && (
-            <div className="mt-2.5 rounded-xl border border-slate-200 bg-slate-50 p-2.5 font-mono text-xs font-semibold text-slate-800 dark:border-slate-800 dark:bg-zinc-800 dark:text-slate-200">
+            <div className="mt-2.5 rounded-xl border border-neutral-200 bg-neutral-50 p-2.5 font-mono text-xs font-semibold text-neutral-800 dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
               🔑 Clave: {cta.contrasena}
             </div>
           )}
@@ -1616,8 +1616,8 @@ function TarjetaCuentaMovil({
                           ? esDestinoSeleccionado
                             ? "border-amber-500 bg-amber-50 ring-2 ring-amber-300 dark:bg-amber-950/30"
                             : "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
-                          : "border-slate-200 bg-slate-100 opacity-45 dark:border-slate-800 dark:bg-zinc-900"
-                        : "border-dashed border-slate-300 bg-slate-50/60 dark:border-slate-800 dark:bg-zinc-950/40"
+                          : "border-neutral-200 bg-neutral-100 opacity-45 dark:border-neutral-800 dark:bg-neutral-900"
+                        : "border-dashed border-neutral-300 bg-neutral-50/60 dark:border-neutral-800 dark:bg-neutral-950/40"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -1739,7 +1739,7 @@ function TarjetaCuentaMovil({
               );
             })}
             {necesitaPaginar && (
-              <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-2.5 dark:border-slate-800 dark:bg-zinc-950/40">
+              <div className="rounded-xl border border-neutral-200 bg-neutral-50/80 p-2.5 dark:border-neutral-800 dark:bg-neutral-950/40">
                 <ControlesPaginacion
                   paginaActual={paginaSegura}
                   totalPaginas={totalPaginas}

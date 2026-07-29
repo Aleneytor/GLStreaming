@@ -20,7 +20,10 @@ export type ProductoOpcion = {
 export type ProveedorOpcion = { id: string; etiqueta: string };
 
 const claseCampo =
-  "w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-base outline-none transition focus:border-neutral-900 disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-neutral-300";
+  "w-full rounded-xl border border-neutral-200 bg-neutral-50/60 px-3.5 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 dark:border-neutral-800 dark:bg-neutral-950/60 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-blue-500 dark:focus:bg-neutral-950";
+
+const claseEtiqueta =
+  "mb-1.5 block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300";
 
 export function FormCuenta({
   productos,
@@ -49,195 +52,208 @@ export function FormCuenta({
   const esSpotifyFamiliar = producto?.codigo === "spotify-familiar";
 
   return (
-    <form action={formAction} className="space-y-5">
-      <div>
-        <label htmlFor="producto_id" className="mb-1.5 block text-sm font-medium">
-          Producto
-        </label>
-        <select
-          id="producto_id"
-          name="producto_id"
-          required
-          value={productoId}
-          onChange={(e) => setProductoId(e.target.value)}
-          className={claseCampo}
-        >
-          <option value="">Elige un producto…</option>
-          {productos.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.plataforma} — {p.nombre}
-            </option>
-          ))}
-        </select>
-        {producto && (
-          <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-            {producto.tipo_inventario === "cuenta_con_unidades"
-              ? `Se crearán ${capacidadSugerida} unidades automáticamente.`
-              : "Recurso indivisible: no se crean unidades hijas."}
-          </p>
-        )}
-      </div>
-
-      {esDeCliente && (
-        <p
-          role="alert"
-          className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-        >
-          Este producto es propiedad del cliente. Se carga por el flujo de servicio
-          existente, no por aquí.
-        </p>
-      )}
-
-      {esSpotifyFamiliar && (
-        <div className="rounded-xl border border-green-300 bg-green-50 p-4 text-sm text-green-950 dark:border-green-900 dark:bg-green-950/30 dark:text-green-100">
-          <strong>Familia Spotify · 5 miembros</strong>
-          <p className="mt-1 text-xs opacity-80">
-            Aquí se crea la cuenta administradora y la cobertura. Los correos de los
-            miembros se preparan después desde “Gestionar familia”.
-          </p>
+    <form action={formAction} className="space-y-6">
+      {/* SECCIÓN 1: Selección de Producto y Configuración */}
+      <section className="space-y-4 rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900/80">
+        <div className="flex items-center gap-2 border-b border-neutral-100 pb-3 dark:border-neutral-800/80">
+          <div className="rounded-lg bg-neutral-100 p-1.5 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Producto & Capacidad</h2>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Selecciona la plataforma y modalidad a registrar</p>
+          </div>
         </div>
-      )}
 
-      <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="capacidad" className="mb-1.5 block text-sm font-medium">
-            Capacidad
+          <label htmlFor="producto_id" className={claseEtiqueta}>
+            Producto de la Plataforma
           </label>
-          <input
-            id="capacidad"
-            name="capacidad"
-            type="number"
-            inputMode="numeric"
-            min={1}
+          <select
+            id="producto_id"
+            name="producto_id"
             required
-            // `key` fuerza a re-montar el input al cambiar de producto para que
-            // tome el nuevo valor sugerido.
-            key={`cap-${productoId}`}
-            defaultValue={capacidadSugerida}
-            readOnly={capacidadFija}
-            disabled={!producto}
+            value={productoId}
+            onChange={(e) => setProductoId(e.target.value)}
             className={claseCampo}
-          />
-          {capacidadFija && (
-            <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-              Fijada por el producto.
-            </p>
+          >
+            <option value="">Elige un producto…</option>
+            {productos.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.plataforma} — {p.nombre}
+              </option>
+            ))}
+          </select>
+
+          {producto && (
+            <div className="mt-2.5 flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                {producto.tipo_inventario === "cuenta_con_unidades"
+                  ? `${capacidadSugerida} slots de inventario`
+                  : "Recurso indivisible"}
+              </span>
+              {capacidadFija && (
+                <span className="inline-flex items-center rounded-md bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+                  Capacidad fija
+                </span>
+              )}
+            </div>
           )}
         </div>
 
-        <div>
-          <label htmlFor="alias" className="mb-1.5 block text-sm font-medium">
-            Alias <span className="text-neutral-400">(opcional)</span>
-          </label>
-          <input
-            id="alias"
-            name="alias"
-            type="text"
-            placeholder="ej. Netflix 1"
-            className={claseCampo}
-          />
-        </div>
-      </div>
+        {esDeCliente && (
+          <div
+            role="alert"
+            className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/80 p-3.5 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200"
+          >
+            <svg className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span>Este producto es propiedad del cliente. Se carga por el flujo de servicio existente, no por aquí.</span>
+          </div>
+        )}
 
-      <div>
-        <label htmlFor="proveedor" className="mb-1.5 block text-sm font-medium">
-          Proveedor <span className="text-neutral-400">(opcional)</span>
-        </label>
-        {/* Texto libre: se reutiliza si el nombre ya existe, si no se crea. */}
-        <input
-          id="proveedor"
-          name="proveedor"
-          type="text"
-          list="lista-proveedores"
-          placeholder="Yo, un nombre o un teléfono…"
-          className={claseCampo}
-        />
-        <datalist id="lista-proveedores">
-          {proveedores.map((p) => (
-            <option key={p.id} value={p.etiqueta} />
-          ))}
-        </datalist>
-        <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-          Escribe el que quieras: si no existe, se crea. Indicarlo no crea costo ni
-          pago; eso se registra aparte.
-        </p>
-      </div>
-
-      <div>
-        <label htmlFor="notas" className="mb-1.5 block text-sm font-medium">
-          Notas <span className="text-neutral-400">(opcional)</span>
-        </label>
-        <textarea
-          id="notas"
-          name="notas"
-          rows={3}
-          placeholder="ej. cómo pagaste esta cuenta, dónde la compraste…"
-          className={claseCampo}
-        />
-        <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-          Para tus recordatorios. No anotes aquí números completos de tarjeta ni
-          códigos de seguridad.
-        </p>
-      </div>
-
-      <fieldset className="space-y-4 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-        <legend className="px-1 text-sm font-medium">Credenciales de la cuenta</legend>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          Se guardan cifradas. Ni siquiera aparecen en la base de datos en texto legible.
-        </p>
-
-        <div>
-          <label htmlFor="correo" className="mb-1.5 block text-sm font-medium">
-            Correo de acceso
-          </label>
-          <input
-            id="correo"
-            name="correo"
-            type="text"
-            inputMode="email"
-            autoComplete="off"
-            required
-            className={claseCampo}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="contrasena" className="mb-1.5 block text-sm font-medium">
-            Contraseña de la cuenta
-          </label>
-          <input
-            id="contrasena"
-            name="contrasena"
-            type="text"
-            autoComplete="off"
-            required
-            className={claseCampo}
-          />
-        </div>
-      </fieldset>
-
-      {esSpotifyFamiliar && (
-        <fieldset className="space-y-4 rounded-xl border border-green-200 p-4 dark:border-green-900">
-          <legend className="px-1 text-sm font-medium">Pago de Spotify (opcional)</legend>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            Registra solamente el Gmail que paga la familia. Nunca se solicita su contraseña.
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2">
+        {esSpotifyFamiliar && (
+          <div className="flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs text-emerald-950 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200">
+            <span className="rounded-lg bg-emerald-500/20 px-2 py-1 font-bold text-emerald-700 dark:text-emerald-300">
+              Spotify
+            </span>
             <div>
-              <label htmlFor="gmail_pagador" className="mb-1.5 block text-sm font-medium">
-                Gmail pagador
+              <strong className="font-semibold">Familia Spotify · 5 miembros</strong>
+              <p className="mt-0.5 opacity-90">
+                Se crea la cuenta administradora y cobertura. Los accesos de miembros se gestionan luego en &quot;Gestionar familia&quot;.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="capacidad" className={claseEtiqueta}>
+              Capacidad (Slots)
+            </label>
+            <input
+              id="capacidad"
+              name="capacidad"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              required
+              key={`cap-${productoId}`}
+              defaultValue={capacidadSugerida}
+              readOnly={capacidadFija}
+              disabled={!producto}
+              className={claseCampo}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="alias" className={claseEtiqueta}>
+              Alias opcional
+            </label>
+            <input
+              id="alias"
+              name="alias"
+              type="text"
+              placeholder="ej. Netflix Principal #1"
+              className={claseCampo}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* SECCIÓN 2: Credenciales de la Cuenta */}
+      <section className="space-y-4 rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900/80">
+        <div className="flex items-center justify-between border-b border-neutral-100 pb-3 dark:border-neutral-800/80">
+          <div className="flex items-center gap-2">
+            <div className="rounded-lg bg-blue-500/10 p-1.5 text-blue-600 dark:text-blue-400">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Credenciales de Acceso</h2>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">Datos de inicio de sesión de la plataforma</p>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+            <svg className="h-3 w-3 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            AES-256-GCM
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="correo" className={claseEtiqueta}>
+              Correo de acceso
+            </label>
+            <input
+              id="correo"
+              name="correo"
+              type="text"
+              inputMode="email"
+              autoComplete="off"
+              required
+              placeholder="cuenta@correo.com"
+              className={claseCampo}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="contrasena" className={claseEtiqueta}>
+              Contraseña
+            </label>
+            <input
+              id="contrasena"
+              name="contrasena"
+              type="text"
+              autoComplete="off"
+              required
+              placeholder="••••••••"
+              className={claseCampo}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* SECCIÓN 3: Pago de Spotify (Condicional) */}
+      {esSpotifyFamiliar && (
+        <section className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900/80">
+          <div className="flex items-center gap-2 border-b border-neutral-100 pb-3 dark:border-neutral-800/80">
+            <div className="rounded-lg bg-neutral-100 p-1.5 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Control de pago Spotify</h2>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">Gmail pagador asociado (sin contraseña)</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="gmail_pagador" className={claseEtiqueta}>
+                Gmail Pagador
               </label>
               <input
                 id="gmail_pagador"
                 name="gmail_pagador"
                 type="email"
                 autoComplete="off"
+                placeholder="pagador@gmail.com"
                 className={claseCampo}
               />
             </div>
+
             <div>
-              <label htmlFor="origen_gpay" className="mb-1.5 block text-sm font-medium">
-                Origen
+              <label htmlFor="origen_gpay" className={claseEtiqueta}>
+                Origen de Cuenta
               </label>
               <select id="origen_gpay" name="origen_gpay" className={claseCampo}>
                 <option value="gpay_usa">GPay USA</option>
@@ -245,88 +261,130 @@ export function FormCuenta({
               </select>
             </div>
           </div>
-        </fieldset>
+        </section>
       )}
 
-      <fieldset className="space-y-4 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-        <legend className="px-1 text-sm font-medium">
-          Costo del proveedor <span className="text-neutral-400">(opcional)</span>
-        </legend>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          Si esta cuenta te cuesta dinero, indícalo. Aquí solo se registra{" "}
-          <strong>cuánto cuesta y cuándo vence</strong>; los pagos y las ganancias
-          llegan más adelante.
-        </p>
-
-        <div className="grid grid-cols-2 gap-4">
+      {/* SECCIÓN 4: Proveedor y Costo (Opcional) */}
+      <section className="space-y-4 rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900/80">
+        <div className="flex items-center gap-2 border-b border-neutral-100 pb-3 dark:border-neutral-800/80">
+          <div className="rounded-lg bg-amber-500/10 p-1.5 text-amber-600 dark:text-amber-400">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+          </div>
           <div>
-            <label htmlFor="costo_usdt" className="mb-1.5 block text-sm font-medium">
+            <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Proveedor & Costo Operativo</h2>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Datos opcionales para control financiero e inversión</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="proveedor" className={claseEtiqueta}>
+              Proveedor
+            </label>
+            <input
+              id="proveedor"
+              name="proveedor"
+              type="text"
+              list="lista-proveedores"
+              placeholder="Yo, proveedor o teléfono..."
+              className={claseCampo}
+            />
+            <datalist id="lista-proveedores">
+              {proveedores.map((p) => (
+                <option key={p.id} value={p.etiqueta} />
+              ))}
+            </datalist>
+          </div>
+
+          <div>
+            <label htmlFor="notas" className={claseEtiqueta}>
+              Notas internas
+            </label>
+            <input
+              id="notas"
+              name="notas"
+              type="text"
+              placeholder="Recordatorios de compra, origen..."
+              className={claseCampo}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="costo_usdt" className={claseEtiqueta}>
               Costo (USDT)
             </label>
-            <input
-              id="costo_usdt"
-              name="costo_usdt"
-              type="text"
-              inputMode="decimal"
-              placeholder="ej. 8.50"
-              className={claseCampo}
-            />
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-2.5 text-sm font-medium text-neutral-400 dark:text-neutral-500">$</span>
+              <input
+                id="costo_usdt"
+                name="costo_usdt"
+                type="text"
+                inputMode="decimal"
+                placeholder="8.50"
+                className={`${claseCampo} pl-7`}
+              />
+            </div>
           </div>
+
           <div>
-            <label htmlFor="dia_ancla" className="mb-1.5 block text-sm font-medium">
-              Día de renovación
+            <label htmlFor="ciclo_inicio" className={claseEtiqueta}>
+              Inicio Ciclo
             </label>
             <input
-              id="dia_ancla"
-              name="dia_ancla"
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={31}
-              placeholder="1-31"
+              id="ciclo_inicio"
+              name="ciclo_inicio"
+              type="date"
+              defaultValue={new Date().toISOString().slice(0, 10)}
               className={claseCampo}
             />
           </div>
         </div>
+      </section>
 
-        <div>
-          <label htmlFor="ciclo_inicio" className="mb-1.5 block text-sm font-medium">
-            Inicio del ciclo actual
-          </label>
-          <input
-            id="ciclo_inicio"
-            name="ciclo_inicio"
-            type="date"
-            defaultValue={new Date().toISOString().slice(0, 10)}
-            className={claseCampo}
-          />
-          <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-            Si dejas vacío el día de renovación, se usa el día de esta fecha. Un día
-            31 se ajusta solo en los meses cortos y luego se recupera.
-          </p>
-        </div>
-      </fieldset>
-
+      {/* Alerta de Error */}
       {estado?.error && (
-        <p
+        <div
           role="alert"
-          className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"
+          className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300"
         >
-          {estado.error}
-        </p>
+          <svg className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{estado.error}</span>
+        </div>
       )}
 
-      <div className="flex gap-3">
+      {/* Botones de Acción */}
+      <div className="flex items-center gap-3 pt-2">
         <button
           type="submit"
           disabled={pendiente || !producto || esDeCliente}
-          className="flex-1 rounded-lg bg-neutral-900 px-4 py-3 text-base font-medium text-white transition active:scale-[0.99] disabled:opacity-60 dark:bg-white dark:text-neutral-900"
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
         >
-          {pendiente ? "Guardando…" : "Crear cuenta"}
+          {pendiente ? (
+            <>
+              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              <span>Guardando cuenta…</span>
+            </>
+          ) : (
+            <>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Crear cuenta</span>
+            </>
+          )}
         </button>
         <Link
           href="/inventario"
-          className="rounded-lg border border-neutral-300 px-4 py-3 text-base transition active:scale-[0.99] dark:border-neutral-700"
+          className="inline-flex items-center justify-center rounded-xl border border-neutral-200 bg-white px-5 py-3 text-sm font-semibold text-neutral-700 shadow-xs transition hover:bg-neutral-50 active:scale-[0.99] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800/80"
         >
           Cancelar
         </Link>
