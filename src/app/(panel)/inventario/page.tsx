@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { resumirCuentaInventario } from "@/domain/resumen-inventario";
+import { LogoPlataforma, tieneLogo } from "@/features/inventario/logos-plataforma";
 
 export const dynamic = "force-dynamic";
 
@@ -72,9 +73,15 @@ function TarjetaPlataforma({
         <span className="flex items-start justify-between gap-3">
           <span
             aria-hidden
-            className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 text-sm font-black tracking-tight text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+            className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
           >
-            {insigniaDe(plataforma.slug)}
+            {tieneLogo(plataforma.slug) ? (
+              <LogoPlataforma slug={plataforma.slug} className="size-7" />
+            ) : (
+              <span className="text-sm font-black tracking-tight text-neutral-500 dark:text-neutral-400">
+                {insigniaDe(plataforma.slug)}
+              </span>
+            )}
           </span>
           <span
             className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${
