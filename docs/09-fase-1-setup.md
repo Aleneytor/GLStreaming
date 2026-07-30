@@ -120,5 +120,4 @@ migraciones añadirán, en orden:
 3. **Proveedores y finanzas**: `ciclos_proveedor`, `pagos_proveedor`,
    `gastos_operativos`, `tasas_cambio`, `cierres_mensuales`.
 4. **Rama Spotify**: identidades, coberturas, controles de pago, incidencias.
-5. **Netflix — verificación de hogar**: `verificaciones_hogar_netflix` (DEC-95).
-6. **Vistas seguras + suite de pruebas RLS** contra los 5 perfiles.
+5. **Vistas seguras + suite de pruebas RLS** contra los 5 perfiles.

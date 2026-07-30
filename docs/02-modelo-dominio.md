@@ -74,9 +74,6 @@ erDiagram
     TASAS_CAMBIO ||--o{ CIERRES_MENSUALES : valoriza
     CIERRES_MENSUALES ||--o{ DETALLES_CIERRE_MENSUAL : contiene
     UNIDADES_INVENTARIO ||--o{ HISTORIAL_ESTADO_UNIDAD : audita
-    UNIDADES_INVENTARIO ||--o{ VERIFICACIONES_HOGAR_NETFLIX : "sufre evento"
-    ASIGNACIONES_INVENTARIO ||--o{ VERIFICACIONES_HOGAR_NETFLIX : registra
-    USUARIOS ||--o{ VERIFICACIONES_HOGAR_NETFLIX : "registra manualmente"
     USUARIOS ||--o{ SOLICITUDES_STOCK : solicita
     PRODUCTOS_PLATAFORMA ||--o{ SOLICITUDES_STOCK : requiere
     SOLICITUDES_STOCK ||--o| RESERVAS_INVENTARIO : genera
@@ -365,19 +362,6 @@ Para una caída familiar Spotify, las operaciones se crean desde `casos_incidenc
 Registro de cada transición con `unidad_id`, `estado_anterior`, `estado_nuevo`, `ocurrio_at`, `actor_id` y `motivo`.
 
 Permite reconstruir bloqueos técnicos y auditar habilitaciones o retiros. Los intervalos ocupados y vacíos se reconstruyen desde asignaciones/reservas; el historial no sustituye las restricciones que evitan rangos solapados.
-
-#### `verificaciones_hogar_netflix`
-
-**Añadido el 22/07/2026, a partir de una aclaración del usuario.** Registra cada evento de verificación de hogar ("No perteneces a este hogar") que Netflix dispara de forma irregular (aproximadamente cada 15 días, sin fecha fija) sobre un perfil de una cuenta vendida en modalidad `cuenta_completa` del producto A (cuenta estándar). No aplica a la modalidad `perfil` individual ni al producto B (perfil extra) — el usuario confirmó que el perfil extra nunca sufre este evento, lo cual explica su mayor estabilidad operativa ya documentada en `netflix.md`.
-
-Campos: `id`, `unidad_id` (perfil afectado, FK a `unidades_inventario`), `asignacion_id` (FK a `asignaciones_inventario`, la venta de cuenta completa vigente), `disparada_at`, `registrada_por_id` (administrador que marcó el evento manualmente, sin detección automática), `codigo_solicitado_at` opcional (momento en que el cliente confirma que ya pidió/usó el código de Netflix), `resultado` (`resuelta | requiere_traslado`), `nota_no_sensible` opcional, `created_at`.
-
-Reglas:
-- Se crea una fila por cada evento; nunca se sobrescribe una fila anterior (mismo patrón de `historial_estado_unidad`/`entregas_acceso`: historial acumulativo, no un único flag mutable).
-- El conteo de eventos por perfil es **acumulativo durante toda la vida de esa asignación de cuenta completa**; una renovación mensual normal del cliente **no reinicia** el contador (confirmado explícitamente por el usuario).
-- El primer evento de un perfil (o cualquiera resuelto con código solicitado) se marca `resuelta`: no cambia período, precio, cobro ni fecha de renovación; el código concede aproximadamente 14 días adicionales, que sumados al uso ya transcurrido del mes suelen completar el período pagado.
-- Si a un perfil le vuelve a aparecer la verificación y Netflix ya no permite solicitar otro código, el evento se marca `resultado = requiere_traslado`: esto dispara la falla de la cuenta completa ya documentada (traslado a otra cuenta estándar totalmente libre, conservando período/precio/cobro/fecha; la cuenta de origen queda en mantenimiento). No se modela como una falla nueva — reutiliza el mecanismo de traslado por falla de `asignaciones_inventario` ya definido.
-- La interfaz debe mostrar, por perfil dentro de una cuenta completa vendida, una acción manual para registrar un nuevo evento y una casilla para marcar `codigo_solicitado_at` cuando el cliente confirme que ya lo pidió.
 
 #### `reservas_inventario`
 

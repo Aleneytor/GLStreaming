@@ -45,22 +45,6 @@ Modalidades permitidas:
 - No se representa mediante cinco ventas ni un sexto perfil.
 - Bloquea cualquier reserva o venta individual hasta su liberación explícita.
 
-### Verificación de hogar ("No perteneces a este hogar") — solo en modalidad `cuenta_completa`
-
-**Añadido el 22/07/2026, a partir de la experiencia operativa del usuario.** Netflix dispara de forma irregular (aproximadamente cada 15 días, sin fecha fija — la decide Netflix, no el negocio) un mensaje de verificación de hogar sobre un perfil concreto cuando la cuenta estándar se vendió en modalidad `cuenta_completa`. **No ocurre en modalidad `perfil` individual del producto A, ni en el producto B (perfil extra)** — esto explica por qué el perfil extra es más estable operativamente (ver sección 3).
-
-Se registra **por perfil** (hasta 5 por cuenta completa vendida), no a nivel de toda la cuenta, porque distintos miembros de esa venta completa pueden disparar el aviso desde ubicaciones distintas de forma independiente.
-
-Flujo confirmado:
-
-1. El cliente avisa que le apareció el mensaje en un perfil concreto. No hay forma de detectarlo automáticamente; el administrador lo registra manualmente con una acción por perfil.
-2. El cliente solicita el código a Netflix y lo introduce. El administrador marca `código solicitado` para ese evento cuando el cliente confirma que ya lo hizo.
-3. El código concede aproximadamente 14 días adicionales de servicio normal, que sumados al uso ya transcurrido del mes suelen completar el período pagado. No genera cobro adicional, no modifica el período, precio ni fecha de renovación del cliente.
-4. Si a ese mismo perfil le vuelve a aparecer la verificación, Netflix ya no permite solicitar otro código. Esto se trata como una **falla de la cuenta completa**: se aplica el traslado por falla ya documentado más abajo (traslado a otra cuenta estándar totalmente libre, conservando período/precio/cobro/fecha de renovación); la cuenta de origen queda en mantenimiento.
-5. El conteo de eventos por perfil es **acumulativo durante toda la vida de esa asignación de cuenta completa**: una renovación mensual normal del cliente **no reinicia** el contador.
-
-Cada evento queda registrado como una fila propia (nunca se sobrescribe uno anterior), con: perfil afectado, asignación de cuenta completa vigente, quién lo registró, momento en que se disparó, momento en que se marcó "código solicitado" y resultado (`resuelta` o `requiere_traslado`). Ver entidad `verificaciones_hogar_netflix` en `docs/02-modelo-dominio.md`.
-
 ### Entrega, traslado y liberación de la cuenta estándar
 
 - La venta por perfil entrega correo, contraseña, nombre de perfil, PIN y fecha `Renueva/Vence`.
@@ -135,7 +119,6 @@ En Netflix se podrán filtrar o agrupar los dos productos:
 - `Cuenta estándar` muestra fila padre y cinco perfiles, o un resumen único cuando está vendida completa.
 - `Perfil extra` muestra una sola unidad y una etiqueta visible que lo diferencia de un perfil estándar.
 - Precio, costo, estabilidad o nombre no se usarán para inferir el producto; se guarda su identificador explícito.
-- Cada perfil dentro de una venta `cuenta_completa` muestra una acción manual `Registrar verificación de hogar` y, una vez registrado el evento, una casilla `Código solicitado` para que el administrador marque cuándo el cliente confirmó haberlo pedido. El historial de eventos por perfil queda visible en el detalle de la asignación.
 
 ## 7. Invariantes mínimas
 
@@ -151,10 +134,6 @@ En Netflix se podrán filtrar o agrupar los dos productos:
 10. Entregar acceso a una cuenta estándar no permite modificar sus datos maestros.
 11. Trasladar un perfil o venta completa estándar no crea otra venta/período/cobro.
 12. Un perfil estándar con limpieza o revocación pendiente no aparece disponible.
-13. La verificación de hogar solo puede registrarse sobre perfiles de una asignación `cuenta_completa`; nunca sobre modalidad `perfil` individual ni sobre el producto extra.
-14. Un evento de verificación de hogar nunca modifica período, precio, cobro ni fecha de renovación por sí solo.
-15. El conteo de eventos por perfil es acumulativo y no se reinicia al renovar.
-16. Un segundo evento sin código disponible en el mismo perfil dispara el traslado por falla de la cuenta completa, nunca una falla parcial de un solo perfil dentro de la misma cuenta.
 
 ## 8. Confirmaciones pendientes
 
