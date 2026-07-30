@@ -10,6 +10,9 @@ export type VendedorOp = {
   alias: string | null;
   tipo: "revendedor" | "intermediario";
   cobraEnParalela: boolean;
+  /** Teléfono afiliado (de la importación / catálogo). Para revendedores es el
+   * contacto de la venta: GL le vende A ÉL, no a un cliente final desconocido. */
+  telefono?: string | null;
 };
 
 export function ModalVentaRapida({
@@ -68,6 +71,18 @@ export function ModalVentaRapida({
   const requiereIdentidadSpotify =
     esSpotifyFamiliar && (!clienteLogin || editarIdentidadPreparada);
 
+  // El nombre del cupo (perfil/miembro) sirve de cliente inicial salvo que sea
+  // un placeholder genérico. Controlado para poder autocompletarlo al elegir un
+  // revendedor (ver onCambiarVendedor).
+  const esNombreGenerico =
+    !nombrePerfil ||
+    nombrePerfil.toLowerCase().startsWith("perfil ") ||
+    nombrePerfil.toLowerCase().startsWith("miembro ") ||
+    nombrePerfil === "Vacío (+ Vender)" ||
+    nombrePerfil === "Cuenta Completa";
+  const [clienteNombre, setClienteNombre] = useState(esNombreGenerico ? "" : nombrePerfil);
+  const [clienteWhatsapp, setClienteWhatsapp] = useState("");
+
   // Duración del paquete: la renovación se calcula a N meses del inicio. El
   // precio es el TOTAL del paquete (no el mensual).
   const [meses, setMeses] = useState(1);
@@ -95,6 +110,13 @@ export function ModalVentaRapida({
     // Existente: hereda su tipo/base. Nuevo: intermediario por defecto (casual).
     setTipoVendedor(v?.tipo ?? "intermediario");
     setCobraParalela(v?.cobraEnParalela ?? false);
+    // En una venta a REVENDEDOR, GL le vende a él: el cliente ES el revendedor.
+    // Se rellena nombre y teléfono (si están vacíos) con los suyos, para no
+    // exigir un cliente final que no existe. Editable si vendes a uno concreto.
+    if (v?.tipo === "revendedor") {
+      setClienteNombre((actual) => actual.trim() || v.nombre);
+      setClienteWhatsapp((actual) => actual.trim() || (v.telefono ?? ""));
+    }
   }
 
   function onCambiarTipo(t: "revendedor" | "intermediario") {
@@ -102,13 +124,6 @@ export function ModalVentaRapida({
   }
 
   const hoyIso = new Date().toISOString().split("T")[0];
-  const esNombreGenerico =
-    !nombrePerfil ||
-    nombrePerfil.toLowerCase().startsWith("perfil ") ||
-    nombrePerfil.toLowerCase().startsWith("miembro ") ||
-    nombrePerfil === "Vacío (+ Vender)" ||
-    nombrePerfil === "Cuenta Completa";
-  const clienteInicial = esNombreGenerico ? "" : nombrePerfil;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
@@ -313,10 +328,16 @@ export function ModalVentaRapida({
             <input
               name="cliente_nombre"
               required
-              defaultValue={clienteInicial}
+              value={clienteNombre}
+              onChange={(e) => setClienteNombre(e.target.value)}
               placeholder="Ej. Luis Martínez"
               className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
             />
+            {tipoVendedor === "revendedor" && seleccionVendedor && (
+              <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+                Venta a revendedor: el cliente es el propio revendedor. Cámbialo solo si vendes a un cliente final concreto.
+              </p>
+            )}
           </div>
 
           <div>
@@ -325,6 +346,8 @@ export function ModalVentaRapida({
             </label>
             <input
               name="cliente_whatsapp"
+              value={clienteWhatsapp}
+              onChange={(e) => setClienteWhatsapp(e.target.value)}
               placeholder="+584121234567"
               className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-mono text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
             />
