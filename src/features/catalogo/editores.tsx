@@ -227,6 +227,15 @@ export function EditorVendedor({
   const [tipo, setTipo] = useState<"revendedor" | "intermediario">(
     vendedor?.tipo ?? "intermediario",
   );
+  // Re-sincroniza el <select> con el dato guardado cuando este cambia (p. ej.
+  // tras Guardar + revalidar). Sin esto, un <select> controlado por estado local
+  // se queda mostrando el valor anterior aunque en la base ya se guardó el nuevo:
+  // `useState(prop)` solo lee la prop al montar, no cuando cambia después.
+  const [tipoGuardado, setTipoGuardado] = useState(vendedor?.tipo);
+  if (vendedor?.tipo !== tipoGuardado) {
+    setTipoGuardado(vendedor?.tipo);
+    setTipo(vendedor?.tipo ?? "intermediario");
+  }
 
   if (vendedor && !abierto) {
     const vinculado = usuarios.find((u) => u.id === vendedor.usuario_id);
