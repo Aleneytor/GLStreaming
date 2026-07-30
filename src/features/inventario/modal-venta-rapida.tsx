@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { venderUnidadRapidaAction } from "./actions";
+import { tarifaSpotify, tipoTarifaSpotifyDesdeCorreo } from "@/domain/tarifas-spotify";
 
 export type VendedorOp = {
   id: string;
@@ -66,6 +67,24 @@ export function ModalVentaRapida({
   const [editarIdentidadPreparada, setEditarIdentidadPreparada] = useState(false);
   const requiereIdentidadSpotify =
     esSpotifyFamiliar && (!clienteLogin || editarIdentidadPreparada);
+
+  // Duración del paquete: la renovación se calcula a N meses del inicio. El
+  // precio es el TOTAL del paquete (no el mensual).
+  const [meses, setMeses] = useState(1);
+  const [precio, setPrecio] = useState("2.50");
+  // Spotify tiene tarifa por tramos (1/3/6/12): al elegir un tramo, sugiere el
+  // precio total. Para 2 meses u otras duraciones, o revendedores, precio manual.
+  function sugerirPrecioSpotify(
+    cantidadMeses: number,
+    tipoCorreo: typeof tipoCorreoSpotify = tipoCorreoSpotify,
+  ) {
+    if (!esSpotifyFamiliar) return;
+    const tarifa = tarifaSpotify(
+      tipoTarifaSpotifyDesdeCorreo(clienteLogin, tipoCorreo),
+      cantidadMeses,
+    );
+    if (tarifa != null) setPrecio(String(tarifa));
+  }
 
   const revendedores = vendedores.filter((v) => v.tipo === "revendedor");
   const intermediarios = vendedores.filter((v) => v.tipo !== "revendedor");
@@ -327,17 +346,45 @@ export function ModalVentaRapida({
 
             <div>
               <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                Precio Comercial ($ USD) *
+                Duración (meses) *
               </label>
-              <input
-                name="precio_usd"
-                required
-                inputMode="decimal"
-                placeholder="2.50"
-                defaultValue="2.50"
-                className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-mono text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-              />
+              <select
+                name="meses"
+                value={meses}
+                onChange={(e) => {
+                  const cantidad = Number(e.target.value);
+                  setMeses(cantidad);
+                  sugerirPrecioSpotify(cantidad);
+                }}
+                className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  <option key={m} value={m}>
+                    {m} {m === 1 ? "mes" : "meses"}
+                  </option>
+                ))}
+              </select>
             </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+              {meses > 1 ? "Precio total del paquete ($ USD) *" : "Precio Comercial ($ USD) *"}
+            </label>
+            <input
+              name="precio_usd"
+              required
+              inputMode="decimal"
+              placeholder="2.50"
+              value={precio}
+              onChange={(e) => setPrecio(e.target.value)}
+              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-mono text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+            />
+            {meses > 1 && (
+              <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+                Total por los {meses} meses (no por mes). La renovación se fija a {meses} meses del inicio.
+              </p>
+            )}
           </div>
 
           <div>

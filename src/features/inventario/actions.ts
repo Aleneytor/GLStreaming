@@ -616,6 +616,10 @@ export async function venderUnidadRapidaAction(
   const nombrePerfil = String(formData.get("nombre_perfil") ?? "").trim();
   const precioUsdTxt = String(formData.get("precio_usd") ?? "").trim();
   const fechaInicioTxt = String(formData.get("fecha_inicio") ?? "").trim();
+  // Duración del paquete en meses (la renovación se calcula a N meses del inicio).
+  // El precio recibido es el TOTAL del paquete, no el mensual.
+  const mesesRaw = Number(formData.get("meses") ?? 1);
+  const meses = Number.isInteger(mesesRaw) && mesesRaw >= 1 && mesesRaw <= 12 ? mesesRaw : 1;
   const vendedorIdInput = String(formData.get("vendedor_id") ?? "").trim() || null;
   const vendedorNombreCustom = String(formData.get("vendedor_nombre_custom") ?? "").trim() || null;
   const vendedorTipo =
@@ -700,6 +704,7 @@ export async function venderUnidadRapidaAction(
         p_precio_usd: precioUsd,
         p_monto_usd: precioUsd,
         p_inicio: fechaInicioTxt || null,
+        p_cantidad_periodos: meses,
         p_vendedor_id: vendedorId,
         p_login_cifrado: cifrarSecreto(spotifyLogin),
         p_login_fingerprint: huellaSecreto(spotifyLogin),
@@ -716,6 +721,7 @@ export async function venderUnidadRapidaAction(
         p_precio_usd: precioUsd,
         p_monto_usd: precioUsd,
         p_inicio: fechaInicioTxt || null,
+        p_cantidad_periodos: meses,
         p_vendedor_id: vendedorId,
       });
 
