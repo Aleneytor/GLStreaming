@@ -1064,8 +1064,12 @@ function BloqueCuentaExcel({
         } else if (f.dias === null) {
           claseAlerta = "bg-neutral-100 text-neutral-700 font-medium dark:bg-neutral-800 dark:text-neutral-300 rounded-md px-2.5 py-1";
           textoAlerta = "Sin fecha";
-        } else if (f.dias > 0) {
+        } else if (f.dias > 5) {
           claseAlerta = "bg-emerald-100 text-emerald-950 border border-emerald-300 font-bold hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/50 dark:hover:bg-emerald-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
+          textoAlerta = `Falta ${f.dias} días ⚙️`;
+        } else if (f.dias > 0) {
+          // 1–5 días: pronto a vencer → ámbar (no verde).
+          claseAlerta = "bg-amber-100 text-amber-950 border border-amber-300 font-bold hover:bg-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/50 dark:hover:bg-amber-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
           textoAlerta = `Falta ${f.dias} días ⚙️`;
         } else if (f.dias === 0) {
           claseAlerta = "bg-red-600 text-white font-black hover:bg-red-700 rounded-md px-2.5 py-1 animate-pulse shadow-md cursor-pointer";
@@ -1082,9 +1086,14 @@ function BloqueCuentaExcel({
           claseAvisoProv =
             "bg-neutral-100 text-neutral-600 border border-dashed border-neutral-300 hover:bg-neutral-200 cursor-pointer rounded-md px-2.5 py-1 font-medium dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700";
           textoAvisoProv = "+ Pagar";
-        } else if ((cta.diasProveedor ?? 0) >= 0) {
+        } else if ((cta.diasProveedor ?? 0) > 5) {
           claseAvisoProv =
             "bg-emerald-100 text-emerald-950 border border-emerald-300 font-bold hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/50 dark:hover:bg-emerald-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
+          textoAvisoProv = `Falta ${cta.diasProveedor} días 🔄`;
+        } else if ((cta.diasProveedor ?? 0) >= 0) {
+          // 0–5 días: pronto a renovar con el proveedor → ámbar (no verde).
+          claseAvisoProv =
+            "bg-amber-100 text-amber-950 border border-amber-300 font-bold hover:bg-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/50 dark:hover:bg-amber-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
           textoAvisoProv = `Falta ${cta.diasProveedor} días 🔄`;
         } else {
           claseAvisoProv = "bg-red-100 text-red-950 border border-red-300 font-bold hover:bg-red-200 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/50 dark:hover:bg-red-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
