@@ -7,8 +7,9 @@ import { analizarFilas } from "@/domain/importacion";
  *
  * Casos que trae esta familia:
  *   - Miembros con nombre de cliente escrito.
- *   - Un miembro SIN nombre (fila 4): el revendedor solo pasó correo y clave,
- *     así que el cliente queda identificado por su propio correo.
+ *   - Un miembro SIN nombre (fila 4): el revendedor solo pasó correo y clave.
+ *     El correo de acceso NO se usa como nombre del cliente; se cae al
+ *     revendedor («Vendió») como cliente comercial provisional.
  *   - El Gmail pagador metido dentro de la celda de proveedor.
  */
 const CAB =
@@ -50,11 +51,12 @@ describe("Familia de Spotify: miembros con su propio login", () => {
     expect(r.filas[3].datos.claveCliente).toBe("31714135may");
   });
 
-  it("sin nombre de cliente, lo identifica por su propio correo", () => {
-    // El revendedor solo pasó correo y clave: el correo ES el cliente.
-    expect(r.filas[3].datos.cliente).toBe("guerrakatherine504@gmail.com");
+  it("sin nombre de cliente, cae al revendedor («Vendió») como provisional", () => {
+    // El correo de acceso NO se usa como nombre del cliente: se toma el
+    // revendedor como cliente comercial provisional (prioridad Cliente→Perfil→Vendió).
+    expect(r.filas[3].datos.cliente).toBe("NubeDigital");
     expect(r.filas[3].datos.vendio).toBe("NubeDigital");
-    expect(r.filas[3].avisos.join(" ")).toContain("identificado por su correo");
+    expect(r.filas[3].avisos.join(" ")).toContain("provisional");
   });
 
   it("respeta el nombre cuando sí viene escrito", () => {
@@ -107,7 +109,8 @@ describe("Dos familias seguidas, con un cupo «no se puede»", () => {
 
   it("reconoce DOS familias, no una", () => {
     expect(r.cuentas).toBe(2);
-    expect(r.conError).toBe(0);
+    // 1 error: hay una fila vendida sin Cliente/Perfil/Vendió (ver test de abajo).
+    expect(r.conError).toBe(1);
     expect(r.filas).toHaveLength(10);
   });
 
@@ -132,9 +135,12 @@ describe("Dos familias seguidas, con un cupo «no se puede»", () => {
     expect(r.filas[0].datos.cliente).toBeNull();
   });
 
-  it("sin nombre pero con venta, identifica al cliente por su correo", () => {
-    expect(r.filas[6].datos.cliente).toBe("eryckssantana57@gmail.com");
-    expect(r.filas[8].datos.cliente).toBe("merianyelis9@gmail.com");
+  it("sin nombre cae al revendedor; sin nombre ni revendedor en una venta, es error", () => {
+    // idx6: trae «Vendió» = Roman → cliente provisional Roman (no el correo).
+    expect(r.filas[6].datos.cliente).toBe("Roman");
+    // idx8: vendida ($3) pero sin Cliente, sin Perfil (Spotify) y sin Vendió → error.
+    expect(r.filas[8].datos.cliente).toBeNull();
+    expect(r.filas[8].errores.join(" ")).toContain("nombre comercial del cliente");
   });
 
   it("separa el Gmail pagador de la celda de proveedor de la segunda familia", () => {

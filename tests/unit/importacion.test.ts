@@ -276,15 +276,16 @@ describe("analizarFilas", () => {
   });
 
   it("un servicio de costo 0 (familiar) no es error: es cortesía", () => {
-    // La fila de Abigail: ingresos «$ -», inversión «$ -», proveedor «yo».
+    // Cortesía a Abigail: ingresos «$ -», inversión «$ -», proveedor «yo». El
+    // nombre va en la columna Cliente (monto 0 ya no promueve el Perfil a cliente).
     const r = analizarFilas(
-      fila("netab@gls.org", "gls2020", "Abigail", "0", "$ -", "23/4/2027", "23/5/2027", "", "", "", "$ -", "yo"),
+      fila("netab@gls.org", "gls2020", "Abigail", "0", "$ -", "23/4/2027", "23/5/2027", "Abigail", "", "", "$ -", "yo"),
       1,
     );
     expect(r.conError).toBe(0);
     expect(r.filas[0].datos.monto).toBe(0);
     expect(r.filas[0].datos.inversion).toBe(0);
-    expect(r.filas[0].datos.cliente).toBe("Abigail"); // el perfil es la clienta
+    expect(r.filas[0].datos.cliente).toBe("Abigail");
     expect(r.filas[0].avisos.join(" ")).toContain("Cortesía");
   });
 
@@ -484,7 +485,7 @@ describe("analizarFilas", () => {
       notasProveedor: "Paga por Binance",
     });
     expect(r.configuracionesVendedores).toEqual([
-      { nombre: "Gabriel Nadales", alias: "Joker", tipo: "revendedor", tasa: "paralela" },
+      { nombre: "Gabriel Nadales", alias: "Joker", tipo: "revendedor", tasa: "paralela", telefono: null },
     ]);
   });
 
