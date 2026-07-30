@@ -8,7 +8,7 @@ Fecha de esta consolidación: **22/07/2026**.
 
 GL Streaming reemplaza un Excel operativo de reventa de cuentas de streaming (Netflix, HBO, Disney+, Prime Video, Crunchyroll, Paramount+, Universal+, VIX, FlujoTV, Telelatino, CapCut, Gemini/Google Cloud, Canva, YouTube, Spotify) por una app web. El modelo de dominio es inusualmente riguroso para una etapa pre-código: **95 decisiones confirmadas** (`DEC-01` a `DEC-95` en `06-decisiones-pendientes.md`), un diccionario de ~30 entidades con campos exactos (`02-modelo-dominio.md`), 90+ invariantes numerados, y fórmulas financieras completas (USD comercial → VES cobrado a BCV → lectura económica a paralela → USDT de costos).
 
-**Fase 0 (decisiones de dominio) está cerrada.** Seis plataformas están funcionalmente sólidas: Netflix, HBO, Disney+, Prime Video, Crunchyroll y Spotify. Los cuatro huecos que quedaban (YouTube, Canva, Telelatino, Gemini/Google Cloud) se resolvieron o se despriorizaron explícitamente en la sesión del 22/07/2026 (ver `DEC-91` a `DEC-95`), incluida una regla nueva de Netflix (verificación de hogar) que no estaba documentada antes.
+**Fase 0 (decisiones de dominio) está cerrada.** Seis plataformas están funcionalmente sólidas: Netflix, HBO, Disney+, Prime Video, Crunchyroll y Spotify. Los cuatro huecos que quedaban (YouTube, Canva, Telelatino, Gemini/Google Cloud) se resolvieron o se despriorizaron explícitamente en la sesión del 22/07/2026 (ver `DEC-91` a `DEC-94`).
 
 **Lo único pendiente fuera de este workspace**: rotar una credencial expuesta en el repo público del proyecto Kuanto (fuente de la tasa paralela, propiedad del usuario) — ver `07-integracion-tasas.md` y la nota en `README.md`. **No bloquea la Fase 1**: todo el desarrollo empieza en local con datos simulados; solo importa antes de conectar la tasa paralela en vivo (más cerca de la Fase 4, motor financiero).
 
@@ -51,7 +51,7 @@ Repositorio propuesto (de `03-arquitectura-y-seguridad.md`, sin cambios): `src/a
 
 Por decisión explícita del usuario, **no se espera a cerrar el catálogo completo de las 15 plataformas** antes de programar:
 
-1. Fase 1 (fundación técnica): proyecto local Next.js/TS/Tailwind/Supabase, migraciones cubriendo el esquema completo de las 6 plataformas sólidas + Spotify + los huecos ya resueltos de Canva/Gemini/Netflix-extra + la nueva regla de verificación de hogar; YouTube con el mínimo necesario para conservar sus 2 registros comerciales reales. Auth/RLS/vistas seguras, seeds sintéticos.
+1. Fase 1 (fundación técnica): proyecto local Next.js/TS/Tailwind/Supabase, migraciones cubriendo el esquema completo de las 6 plataformas sólidas + Spotify + los huecos ya resueltos de Canva/Gemini/Netflix-extra; YouTube con el mínimo necesario para conservar sus 2 registros comerciales reales. Auth/RLS/vistas seguras, seeds sintéticos.
 2. Fase 2 (Netflix + carga manual) → Fase 3 (ciclo comercial) → Fase 4 (proveedores/finanzas/cierre, momento natural para resolver la rotación de Kuanto) → Fase 5 (portal revendedor) → Fase 6 (resto de plataformas + despliegue en `glcuenta.com`), tal como están descritas en `05-roadmap.md`, sin cambios de fondo.
 3. Telelatino queda con modalidad limitada a "cuenta completa" (default ya aceptado) hasta que se decida ampliarla; el resto de los ~40 ítems P0/P1 no críticos quedan aceptados con la propuesta que ya trae `06-decisiones-pendientes.md`, salvo que el usuario diga lo contrario en el momento de implementarlos.
 4. No se toca VPS ni `glcuenta.com` hasta la Fase 6.
@@ -69,7 +69,7 @@ Migraciones (`supabase/migrations/`):
 - `0003_ciclo_comercial` — tasas_cambio, contactos_comerciales, suscripciones, suscripcion_contactos, historial_estado_suscripcion, sesiones_carga_inicial, asignaciones_inventario, periodos_servicio, pagos_cliente.
 - `0004_proveedores_finanzas` — ciclos_proveedor, pagos_proveedor, categorias_gasto, gastos_operativos, cierres_mensuales, detalles_cierre_mensual.
 - `0005_spotify_entregas` — identidades_spotify, coberturas_spotify, controles_pago_spotify, vinculos_identidad_spotify, incidencias_spotify, casos_incidencia_spotify, entregas_acceso, operaciones_remotas.
-- `0006_cierre_vistas_seguras` — verificaciones_hogar_netflix, eventos_auditoria; vista `v_mis_ventas_revendedor` (única ventana del revendedor); grants a `authenticated` (RLS decide filas; `anon` sin privilegios). El revendedor NO ve stock ni solicita por la app (DEC-97).
+- `0006_cierre_vistas_seguras` — eventos_auditoria; vista `v_mis_ventas_revendedor` (única ventana del revendedor); grants a `authenticated` (RLS decide filas; `anon` sin privilegios). El revendedor NO ve stock ni solicita por la app (DEC-97). *(La tabla `verificaciones_hogar_netflix`, creada aquí originalmente, se eliminó del alcance en la migración `0056`.)*
 
 Lógica de dominio (TypeScript, con pruebas):
 - `src/lib/crypto.ts` — cifrado AES-256-GCM de secretos + huella HMAC + máscaras (5 pruebas).
@@ -217,6 +217,70 @@ Estado de pruebas: **181 SQL + 79 unitarias**, todas en verde.
 Para retomar: `npx supabase start` y `npm run dev` (ver `09-fase-1-setup.md`).
 
 ## 4.6. Operación directa y adaptación móvil (27/07/2026)
+
+## 4.7. Clientes canónicos y teléfono de revendedor (28/07/2026)
+
+- **Clientes canónicos por nombre + teléfono**: la resolución de clientes ya no
+  reutiliza por nombre a secas. Con teléfono, exige la pareja exacta
+  `nombre + whatsapp`; sin teléfono, solo reutiliza un nombre inequívoco sin
+  teléfono previo. Esto evita mezclar homónimos y permite agrupar en operación
+  a un mismo cliente con varios servicios cuando comparte nombre y número.
+- **Spotify familiar deja de inventar clientes con el correo de acceso**: el
+  importador ya no toma `Correo Cliente` como nombre comercial del cliente. Ese
+  correo es credencial. Si falta `Cliente` o `Perfil` en una fila vendida, la
+  fila se marca con error para corregir el Excel antes de importarla.
+- **Caso real de revendedor sin nombre final del cliente**: si una venta llega
+  con correo/clave del cliente final pero sin su nombre, el importador ya no
+  bloquea ni inventa un cliente con ese correo. La prioridad comercial quedó:
+  `Cliente` → `Perfil` → `Vendió`; `Correo Cliente` nunca entra como nombre del
+  cliente. Si además la fila no trae teléfono del cliente pero sí teléfono del
+  vendedor importado, se usa ese teléfono como referencia comercial
+  provisional.
+- **Spotify familiar madre/libre**: una fila con `monto = 0` ya no se toma como
+  señal automática de venta. Eso evita que las filas madre o libres de Spotify
+  familiar aparezcan en rojo pidiendo nombre de cliente cuando en realidad son
+  cupos base o inventario sin vender.
+- **Teléfono en vendedores/revendedores**: `vendedores` ahora guarda
+  `telefono_original` y `telefono_normalizado`. El catálogo permite editarlo y
+  el importador puede anclarlo desde la hoja al resolver `Vendió`.
+- **Centro de Operaciones agrupado por cliente**: la UI agrupa tarjetas por
+  `cliente_id` y, como respaldo, por `nombre + teléfono`, mostrando varios
+  servicios del mismo cliente dentro de una sola tarjeta.
+- **Migraciones nuevas**: `0053_clientes_canonicos_y_telefono_vendedor.sql` y
+  `0054_fix_resolver_cliente_canonico.sql`.
+- **Validación real**: `npx supabase migration up`, `db reset` local exitoso,
+  recreación de usuarios dev, `npm run db:types`, `npx tsc --noEmit` y prueba
+  SQL manual verificando que `Franklin + mismo teléfono` reutiliza el mismo
+  cliente y `Franklin + teléfono distinto` crea otro.
+
+## 4.8. Spotify familiar: retiro reutilizable del negocio (29/07/2026)
+
+- **Bug corregido**: al cancelar un miembro de Spotify familiar con correo del
+  negocio, el cupo volvía a quedar libre pero “sin acceso preparado”, lo que en
+  la práctica hacía parecer que el sistema había borrado el correo/clave. Además,
+  el vínculo Spotify podía quedar abierto sobre una suscripción ya cancelada.
+- **Regla correcta**: si el acceso del miembro es reutilizable
+  (`dominio_gl` o `gmail_propio`), confirmar el retiro debe cerrar la venta pero
+  devolver ese mismo correo/clave al mismo cupo como identidad preparada, lista
+  para revenderse. Si es `correo_cliente`, sí corresponde retirar la identidad y
+  destruir sus secretos.
+- **Implementación**: migración
+  `0055_spotify_reutiliza_identidad_al_confirmar_retiro.sql`, que extiende
+  `confirmar_limpieza()` para:
+
+  1. cerrar el `vinculos_identidad_spotify` activo de la suscripción cancelada;
+  2. reciclar la identidad reusable hacia `unidad_preparada_id` del mismo cupo;
+  3. retirar de forma irreversible solo las identidades `correo_cliente`;
+  4. no tocar la identidad madre de la familia.
+
+- **Validación real**: suite nueva
+  `supabase/tests/spotify_limpieza_reutilizable.sql`, ejecutada contra
+  PostgreSQL local. Casos verificados:
+
+  - acceso GL vuelve preparado al mismo cupo;
+  - el vínculo viejo queda cerrado;
+  - la identidad madre conserva login/clave;
+  - un `correo_cliente` sí pierde secretos y queda `retirada`.
 
 Las migraciones `0023..0035` y las iteraciones posteriores llevaron la operación
 diaria al inventario: venta y gestión directa desde cada cupo, importadores para

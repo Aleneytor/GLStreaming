@@ -87,6 +87,7 @@ const esquemaVendedor = z.object({
   id: z.string().uuid().optional().or(z.literal("")),
   nombre: z.string().trim().min(1, "El nombre es obligatorio."),
   alias: z.string().trim().max(60).optional().or(z.literal("")),
+  telefono_original: z.string().trim().max(40).optional().or(z.literal("")),
   usuario_id: z.string().uuid().optional().or(z.literal("")),
   tipo: z.enum(["revendedor", "intermediario"]),
   cobra_en_paralela: z.coerce.boolean(),
@@ -111,6 +112,7 @@ export async function guardarVendedorAction(
     id: formData.get("id") ?? "",
     nombre: formData.get("nombre"),
     alias: formData.get("alias") ?? "",
+    telefono_original: formData.get("telefono_original") ?? "",
     usuario_id: formData.get("usuario_id") ?? "",
     tipo: formData.get("tipo") ?? "intermediario",
     cobra_en_paralela: formData.get("cobra_en_paralela") === "on",
@@ -119,11 +121,16 @@ export async function guardarVendedorAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
   }
-  const { id, nombre, alias, usuario_id, tipo, cobra_en_paralela, activo } = parsed.data;
+  const { id, nombre, alias, telefono_original, usuario_id, tipo, cobra_en_paralela, activo } =
+    parsed.data;
 
   const fila = {
     nombre,
     alias: alias || null,
+    telefono_original: telefono_original || null,
+    telefono_normalizado: telefono_original
+      ? telefono_original.replace(/[^\d+]/g, "") || null
+      : null,
     usuario_id: usuario_id || null,
     tipo,
     cobra_en_paralela,

@@ -120,6 +120,8 @@ type VendedorExistente = {
   alias: string | null;
   tipo: string;
   cobra_en_paralela: boolean;
+  telefono_original: string | null;
+  telefono_normalizado: string | null;
 };
 
 type VendedorResuelto = {
@@ -147,10 +149,20 @@ async function resolverVendedores(
       const cobraEnParalela = config.tasa
         ? config.tasa === "paralela"
         : existente.cobra_en_paralela;
-      const patch: { alias?: string; tipo?: string; cobra_en_paralela?: boolean } = {};
+      const patch: {
+        alias?: string;
+        tipo?: string;
+        cobra_en_paralela?: boolean;
+        telefono_original?: string;
+        telefono_normalizado?: string | null;
+      } = {};
       if (config.alias) patch.alias = config.alias;
       if (config.tipo) patch.tipo = tipo;
       if (config.tasa) patch.cobra_en_paralela = cobraEnParalela;
+      if (config.telefono) {
+        patch.telefono_original = config.telefono;
+        patch.telefono_normalizado = config.telefono.replace(/[^0-9+]/g, "") || null;
+      }
       if (Object.keys(patch).length > 0) {
         const { error } = await supabase.from("vendedores").update(patch).eq("id", existente.id);
         if (error) throw new Error(`No se pudo actualizar a ${config.nombre}: ${error.message}`);
@@ -168,6 +180,10 @@ async function resolverVendedores(
         alias: config.alias,
         tipo,
         cobra_en_paralela: cobraEnParalela,
+        telefono_original: config.telefono,
+        telefono_normalizado: config.telefono
+          ? config.telefono.replace(/[^0-9+]/g, "") || null
+          : null,
       })
       .select("id")
       .single();
@@ -232,7 +248,7 @@ export async function importarAction(
   const supabase = await createClient();
   const { data: vendedoresExistentes, error: errorVendedores } = await supabase
     .from("vendedores")
-    .select("id, nombre, alias, tipo, cobra_en_paralela");
+    .select("id, nombre, alias, tipo, cobra_en_paralela, telefono_original, telefono_normalizado");
   if (errorVendedores) return { error: `No se pudieron leer los vendedores: ${errorVendedores.message}` };
 
   const existentes = (vendedoresExistentes ?? []) as VendedorExistente[];

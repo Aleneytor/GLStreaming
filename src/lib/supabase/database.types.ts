@@ -2659,6 +2659,8 @@ export type Database = {
           created_at: string
           id: string
           nombre: string
+          telefono_normalizado: string | null
+          telefono_original: string | null
           tipo: string
           usuario_id: string | null
         }
@@ -2669,6 +2671,8 @@ export type Database = {
           created_at?: string
           id?: string
           nombre: string
+          telefono_normalizado?: string | null
+          telefono_original?: string | null
           tipo?: string
           usuario_id?: string | null
         }
@@ -2679,6 +2683,8 @@ export type Database = {
           created_at?: string
           id?: string
           nombre?: string
+          telefono_normalizado?: string | null
+          telefono_original?: string | null
           tipo?: string
           usuario_id?: string | null
         }
@@ -2688,64 +2694,6 @@ export type Database = {
             columns: ["usuario_id"]
             isOneToOne: true
             referencedRelation: "usuarios"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      verificaciones_hogar_netflix: {
-        Row: {
-          asignacion_id: string
-          codigo_solicitado_at: string | null
-          created_at: string
-          disparada_at: string
-          id: string
-          nota_no_sensible: string | null
-          registrada_por_id: string | null
-          resultado: string
-          unidad_id: string
-        }
-        Insert: {
-          asignacion_id: string
-          codigo_solicitado_at?: string | null
-          created_at?: string
-          disparada_at?: string
-          id?: string
-          nota_no_sensible?: string | null
-          registrada_por_id?: string | null
-          resultado?: string
-          unidad_id: string
-        }
-        Update: {
-          asignacion_id?: string
-          codigo_solicitado_at?: string | null
-          created_at?: string
-          disparada_at?: string
-          id?: string
-          nota_no_sensible?: string | null
-          registrada_por_id?: string | null
-          resultado?: string
-          unidad_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "verificaciones_hogar_netflix_asignacion_id_fkey"
-            columns: ["asignacion_id"]
-            isOneToOne: false
-            referencedRelation: "asignaciones_inventario"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "verificaciones_hogar_netflix_registrada_por_id_fkey"
-            columns: ["registrada_por_id"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "verificaciones_hogar_netflix_unidad_id_fkey"
-            columns: ["unidad_id"]
-            isOneToOne: false
-            referencedRelation: "unidades_inventario"
             referencedColumns: ["id"]
           },
         ]
@@ -3044,6 +2992,10 @@ export type Database = {
         }
         Returns: string
       }
+      deshacer_ultima_renovacion: {
+        Args: { p_motivo?: string; p_suscripcion_id: string }
+        Returns: string
+      }
       editar_acceso_miembro_spotify: {
         Args: {
           p_contrasena_cifrada: string
@@ -3275,6 +3227,10 @@ export type Database = {
         }
         Returns: string
       }
+      resolver_cliente_canonico: {
+        Args: { p_nombre: string; p_whatsapp?: string }
+        Returns: string
+      }
       resumen_financiero: {
         Args: { p_fin: string; p_inicio: string }
         Returns: {
@@ -3307,10 +3263,6 @@ export type Database = {
       }
       revertir_cobro_cliente: {
         Args: { p_motivo?: string; p_pago_id: string }
-        Returns: string
-      }
-      deshacer_ultima_renovacion: {
-        Args: { p_motivo?: string; p_suscripcion_id: string }
         Returns: string
       }
       revertir_gasto_operativo: {
@@ -3560,3 +3512,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

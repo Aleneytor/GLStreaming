@@ -72,6 +72,7 @@ export type FilaImportacion = {
   aliasVendedor: string | null;
   tipoVendedor: "revendedor" | "intermediario" | null;
   tasaVendedor: "bcv" | "paralela" | null;
+  telefonoVendedor: string | null;
   tipoProveedor: "propio" | "tercero" | null;
   telefonoProveedor: string | null;
   notasProveedor: string | null;
@@ -82,6 +83,7 @@ export type ConfiguracionVendedorImportacion = {
   alias: string | null;
   tipo: "revendedor" | "intermediario" | null;
   tasa: "bcv" | "paralela" | null;
+  telefono: string | null;
 };
 
 /**
@@ -308,6 +310,7 @@ type Campo =
   | "aliasVendedor"
   | "tipoVendedor"
   | "tasaVendedor"
+  | "telefonoVendedor"
   | "tipoProveedor"
   | "telefonoProveedor"
   | "notasProveedor";
@@ -373,6 +376,8 @@ function campoDeCabecera(titulo: string): Campo | null {
   if (/alias/.test(h) && /(vendedor|vendio|revendedor)/.test(h)) return "aliasVendedor";
   if (/tipo/.test(h) && /(vendedor|vendio|revendedor)/.test(h)) return "tipoVendedor";
   if (/(tasa|base)/.test(h) && /(vendedor|vendio|revendedor|cobro)/.test(h)) return "tasaVendedor";
+  if (/(telefono|celular|whatsapp|movil)/.test(h) && /(vendedor|vendio|revendedor)/.test(h))
+    return "telefonoVendedor";
   if (/tipo/.test(h) && /proveedor/.test(h)) return "tipoProveedor";
   if (/(telefono|celular|whatsapp|movil)/.test(h) && /proveedor/.test(h)) return "telefonoProveedor";
   if (/nota/.test(h) && /proveedor/.test(h)) return "notasProveedor";
@@ -619,7 +624,7 @@ export function analizarFilas(
       leer(c, "vendio"),
     ].some((valor) => valor.trim().toLowerCase() === "no se puede");
     const clienteCol = limpiarMarca(leer(c, "cliente")) || null;
-    const whatsapp = limpiarMarca(leer(c, "whatsapp")) || null;
+    let whatsapp = limpiarMarca(leer(c, "whatsapp")) || null;
     const vendio = limpiarMarca(leer(c, "vendio")) || null;
     const inversionCruda = leer(c, "inversion");
     // La celda de proveedor puede traer el Gmail pagador dentro (familias de
@@ -642,6 +647,7 @@ export function analizarFilas(
     const notasCliente = limpiarMarca(leer(c, "notasCliente")) || null;
     const notaRenovacion = limpiarMarca(leer(c, "notaRenovacion")) || null;
     const aliasVendedor = limpiarMarca(leer(c, "aliasVendedor")) || null;
+    const telefonoVendedor = limpiarMarca(leer(c, "telefonoVendedor")) || null;
     const telefonoProveedor = limpiarMarca(leer(c, "telefonoProveedor")) || null;
     const notasProveedor = limpiarMarca(leer(c, "notasProveedor")) || null;
 
@@ -662,7 +668,7 @@ export function analizarFilas(
     if (tasaVendedorLeida === "invalido") {
       errores.push(`Tasa del vendedor no entendida: «${leer(c, "tasaVendedor")}».`);
     }
-    if (!vendio && (aliasVendedor || tipoVendedor || tasaVendedor)) {
+    if (!vendio && (aliasVendedor || tipoVendedor || tasaVendedor || telefonoVendedor)) {
       errores.push("Hay datos del vendedor, pero la columna «Vendió» está vacía.");
     }
 
@@ -719,27 +725,32 @@ export function analizarFilas(
       );
     }
 
-    // --- Cliente: la columna, el nombre del perfil o, si no, SU CORREO -------
-    // En Spotify el revendedor suele pasar solo el correo y la clave del
-    // cliente, sin su nombre: entonces el cliente queda identificado por su
-    // propio correo, que es justo lo que lo distingue.
+    // --- Cliente: la columna, el perfil o, si no, el revendedor --------------
+    // IMPORTANTE: el correo de acceso del cliente (Spotify familiar) NUNCA se
+    // usa como nombre comercial. Si el revendedor no conoce el nombre final del
+    // cliente y solo entrega el correo/clave, el registro comercial provisional
+    // queda a nombre del revendedor/intermediario.
     // Un correo de identidad POR SÍ SOLO no es una venta: puede ser un cupo con
     // su login ya preparado pero sin vender (la hoja lo marca «Vacío»). Hace
     // falta algo más: nombre, monto, teléfono o revendedor.
     const haySenalVenta = Boolean(
-      clienteCol || typeof monto === "number" || whatsapp || vendio,
+      clienteCol || (typeof monto === "number" && monto > 0) || whatsapp || vendio,
     );
-    const cliente = clienteCol ?? (haySenalVenta ? (perfil ?? correoCliente) : null);
+    const cliente = clienteCol ?? (haySenalVenta ? (perfil ?? vendio) : null);
+    if (!whatsapp && vendio && telefonoVendedor) {
+      whatsapp = telefonoVendedor;
+    }
     if (!clienteCol && cliente) {
       avisos.push(
-        cliente === correoCliente
-          ? `Cliente identificado por su correo: «${cliente}».`
+        cliente === vendio
+          ? `Cliente comercial provisional tomado del revendedor: «${cliente}».`
           : `Cliente tomado del perfil: «${cliente}».`,
       );
     }
     if (haySenalVenta && !cliente) {
-      // No se puede saber a quién: mejor dejar el cupo libre que inventar uno.
-      avisos.push("Sin nada que identifique al cliente: el cupo se carga libre.");
+      errores.push(
+        "Falta el nombre comercial del cliente. El correo de acceso no se usa como cliente: completa «Cliente», «Perfil» o «Vendió».",
+      );
     }
     if (cliente && !vence) avisos.push("Sin vencimiento: se calculará como inicio + 1 mes.");
     if (cliente && monto === null) avisos.push("Sin monto: quedará en «Por cobrar».");
@@ -754,12 +765,14 @@ export function analizarFilas(
         alias: aliasVendedor ?? anterior?.alias ?? null,
         tipo: tipoVendedor ?? anterior?.tipo ?? null,
         tasa: tasaVendedor ?? anterior?.tasa ?? null,
+        telefono: telefonoVendedor ?? anterior?.telefono ?? null,
       };
       if (
         anterior &&
         ((aliasVendedor && anterior.alias && aliasVendedor !== anterior.alias) ||
           (tipoVendedor && anterior.tipo && tipoVendedor !== anterior.tipo) ||
-          (tasaVendedor && anterior.tasa && tasaVendedor !== anterior.tasa))
+          (tasaVendedor && anterior.tasa && tasaVendedor !== anterior.tasa) ||
+          (telefonoVendedor && anterior.telefono && telefonoVendedor !== anterior.telefono))
       ) {
         errores.push(`El vendedor «${vendio}» tiene configuraciones distintas entre filas.`);
       } else {
@@ -815,6 +828,7 @@ export function analizarFilas(
         aliasVendedor,
         tipoVendedor,
         tasaVendedor,
+        telefonoVendedor,
         tipoProveedor,
         telefonoProveedor,
         notasProveedor,
