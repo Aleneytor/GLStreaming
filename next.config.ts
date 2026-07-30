@@ -8,7 +8,9 @@ const nextConfig: NextConfig = {
   // Permite abrir el servidor de desarrollo desde otros dispositivos de la red
   // local (probar en el teléfono). Solo aplica a `next dev`. Se incluye la
   // subred con comodín para no reeditar esto cada vez que el router reasigne IP.
-  allowedDevOrigins: ["192.168.0.*", "192.168.0.105", "192.168.0.106"],
+  // `*.trycloudflare.com` habilita los túneles temporales de Cloudflare para
+  // enseñarle el panel a alguien fuera de la red local (ver runbook del túnel).
+  allowedDevOrigins: ["192.168.0.*", "192.168.0.105", "192.168.0.106", "*.trycloudflare.com"],
   // El acceso a datos vive en el servidor (Server Actions / route handlers);
   // el navegador nunca recibe la service_role de Supabase.
   experimental: {
