@@ -114,6 +114,35 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 
 ## Estado actual
 
+- **Pase visual COMPLETO (2026-08-08)** — se cerraron los cinco quick wins y las
+  cuatro elevaciones de `docs/10-auditoria-visual.md` / `11-pase-visual-claude.md`:
+  - **Marca real**: el logo del negocio (`assets_gl_streaming/Logo.jpg`) es
+    monocromo blanco-sobre-negro, así que su fondo se convirtió en transparencia
+    derivando el alfa de la luminancia (sin pérdida). En `/public`: `logo-gl.png`
+    (monograma, recorte 413×413 exacto), `logo-gl-completo.png` (lockup) e iconos
+    PWA 192/512/maskable + apple-icon. Sustituye al emoji 📺 del login y al
+    recuadro azul con SVG genérico del header. En claro se invierte a negro
+    (`invert dark:invert-0`), que es el uso estándar de una marca monocroma.
+    ⚠️ El `manifest.ts` ya NO tiene `icons: []`; **falta solo el service worker**
+    para que la PWA sea instalable.
+  - **Iconografía**: nuevo `src/components/iconos.tsx` (Heroicons v2 outline,
+    heredan `currentColor`). La navegación dejó de usar emojis —cada sistema
+    operativo los dibujaba distinto y metían color sin significado—; `ItemNav.icono`
+    ahora es `NombreIcono`, así que un emoji suelto no compila. Los emojis se
+    CONSERVAN en `boton-copiar-whatsapp.tsx`: ahí son el texto que se le envía al
+    cliente, no interfaz.
+  - **CTA azul (decisión del usuario)**: «Renovar y Cobrar» es el **único** botón
+    azul de la app. El resto sigue neutral-inverse; si se añaden más azules, se
+    pierde el efecto.
+  - **`components/estado-vacio.tsx`**: estados vacíos unificados con variantes
+    `neutro` y `ok` (el vacío como buena noticia). Aplicado en Cobros,
+    Operaciones, Clientes e Inventario por plataforma.
+  - **Accesibilidad**: `:focus-visible` azul de base en `globals.css` y respeto a
+    «reducir movimiento» (regla global + `motion-safe:` en los pulsos). Acciones
+    táctiles a 44 px (`min-h-11`).
+  - Quick wins: eyebrow duplicado de Finanzas eliminado, «Flujo neto del día» con
+    franja neutra (es un saldo, no una categoría de movimiento), y la cabecera del
+    inventario por plataforma al patrón canónico con el logo de la plataforma.
 - **Cierre del MVP con datos reales (COMPLETO 2026-08-08)**: los **3 perfiles
   fantasma** de la auditoría del 2026-07-27 **ya no existen** en la base real.
   Re-verificado contra PostgreSQL: no hay ninguna unidad con `nombre_visible` de
@@ -646,3 +675,57 @@ verde tras `db:reset` —las suites de venta insertan su propia tasa—).*
 - `ModalGestionVenta` además quedó con estado local para nombre, perfil y acceso
   Spotify. Tras guardar conserva en pantalla el dato nuevo y actualiza su base
   "guardada" para que un segundo submit no compare contra el valor anterior.
+### Nota de sesión 2026-08-08: auditoría visual, 4 ramas no visuales y pase a un modelo con visión
+
+**El modelo actual no tiene visión** (`deepseek-reasoner`), así que la parte
+visual/branding quedó documentada para ejecutarla con un modelo con visión
+(Claude/GPT-4o/Gemini) en otro chat:
+
+- **`docs/10-auditoria-visual.md`** — auditoría de pantallas clave (dashboard,
+  inventario, finanzas, login) con mejoras concretas (sin tocar código).
+- **`docs/11-pase-visual-claude.md`** — pase autónomo listo para pegar en un
+  chat con visión: sistema visual vigente (paleta calmada neutral + acento azul
+  + color semántico, oscuro «dim», botón primario neutral-inverse, tarjetas
+  canónicas), capturas y lista de verificación por pantalla.
+- **Branding**: el logo y las imágenes publicitarias del negocio viven en
+  `assets_gl_streaming/` (no crear `public/` con esos archivos). En `public/` ya
+  están los iconos PWA (`icon-192/512`, `icon-maskable-512`, `apple-icon`) y los
+  logos `logo-gl.png`/`logo-gl-completa.png` que referencia `manifest.ts`.
+
+En paralelo, y mientras ese chat con visión trabaja el diseño, se cerraron 4
+ramas de trabajo no visual (validado: **213 unitarias, typecheck y build en
+verde; 25/25 suites SQL en verde**):
+
+1. **Refuerzo de pruebas del dominio** (de ~178 a 213): dinero, tasas,
+   resumen-inventario, tarifas-spotify, cuentas-completas. La pasada destapó un
+   **bug real**: `validarFechaVigencia` (`src/domain/tasas.ts`) aceptaba
+   `2026-02-30` porque `new Date("2026-02-30T00:00:00Z")` rueda al 2 de marzo en
+   vez de fallar. Se corrigió con una comprobación de ida y vuelta del
+   calendario (`Date.UTC` año/mes/día). Único llamador: el adaptador BCV
+   (`src/server/tasas/adaptadores.ts`).
+2. **Higiene técnica no visual**: barrido de `src/domain` y `src/server` — sin
+   `any`/`as any`, sin `console.*`, sin TODO/FIXME reales (la única coincidencia
+   es la palabra española «TODO» en un comentario de `importacion.ts`), sin
+   `@ts-ignore`/`debugger`/`eval`. Hay **5 exports sin consumidor en
+   producción pero con pruebas** (`proximaRenovacionProveedor`, `avisoProveedor`,
+   `enmascararTarjeta`, `valorEconomicoUsdParalela`, `valorSegunBcvUsd`) — se
+   conservan a propósito: son reglas de dominio documentadas y testeadas (la
+   renovación por ancla del proveedor se calcula en el RPC SQL
+   `registrar_ciclo_proveedor`).
+3. **Preparación para producción**: cabeceras de seguridad no-CSP en
+   `next.config.ts` (`X-Frame-Options: DENY`, `X-Content-Type-Options`,
+   `Referrer-Policy`, `X-DNS-Prefetch-Control`, `Permissions-Policy` que bloquea
+   cámara/mic/geolocalización/USB/pago). CSP fija omitida a propósito: la app
+   habla con Supabase (dominio por entorno), Kuanto y la fuente BCV externa.
+   `formatDetection` en `src/app/layout.tsx` para que iOS no convierta
+   teléfonos/WhatsApp en enlaces automáticos. Checklist completo en
+   **`docs/12-checklist-despliegue.md`** (variables de entorno, GLS_ENCRYPTION_KEY,
+   base, seguridad, PWA, despliegue, smoke tests). `.env.example` y `manifest.ts`
+   ya eran consistentes (sin cambios).
+4. **Documentación** (esta nota + `docs/00-plan-maestro.md`).
+
+**Pendiente canónico**: la lista de todo lo que queda por hacer vive en
+**`docs/13-pendientes.md`** (git pendiente, rama visual en curso con Claude,
+CSP por entorno, rotación del secreto de Kuanto, noindex, service worker,
+despliegue y smoke tests, cierre de documentación). Actualizarla al cierre de
+cada sesión.
