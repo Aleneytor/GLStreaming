@@ -161,6 +161,34 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------------
+-- 6b. Endurecimiento (migración 0060): search_path vacío y sin UUID quemado
+-- ---------------------------------------------------------------------------
+select 'vender_unidad corre con search_path vacío' as prueba,
+       exists (
+         select 1
+         from pg_proc p, unnest(p.proconfig) as e
+         where p.proname = 'vender_unidad'
+           and p.pronamespace = 'public'::regnamespace
+           and e like 'search_path=%'
+           and e not like '%public%'
+       ) as pass;
+
+do $$
+declare ok boolean := false;
+begin
+  begin
+    perform public.vender_unidad(
+      p_cuenta_id => (select id from public.cuentas where alias = 'Net-1'),
+      p_modalidad_id => null,
+      p_cliente_nombre => 'QA Sin Modalidad', p_precio_usd => 1,
+      p_inicio => current_date, p_cantidad_periodos => 1);
+  exception when others then ok := true;
+  end;
+  raise notice 'Sin modalidad se rechaza (sin UUID quemado): %',
+    case when ok then 'PASS' else 'FAIL' end;
+end $$;
+
+-- ---------------------------------------------------------------------------
 -- 7. Venta en UN PASO: crea el cliente y nombra el perfil sobre la marcha
 -- ---------------------------------------------------------------------------
 select id as u3 from public.unidades_inventario where cuenta_id = :'cta' and numero_slot = 3 \gset
@@ -180,11 +208,15 @@ union all select 'El perfil toma el nombre del cliente',
 union all select 'Renueva el 15/08',
        (select fecha_renovacion from public.periodos_servicio where suscripcion_id = :'susc_luis') = '2026-08-15';
 
--- Un segundo servicio del MISMO cliente reutiliza su ficha (no la duplica)
+-- Un segundo servicio del MISMO cliente reutiliza su ficha (no la duplica).
+-- La resolución canónica (0053/0054) exige la misma pareja nombre+teléfono:
+-- sin teléfono NO reutiliza un cliente que ya tiene uno, para no arrastrar un
+-- número ajeno. Por eso este segundo servicio repite el mismo WhatsApp.
 select id as u4 from public.unidades_inventario where cuenta_id = :'cta' and numero_slot = 4 \gset
 select public.vender_unidad(
   p_cuenta_id => :'cta', p_modalidad_id => :'m_perfil', p_unidad_id => :'u4',
   p_cliente_nombre => 'luis qa-prueba',   -- distinto uso de mayúsculas
+  p_cliente_whatsapp => '+58 414-0377887', -- misma pareja nombre+teléfono
   p_nombre_perfil => 'Luis (HBO)', p_precio_usd => 5.00
 ) as susc_luis2 \gset
 

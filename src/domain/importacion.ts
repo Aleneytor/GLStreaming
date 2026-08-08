@@ -376,7 +376,14 @@ function campoDeCabecera(titulo: string): Campo | null {
   if (/alias/.test(h) && /(vendedor|vendio|revendedor)/.test(h)) return "aliasVendedor";
   if (/tipo/.test(h) && /(vendedor|vendio|revendedor)/.test(h)) return "tipoVendedor";
   if (/(tasa|base)/.test(h) && /(vendedor|vendio|revendedor|cobro)/.test(h)) return "tasaVendedor";
-  if (/(telefono|celular|whatsapp|movil)/.test(h) && /(vendedor|vendio|revendedor)/.test(h))
+  // El teléfono del vendedor admite también las abreviaturas de la hoja real
+  // («Tel. Vendedor», «Tlf Vendedor», «Celular Revendedor»…). La condición AND
+  // con la palabra de vendedor impide que una columna genérica como «N° Celular»
+  // (la del cliente) se robe el número.
+  if (
+    /(telefono|celular|whatsapp|movil|\btlf\b|\btelf\b|\btel\b|\bcel\b)/.test(h) &&
+    /(vendedor|vendio|revendedor)/.test(h)
+  )
     return "telefonoVendedor";
   if (/tipo/.test(h) && /proveedor/.test(h)) return "tipoProveedor";
   if (/(telefono|celular|whatsapp|movil)/.test(h) && /proveedor/.test(h)) return "telefonoProveedor";

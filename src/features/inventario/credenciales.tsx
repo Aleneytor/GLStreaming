@@ -203,7 +203,7 @@ export function BotonTarjetaProveedor({ proveedorId }: { proveedorId: string }) 
           onClick={() => setDatos(null)}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-purple-800 bg-white p-5 text-left shadow-2xl dark:bg-neutral-950"
+            className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-purple-800 bg-white p-5 text-left shadow-2xl dark:bg-neutral-950"
             onClick={(evento) => evento.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3">

@@ -1,6 +1,14 @@
 -- Bloqueo familiar y alta atómica con correo propio/del cliente.
 begin;
 
+-- Tasas controladas por la prueba (tras un db:reset el seed no deja tasas):
+-- 100 Bs/USD (BCV) y 50 Bs/USD (paralela), como hacen el resto de suites
+-- que registran cobros. Se revierten con el rollback.
+insert into public.tasas_cambio (tipo, bs_por_usd, fecha_vigencia, fuente, fuente_registro_id, observada_fuente_at, revalidada_at, estado)
+values ('bcv', 100, current_date, 'prueba', 'sav-bcv-1', now(), now(), 'vigente');
+insert into public.tasas_cambio (tipo, bs_por_usd, fuente, fuente_registro_id, observada_fuente_at, revalidada_at, estado)
+values ('paralela', 50, 'prueba', 'sav-par-1', now(), now(), 'vigente');
+
 insert into auth.users (id, email)
 values (gen_random_uuid(), 'admin-spotify-alta@test.local') returning id as admin_id \gset
 update public.usuarios set rol = 'admin' where id = :'admin_id';

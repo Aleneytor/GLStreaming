@@ -33,7 +33,7 @@ export async function MisVentasRevendedor({ q }: { q?: string }) {
   const { data } = await supabase
     .from("v_mis_ventas_revendedor")
     .select(
-      "suscripcion_id, estado, cliente, plataforma, producto, modalidad, fecha_renovacion",
+      "suscripcion_id, estado, cliente, plataforma, producto, modalidad, fecha_renovacion, nota_renovacion",
     )
     // El revendedor atiende lo que está vivo; lo cancelado no le estorba.
     .in("estado", ["activa", "pausada"]);

@@ -149,11 +149,10 @@ function BarraSeleccionTraslado({
                 key={`${destino.cuentaId}:${destino.unidadId ?? "cuenta"}`}
                 type="button"
                 onClick={() => onSeleccionar(destino)}
-                className={`rounded-lg border px-3 py-2 text-left text-[11px] font-semibold transition ${
-                  elegido
+                className={`rounded-lg border px-3 py-2 text-left text-[11px] font-semibold transition ${elegido
                     ? "border-amber-600 bg-amber-500 text-white"
                     : "border-emerald-300 bg-white text-emerald-900 hover:border-emerald-600 dark:border-emerald-800 dark:bg-neutral-900 dark:text-emerald-200"
-                }`}
+                  }`}
               >
                 {elegido ? "✓ " : ""}{destino.etiqueta}
               </button>
@@ -249,6 +248,37 @@ function alertaVencimientoMovil(dias: number | null) {
     clase:
       "border-red-400 bg-red-100 text-red-900 dark:border-red-800 dark:bg-red-950/60 dark:text-red-200",
   };
+}
+
+// Distintivo de estado de la cuenta (mantenimiento/suspendida): color solo
+// semántico, acorde a la paleta calmada (ámbar = pendiente, rojo = peligro).
+// Hace falta porque un vistazo al inventario debe bastar para notar que una
+// cuenta no está operativa, sin tener que entrar a la configuración.
+function BadgeEstadoCuenta({ estado }: { estado: string }) {
+  if (estado === "mantenimiento") {
+    return (
+      <span className="ml-1.5 inline-flex shrink-0 items-center rounded-md border border-amber-300 bg-amber-100 px-1.5 py-0.5 align-middle text-[10px] font-bold uppercase tracking-wide text-amber-950 no-underline dark:border-amber-500/50 dark:bg-amber-500/20 dark:text-amber-300">
+        Mantenimiento
+      </span>
+    );
+  }
+  if (estado === "suspendida") {
+    return (
+      <span className="ml-1.5 inline-flex shrink-0 items-center rounded-md border border-red-300 bg-red-100 px-1.5 py-0.5 align-middle text-[10px] font-bold uppercase tracking-wide text-red-950 no-underline dark:border-red-500/50 dark:bg-red-500/20 dark:text-red-300">
+        Suspendida
+      </span>
+    );
+  }
+  return null;
+}
+
+// Borde del bloque (escritorio) y de la tarjeta (móvil) teñido por estado:
+// ámbar si está en mantenimiento, rojo si está suspendida, vacío si está
+// operativa (ahí manda el borde neutro por defecto de cada vista).
+function bordeEstadoCuenta(estado: string): string {
+  if (estado === "mantenimiento") return "border-amber-400 dark:border-amber-500";
+  if (estado === "suspendida") return "border-red-400 dark:border-red-500";
+  return "";
 }
 
 export function TablaInventario({
@@ -377,8 +407,8 @@ export function TablaInventario({
   const puedeSeleccionarse = (cuenta: BloqueCuenta) =>
     Boolean(
       cuenta.proveedorId &&
-        cuenta.renovarProveedor &&
-        (!proveedorSeleccionadoId || cuenta.proveedorId === proveedorSeleccionadoId),
+      cuenta.renovarProveedor &&
+      (!proveedorSeleccionadoId || cuenta.proveedorId === proveedorSeleccionadoId),
     );
 
   const alternarCuentaPago = (cuenta: BloqueCuenta) => {
@@ -998,7 +1028,10 @@ function BloqueCuentaExcel({
           corriendo al lado de cada uno. Se repite en cada página para no
           perder de vista a qué cuenta pertenecen los cupos visibles. */}
       {cta.esCorreoIntegrante && (
-        <tr className="border-t-[6px] border-neutral-900 bg-blue-50/70 dark:border-black dark:bg-blue-950/25">
+        <tr
+          className={`border-t-[6px] ${bordeEstadoCuenta(cta.cuentaEstado) || "border-neutral-900 dark:border-black"
+            } bg-blue-50/70 dark:bg-blue-950/25`}
+        >
           <td className="whitespace-nowrap border border-neutral-200 bg-neutral-100/70 px-2.5 py-2.5 text-center font-mono font-bold text-neutral-800 dark:border-neutral-800 dark:bg-neutral-800/90 dark:text-neutral-200">
             •
           </td>
@@ -1010,6 +1043,7 @@ function BloqueCuentaExcel({
             {cta.alias && (
               <span className="ml-1 text-[11px] font-normal text-neutral-400">({cta.alias})</span>
             )}
+            <BadgeEstadoCuenta estado={cta.cuentaEstado} />
             <span className="mx-1.5 text-neutral-300 dark:text-neutral-600">·</span>
             <span className="font-mono font-medium text-neutral-800 dark:text-neutral-200">
               {cta.contrasena}
@@ -1036,8 +1070,8 @@ function BloqueCuentaExcel({
         );
         const esDestinoSeleccionado = Boolean(
           destinoCompatible &&
-            destinoSeleccionado?.cuentaId === destinoCompatible.cuentaId &&
-            destinoSeleccionado?.unidadId === destinoCompatible.unidadId,
+          destinoSeleccionado?.cuentaId === destinoCompatible.cuentaId &&
+          destinoSeleccionado?.unidadId === destinoCompatible.unidadId,
         );
 
         if (esLibre) {
@@ -1105,13 +1139,12 @@ function BloqueCuentaExcel({
             key={f.clave}
             onDragOver={onDragOver}
             onDrop={onDrop}
-            className={`transition-colors hover:bg-blue-50/40 dark:hover:bg-neutral-800/60 ${
-              isTarget && esPrimera ? "ring-2 ring-blue-500" : ""
-            } ${
-              esPrimera && !cta.esCorreoIntegrante
-                ? "border-t-[6px] border-neutral-900 dark:border-black"
+            className={`transition-colors hover:bg-blue-50/40 dark:hover:bg-neutral-800/60 ${isTarget && esPrimera ? "ring-2 ring-blue-500" : ""
+              } ${esPrimera && !cta.esCorreoIntegrante
+                ? `border-t-[6px] ${bordeEstadoCuenta(cta.cuentaEstado) || "border-neutral-900 dark:border-black"
+                }`
                 : "border-t border-neutral-200 dark:border-neutral-800/80"
-            }`}
+              }`}
           >
             {/* 1. N° */}
             <td className="whitespace-nowrap border border-neutral-200 bg-neutral-100/70 px-2.5 py-2.5 text-center font-mono font-bold text-neutral-800 align-middle dark:border-neutral-800 dark:bg-neutral-800/90 dark:text-neutral-200">
@@ -1147,6 +1180,7 @@ function BloqueCuentaExcel({
               >
                 {cta.correo}
                 {cta.alias && <span className="ml-1 text-[11px] text-neutral-400 font-normal">({cta.alias})</span>}
+                <BadgeEstadoCuenta estado={cta.cuentaEstado} />
               </td>
             )}
             {cta.esCorreoIntegrante && (
@@ -1201,8 +1235,8 @@ function BloqueCuentaExcel({
                   {f.ingreso != null
                     ? `$ ${f.ingreso.toFixed(2)}`
                     : cta.esCuentaCompleta && cta.filas[0]?.ingreso != null
-                    ? `$ ${cta.filas[0].ingreso.toFixed(2)}`
-                    : ""}
+                      ? `$ ${cta.filas[0].ingreso.toFixed(2)}`
+                      : ""}
                 </td>
 
                 {/* 7. Inicio */}
@@ -1267,9 +1301,8 @@ function BloqueCuentaExcel({
                   onClick={() => {
                     if (!esLibre) onGestionarVenta(f);
                   }}
-                  className={`whitespace-nowrap border border-neutral-200 px-3 py-2 font-bold text-neutral-900 align-middle dark:border-neutral-800 dark:text-white ${
-                    !esLibre ? "cursor-pointer hover:bg-neutral-100/70 hover:underline dark:hover:bg-neutral-800/80" : ""
-                  }`}
+                  className={`whitespace-nowrap border border-neutral-200 px-3 py-2 font-bold text-neutral-900 align-middle dark:border-neutral-800 dark:text-white ${!esLibre ? "cursor-pointer hover:bg-neutral-100/70 hover:underline dark:hover:bg-neutral-800/80" : ""
+                    }`}
                   title={!esLibre ? "Haz clic para renovar, editar o eliminar esta venta" : ""}
                 >
                   <div className="flex items-center justify-between gap-1.5 whitespace-nowrap">
@@ -1477,12 +1510,14 @@ function TarjetaCuentaMovil({
   const libres = cta.filas.filter((f) => !f.cliente).length;
 
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm transition dark:border-neutral-800 dark:bg-neutral-900">
+    <div
+      className={`rounded-2xl border bg-white p-4 shadow-sm transition dark:bg-neutral-900 ${bordeEstadoCuenta(cta.cuentaEstado) || "border-neutral-200 dark:border-neutral-800"
+        }`}
+    >
       {/* Encabezado de la cuenta */}
       <div
-        className={`flex items-center justify-between gap-2 ${
-          colapsada ? "" : "border-b border-neutral-100 pb-2.5 dark:border-neutral-800"
-        }`}
+        className={`flex items-center justify-between gap-2 ${colapsada ? "" : "border-b border-neutral-100 pb-2.5 dark:border-neutral-800"
+          }`}
       >
         <div className="flex items-center gap-2 overflow-hidden">
           {modoBorrar && (
@@ -1510,13 +1545,13 @@ function TarjetaCuentaMovil({
           <span className="truncate font-mono text-xs font-bold text-neutral-900 dark:text-white">
             {cta.correo}
           </span>
+          <BadgeEstadoCuenta estado={cta.cuentaEstado} />
           {colapsada && (
             <span
-              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                libres > 0
+              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${libres > 0
                   ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950 dark:text-blue-300"
                   : "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300"
-              }`}
+                }`}
             >
               {libres > 0 ? `${libres} libre${libres > 1 ? "s" : ""}` : "Vendida"}
             </span>
@@ -1608,8 +1643,8 @@ function TarjetaCuentaMovil({
               );
               const esDestinoSeleccionado = Boolean(
                 destinoCompatible &&
-                  destinoSeleccionado?.cuentaId === destinoCompatible.cuentaId &&
-                  destinoSeleccionado?.unidadId === destinoCompatible.unidadId,
+                destinoSeleccionado?.cuentaId === destinoCompatible.cuentaId &&
+                destinoSeleccionado?.unidadId === destinoCompatible.unidadId,
               );
               const whatsappLimpio = fila.celular?.replace(/[^0-9+]/g, "");
               const alertaVencimiento = alertaVencimientoMovil(fila.dias);
@@ -1617,8 +1652,7 @@ function TarjetaCuentaMovil({
               return (
                 <div
                   key={fila.clave}
-                  className={`flex flex-col gap-2 rounded-xl border p-3 transition ${
-                    estaVendido
+                  className={`flex flex-col gap-2 rounded-xl border p-3 transition ${estaVendido
                       ? "border-emerald-200 bg-emerald-50/40 dark:border-emerald-950 dark:bg-emerald-950/20"
                       : destinosTraslado
                         ? destinoCompatible
@@ -1627,7 +1661,7 @@ function TarjetaCuentaMovil({
                             : "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
                           : "border-neutral-200 bg-neutral-100 opacity-45 dark:border-neutral-800 dark:bg-neutral-900"
                         : "border-dashed border-neutral-300 bg-neutral-50/60 dark:border-neutral-800 dark:bg-neutral-950/40"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-neutral-900 dark:text-white">
@@ -1663,8 +1697,7 @@ function TarjetaCuentaMovil({
                             fila.clienteTipoCorreo,
                           )
                         }
-                        className={`rounded px-2.5 py-1 text-xs font-semibold text-white active:scale-95 disabled:cursor-not-allowed ${
-                          destinosTraslado
+                        className={`rounded px-2.5 py-1 text-xs font-semibold text-white active:scale-95 disabled:cursor-not-allowed ${destinosTraslado
                             ? esDestinoSeleccionado
                               ? "bg-amber-500"
                               : destinoCompatible
@@ -1673,7 +1706,7 @@ function TarjetaCuentaMovil({
                             : cta.admisionSpotifyBloqueada
                               ? "bg-amber-500"
                               : "bg-blue-600"
-                        }`}
+                          }`}
                       >
                         {destinosTraslado
                           ? esDestinoSeleccionado

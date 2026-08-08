@@ -114,6 +114,110 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 
 ## Estado actual
 
+- **Indicador visual del modo mantenimiento/suspendida en el inventario
+  (COMPLETO 2026-08-08)**: una cuenta en `mantenimiento` o `suspendida` ya no se
+  ve igual que una activa. `src/features/inventario/tabla-inventario.tsx` gana dos
+  ayudas —`BadgeEstadoCuenta` (pastilla ámbar «Mantenimiento» / roja «Suspendida»,
+  color solo semántico de la paleta calmada) y `bordeEstadoCuenta` (borde del
+  bloque en escritorio y de la tarjeta en móvil teñido ámbar/rojo)—. La insignia
+  aparece junto al correo en la celda fusionada de escritorio, en la fila «Cuenta
+  principal (panel)» de Canva y en la cabecera de la tarjeta móvil; el borde
+  superior del bloque y el borde de la tarjeta se tiñen del mismo color. Así un
+  vistazo al inventario basta para notar una cuenta en mantenimiento (el perfil
+  89 del usuario) sin entrar a la configuración. Validado: typecheck en verde y
+  178/178 unitarias. La app «no cargaba» porque el servidor de desarrollo no
+  estaba corriendo: se levantó con `npm run dev` y cargó (confirmado por el
+  usuario), sin defecto de código.
+- **Revisión y pulido del responsive móvil (SLICE 4, COMPLETO 2026-08-08)**:
+  pasada de auditoría de código por todas las pantallas móviles (inventario,
+  modales, formularios y paneles) con escaneos de patrones rotos: anchos fijos
+  (`min-w-[…]`/`w-[…px]`), rejillas sin colapso móvil, overlays sin `max-h` y
+  objetivos táctiles. Resultado: la app ya es muy mobile-first (verificado
+  `tarjeta_movil` de `tabla-inventario.tsx`, `FormVenta`, `FormImportacion` con
+  preview en tarjetas `md:hidden`, `FormCuenta` del SLICE 1, `CentroOperaciones`,
+  `SubNavFinanzas` con etiquetas cortas y scroll horizontal, `NavPanel` con barra
+  inferior fija y `env(safe-area-inset-bottom)`). Solo se corrigieron **3
+  overlays** cuyo contenedor interno no tenía `max-h`/`overflow-y-auto` y
+  recortaban su contenido en teléfonos sin dejar scrollear:
+  `modal-renovacion.tsx`, `modal-renovar-proveedor.tsx` y el diálogo de tarjeta
+  en `credenciales.tsx`. Quedó canonizado el patrón de cáscara de modal:
+  `max-h-[calc(100dvh-2rem)] w-full max-w-* overflow-y-auto`. Validado: 175
+  unitarias, typecheck y build en verde. Pendiente inherente (manual): una pasada
+  visual en teléfonos reales por plataformas y modales; el código ya no debería
+  requerir ajustes.
+- **Higiene y correcciones de revisión (SLICE 5, COMPLETO 2026-08-08)**:
+  (1) **Codificación**: `src/lib/supabase/database.types.ts` estaba en UTF-16 LE
+  (BOM `FF FE`, 238544 bytes) porque `npm run db:types` usa un redirect `>` de
+  PowerShell que escribe UTF-16. Se convirtió **en sitio a UTF-8 sin BOM**
+  (119271 bytes, 3620 líneas intactas) con
+  `ReadAllText(…, Unicode)` + `WriteAllText(…, UTF8Encoding($false))`. ⚠️ No
+  volver a regenerar los tipos con un redirect crudo: si hace falta regenerarlos,
+  convertir el resultado igual que aquí. (2) **Paleta de `/personal` alineada con
+  la paleta calmada** (un solo acento azul, neutral, color solo semántico): se
+  erradicó el fucsia/violeta de `item-gasto-personal.tsx`,
+  `form-gasto-personal.tsx` y el encabezado de `personal/page.tsx` (gradiente
+  fucsia→violeta → tarjeta neutral con eyebrow azul). Se usaron el foco canónico
+  `focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20` y el botón primario
+  neutral-inverse (`bg-neutral-900 dark:bg-white`); la zona destructiva roja se
+  conserva (semántica). (3) **Cosméticos**: `src/features/revendedor/clasificacion.ts`
+  y `tests/unit/revendedor-clasificacion.test.ts` pasaron de sangría de 4 a 2
+  espacios (mismo comportamiento, 4/4 pruebas en verde); se restauró la sangría
+  de lista de un bullet perdido en `docs/00-plan-maestro.md` (sección 4.8, única
+  instancia en las 712 líneas). (4) **Bug del teléfono del revendedor en el
+  importador**: `campoDeCabecera` en `src/domain/importacion.ts` solo reconocía
+  palabras de teléfono completas, así que encabezados cortos de la hoja real
+  (`Tel Vendedor`, `Tlf Vendedor`, `Celular Revendedor`) caían a la columna del
+  cliente (`N° Celular`) y el teléfono del vendedor nunca se guardaba. Se amplió
+  el regex con límites de palabra (`\b…\b`) y la condición AND con palabras de
+  vendedor, de modo que «N° Celular» (del cliente) no se roba el número. Se
+  añadieron 2 pruebas de regresión (forma corta `Tel Vendedor` + guarda de
+  «N° Celular»). Validado: **178 unitarias (16 archivos), typecheck y build en
+  verde.**
+- **Panel del revendedor alineado con la pausa y RLS reforzado (COMPLETO
+  2026-08-08)**: el portal (`src/features/revendedor/`) ya NO trata una
+  suscripción `pausada` como activa. La clasificación pura vive en
+  `src/features/revendedor/clasificacion.ts` (`clasificarVentasRevendedor`): las
+  KPI (Al día / Por vencer / Vencidas / urgentes) y los grupos de vencimiento
+  cuentan SOLO ventas activas; las pausadas aparecen en su grupo neutro «En
+  pausa · cupo reservado», con franja y borde neutros y sin el botón «Solicitar
+  renovación» (misma regla que el Centro de Operaciones del admin). De regalo, la
+  tarjeta ahora muestra `nota_renovacion` — la columna que la vista `0030` ya
+  exponía y el importador escribía, pero que nadie veía. Validado contra
+  PostgreSQL real: `portal_revendedor.sql` sumó 9 comprobaciones (la pausa pasa
+  su `estado` por la vista; el revendedor NO ve `cuentas`, `credenciales_cuenta`,
+  `pagos_proveedor`, `gastos_operativos`, `tasas_cambio`, `ciclos_proveedor` ni
+  `tarjetas_proveedor_cifradas` — RLS intacto: solo sus ventas). 175 unitarias
+  (4 nuevas), typecheck, build y 25/25 suites SQL en verde.
+- **Seguridad endurecida (migración `0060`, COMPLETO 2026-08-08)**: `vender_unidad`
+  y las dos funciones de gastos personales (`editar_gasto_personal` y
+  `eliminar_gasto_personal`, de `0059`) pasaron a correr con
+  `set search_path = ''` + nombres calificados (`public.*`), la convención del
+  resto del proyecto; quedó reconciliada la desviación histórica de
+  `vender_unidad` (antes `search_path = public`, ver nota de convención abajo).
+  El parámetro `p_modalidad_id` perdió su UUID quemado (`'1111…1101'`): quedó en
+  `default null` por la restricción 42P13 de PostgreSQL (no se puede quitar el
+  default de un parámetro que sigue a otro con default sin reordenar, y reordenar
+  rompería las llamadas posicionales). Un `null` cae en la guarda existente
+  `Faltan la cuenta o la modalidad.` en vez de adivinar una modalidad. En
+  `src/features/inventario/actions.ts` se eliminó el fallback del UUID quemado de
+  la venta rápida: sin modalidad activa del alcance buscado devuelve un error
+  claro, y `resolverVendedorId` quedó tipado (sin `any`). Validado contra
+  PostgreSQL real: 25/25 suites SQL en verde, 171 unitarias, typecheck y build.
+- **Las suites de venta crean sus propias tasas (lección de fixtures)**: el
+  `seed.sql` NO inserta `tasas_cambio`, así que tras un `db:reset` la base queda
+  sin tasa y cualquier suite que registre un cobro en USD falla con
+  `No hay una tasa BCV confirmada en las últimas 24 h.`. Las suites que cobran
+  deben insertar su propia tasa (patrón: `bcv` a 100 y `paralela` a 50, con
+  `observada_fuente_at`/`revalidada_at = now()` y `estado = 'vigente'`). Se
+  corrigieron `spotify_admision_y_venta`, `spotify_identidades_preparadas` y
+  `spotify_limpieza_reutilizable` (prefijos `sav-`/`sid-`/`slr-`). Detalles de
+  psql: `:'var'` NO se sustituye dentro de bloques `$$…$$` (usar subconsultas
+  inline), y una variable NO definida se envía literal al servidor → «syntax
+  error at or near ":"»; por eso el primer fallo de una venta arrastraba errores
+  en cadena. Para asertar `search_path` vacío en `pg_proc` hay que usar
+  `unnest(p.proconfig)` + `e like 'search_path=%' and e not like '%public%'`
+  (Postgres lo serializa como `search_path=""` con comillas escapadas).
+
 **Gestión Directa, Registro Flexible y Revendedores completos; adaptación móvil del inventario EN PROGRESO (2026-07-27).**
 - **Pausas y liberaciones claras en Operaciones (COMPLETO 2026-07-28)**: una
   suscripción `pausada` conserva el cupo para el cliente, pero ya no aparece en
@@ -163,6 +267,18 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **Rediseño visual: paleta calmada, oscuro «dim» y logos de marca (COMPLETO 2026-07-29)** — **sistema visual vigente de toda la app; SUPERSEDE la línea «Slate/Zinc» y las «tarjetas KPI cromáticas» de las entradas del 2026-07-28 de abajo**: (1) una sola escala de grises `neutral` (se erradicaron `slate`/`zinc`); (2) **un solo acento azul** (`blue-600/700/400`) para lo interactivo y de marca; (3) **color solo para significado semántico** — verde=entra/ok/dinero, rojo (`red`, no `rose`)=pérdida/vencido/alerta, ámbar=pendiente — nunca para decorar plataforma o categoría; (4) headers neutros comunes (`bg-white dark:bg-neutral-900`) con eyebrow azul, sin gradientes por pantalla; (5) botón primario neutral-inverse (`bg-neutral-900 dark:bg-white`). **Oscuro «dim» por defecto**: en `tailwind.config.ts` se re-mapean SOLO los tres tonos oscuros del `neutral` (950=`#16191f` fondo, 900=`#1e222b` tarjetas, 800=`#2b313c` bordes); ajustar esos 3 valores calibra cuán oscuro es todo. El default sigue siendo oscuro (`className="dark"` en `src/app/layout.tsx`) — decisión del usuario, NO cambiar a claro sin pedirlo. **Logos de marca** en el selector de plataformas (`src/features/inventario/logos-plataforma.tsx`, Simple Icons): 9 logos en su color de marca (Spotify, Netflix, Canva, Crunchyroll, Gemini, HBO, Paramount+, Prime Video, YouTube); el color vive solo en el trazo, no baña la tarjeta; el resto usa insignia de letra. Bloque de Finanzas unificado (menú como segmented control neutro con activo azul; las 5 pantallas al mismo header neutro).
 - **Rediseño visual del Dashboard y Navegación del Panel (COMPLETO 2026-07-28)**: Se amplió el ancho del menú lateral en PC de `w-52` a `w-64/w-72` en `NavPanel`, agregando encabezados de sección e iconos espaciosos. La barra superior en `PanelLayout` incluye insignia de marca y avatar con rol. El contenedor principal se expandió a `max-w-6xl` y `CentroOperaciones` incorpora 4 tarjetas KPI clicables (*Atención urgente, Próximos 5 días, En pausa, Cartera total*), buscador con icono y lista de suscripciones. *(Estética luego migrada a la paleta neutra del 2026-07-29; el color de las KPI pasó a franja semántica.)*
 - **Rediseño visual de Finanzas y Días Perdidos (COMPLETO 2026-07-28)**: La página de Resumen Mensual (`/cierre`) ahora expone en primer plano la tarjeta **Rendimiento de Inventario & Slots Perdidos** con una barra visual de ocupación (porcentaje ocupado vs. perdido), desglosando los slots-día ociosos y el dinero desperdiciado en el mes tanto en **Bs** como en **USDT**. Se modernizó la vista diaria de Caja (`/caja`) y la subnavegación (`SubNavFinanzas`) sin alterar la lógica de cálculo ni los RPCs. *(Estética luego migrada a la paleta neutra del 2026-07-29.)*
+- **Gastos personales privados del admin (migración `0058`)**: existe una ruta
+  separada `/personal`, visible solo para administradores y fuera del bloque de
+  finanzas del negocio. Permite anotar gastos personales en `USD` o `Bs`,
+  convertirlos con `BCV` o `paralela`, congelar ambas lecturas y archivarlos
+  después. Usa una tabla aislada (`gastos_personales`) y NO afecta Caja,
+  Cobros, Egresos, Cierres ni métricas del negocio. Validado con
+  `supabase/tests/personal.sql`, `db:reset`, `typecheck` y `build`.
+- **Edición y eliminación de gastos personales (migración `0059`)**: el
+  historial mensual de `/personal` ya permite editar cada gasto inline,
+  recalcular sus snapshots con la tasa elegida, archivarlo si solo debe salir
+  de la vista mensual o eliminarlo definitivamente si fue una carga errónea.
+  Validado también contra PostgreSQL real en `supabase/tests/personal.sql`.
 - **Rediseño visual de Añadir Nueva Cuenta (COMPLETO 2026-07-28)**: El formulario `FormCuenta` y la página `/inventario/nueva` fueron modernizados y limpiados. Se eliminaron bloques de texto redundantes ("cosas innecesarias"), organizando los campos en cuatro tarjetas dinámicas con iconos (Producto & Capacidad con badges de slots, Credenciales Cifradas con indicador AES-256-GCM, Control de Pago Spotify condicional y Proveedor/Costo Operativo en cuadrícula `sm:grid-cols-3`). Cero cambios en lógica o parámetros.
 - **Corrección de sincronización de proveedor en importación (COMPLETO 2026-07-28)**: Se corrigió la columna `dia_ancla_proveedor` en `sincronizarCicloProveedorImportado` en `src/features/migracion/actions.ts` (anteriormente usaba el nombre errado `dia_ancla`). Permite importar las 120+ filas de perfiles extras y renovaciones de proveedor sin errores de caché de esquema.
 - **Rediseño estético y vista móvil colapsable del inventario (COMPLETO 2026-07-28)**: La tabla de inventario en escritorio y la vista de tarjetas en móvil recibieron un rediseño completo de espaciado (padding `py-2.5 px-3`, tipografía `text-xs` de 12px), cabecera y bordes neutros, y badges de estado **semánticos** (verde/ámbar/rojo por vencimiento). En móviles (`< 768px`) se agregaron **botones de desplegable/plegado individual (`▲ Cerrar` / `▼ Abrir`)** con indicador de cupos libres y un botón maestro **`📁 Cerrar todas` / `📂 Abrir todas`** para navegar rápidamente entre decenas de cuentas. La funcionalidad se conservó al 100%.
@@ -443,11 +559,20 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
 
 ### ⚠️ Pendiente para el próximo agente
 
-- **Rediseñar por completo “Nueva cuenta” para TODAS las plataformas (prioridad indicada por el usuario al cerrar 2026-07-28).** El formulario actual sigue siendo genérico, largo y visualmente pobre. Debe convertirse en un flujo corto y contextual por producto/plataforma, mostrando únicamente datos que el negocio realmente usa. Eliminar pasos redundantes como pedir a la vez `Día de renovación` e `Inicio del ciclo actual`: una fecha exacta debe bastar y el ancla se deriva. Revisar especialmente modalidades, capacidad fija, proveedor/costo/renovación, credenciales, Gmail pagador, cuenta completa/extra/individual/familiar y responsive móvil. No copiar sin criterio el importador; ambos flujos comparten dominio pero “Nueva cuenta” es una alta operativa individual.
-- **Actualizar el panel de revendedor.** Revisarlo contra todos los cambios
-  recientes: variantes Netflix/Spotify, vendedor afiliado, base BCV/paralela,
-  renovaciones, nuevas vistas responsive, traslados y paquete de acceso. Mantener
-  RLS: solo sus ventas; nunca stock, proveedor, costos ni tarjetas propias.
+- **Rediseñar por completo “Nueva cuenta” para TODAS las plataformas — COMPLETO
+  (2026-08-08, ver entrada de “Estado actual”)**. El formulario dejó de ser
+  genérico: es un flujo corto y contextual por producto (secciones conducidas por
+  metadata de producto, capacidad automática por regla, Gmail pagador solo en
+  Spotify familiar, y el campo `Día de renovación` fue eliminado — el ancla se
+  deriva de la fecha del ciclo con `derivarDiaAncla` en
+  `src/domain/fechas.ts`). Queda pendiente una pasada visual manual en móvil y
+  escritorio del flujo nuevo.
+- **Actualizar el panel de revendedor — COMPLETO (2026-08-08, ver entrada de
+  “Estado actual”)**. Revisado contra los cambios recientes: la pausa ya no se
+  pinta como alarma (grupo neutro «En pausa · cupo reservado» sin botón de
+  renovación), se muestra `nota_renovacion` y la clasificación quedó como helper
+  puro con pruebas. RLS verificado en PostgreSQL: solo sus ventas; nunca stock,
+  proveedor, costos ni tarjetas.
 - **Continuar definiendo pasos con el usuario.** Esta lista es la base de la
   próxima sesión, no el cierre definitivo del roadmap.
 - **Responsive móvil todavía en revisión.** La tabla ya fue sustituida por
@@ -465,23 +590,29 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
   - **NO son bugs** (revisados): 0 cuentas sin credenciales, 0 dobles ventas, y
     los 11 períodos «completo» sin BCV son **cortesías** de importación (costo 0,
     sin cobro): correcto que no congelen tasa.
-- **Convención:** `vender_unidad` (0033) quedó como `security definer` con
-  `search_path = public`, apartándose del resto del proyecto (`search_path = ''` +
-  nombres calificados, invoker). Funciona porque valida `es_admin()` de primero,
-  pero conviene reconciliarlo en una migración futura. También hay `any` sueltos
-  en `resolverVendedorId`.
+- **Convención (reconciliada en `0060`):** `vender_unidad` quedó como
+  `security definer` con `search_path = ''` y nombres calificados (`public.*`),
+  igual que el resto del proyecto. Las dos funciones de gastos personales
+  (`0059`) también pasaron a `search_path = ''`. Los `any` de `resolverVendedorId`
+  fueron tipados en `src/features/inventario/actions.ts`.
 
 ---
-*Pendiente destacado: rediseñar “Nueva cuenta” para todas las plataformas,
-probar visualmente un traslado real controlado y terminar la revisión del panel
-de revendedor.*
+*Pendiente destacado: probar visualmente un traslado real controlado y terminar
+la revisión responsive móvil (el rediseño de “Nueva cuenta” para todas las
+plataformas y la actualización del panel del revendedor ya se completaron — ver
+entrada de “Estado actual” 2026-08-08).*
 
-*Última actualización: 2026-07-30 (migraciones hasta `0056`; clientes canónicos
-por nombre+teléfono y teléfono de vendedor; Spotify recicla accesos GL al
-confirmar retiro; verificación de hogar de Netflix eliminada del alcance
-—`drop` en `0056`, revierte DEC-95—; rediseño visual completo a paleta neutra
-+ un acento azul + oscuro «dim» + logos de marca —ver entrada del 2026-07-29—;
-165 unitarias y 22 suites SQL en verde).*
+*Última actualización: 2026-08-08 (migraciones hasta `0060`; rediseño de “Nueva
+cuenta” contextual por plataforma —1.1 a 1.8—; seguridad endurecida: `search_path`
+vacío en `vender_unidad` y gastos personales, sin UUID quemado de modalidad,
+`resolverVendedorId` tipado; panel del revendedor alineado con la pausa y RLS
+reforzado; SLICE 5 de higiene: `database.types.ts` a UTF-8 sin BOM, paleta
+calmada en `/personal`, sangrías y bullet de `plan-maestro.md`, y bug del
+teléfono del revendedor en el importador; indicador visual de cuenta en
+`mantenimiento`/`suspendida` en el inventario (badge ámbar/rojo + borde del
+bloque y de la tarjeta) —178 unitarias, typecheck y build en verde, 25/25
+suites SQL en verde tras `db:reset` —las suites de venta insertan su propia
+tasa—).*
 ### Nota de sesión 2026-07-28
 
 - `Gestionar Venta` para Spotify familiar ahora deja editar correo, clave y

@@ -23,12 +23,15 @@ export default async function NuevaCuentaPage({
   const supabase = await createClient();
 
   // Si se entró desde una plataforma, solo se ofrecen sus productos.
+  // Los productos con titularidad del cliente (p. ej. YouTube) no se pueden
+  // "crear" aquí: su cuenta pertenece al cliente, no al negocio.
   let consultaProductos = supabase
     .from("productos_plataforma")
     .select(
-      "id, nombre, codigo, regla_capacidad, capacidad_fija, capacidad_min, capacidad_max, tipo_inventario, titularidad_predeterminada, plataformas!inner(nombre, slug)",
+      "id, nombre, codigo, regla_capacidad, capacidad_fija, capacidad_min, capacidad_max, tipo_inventario, tipo_unidad_fisica, titularidad_predeterminada, plataformas!inner(nombre, slug)",
     )
-    .eq("activo", true);
+    .eq("activo", true)
+    .neq("titularidad_predeterminada", "cliente");
 
   if (slugPlataforma) {
     consultaProductos = consultaProductos.eq("plataformas.slug", slugPlataforma);
@@ -47,11 +50,13 @@ export default async function NuevaCuentaPage({
     nombre: p.nombre,
     codigo: p.codigo,
     plataforma: uno(p.plataformas)?.nombre ?? "",
+    plataformaSlug: uno(p.plataformas)?.slug ?? "",
     regla_capacidad: p.regla_capacidad,
     capacidad_fija: p.capacidad_fija,
     capacidad_min: p.capacidad_min,
     capacidad_max: p.capacidad_max,
     tipo_inventario: p.tipo_inventario,
+    tipo_unidad_fisica: p.tipo_unidad_fisica,
     titularidad_predeterminada: p.titularidad_predeterminada,
   }));
 

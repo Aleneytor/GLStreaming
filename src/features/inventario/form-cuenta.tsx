@@ -9,11 +9,13 @@ export type ProductoOpcion = {
   nombre: string;
   codigo: string;
   plataforma: string;
+  plataformaSlug: string;
   regla_capacidad: string;
   capacidad_fija: number | null;
   capacidad_min: number | null;
   capacidad_max: number | null;
   tipo_inventario: string;
+  tipo_unidad_fisica: string;
   titularidad_predeterminada: string;
 };
 
@@ -24,6 +26,51 @@ const claseCampo =
 
 const claseEtiqueta =
   "mb-1.5 block text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300";
+
+/** Nombre en plural de la unidad física del producto (para el badge de capacidad). */
+const ETIQUETA_UNIDAD: Record<string, string> = {
+  perfil: "perfiles",
+  extra: "extras",
+  dispositivo: "dispositivos",
+  miembro_familiar: "miembros",
+  asiento: "asientos",
+};
+
+function etiquetaUnidad(tipoUnidad: string): string {
+  return ETIQUETA_UNIDAD[tipoUnidad] ?? "slots";
+}
+
+function IconoCarpeta() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+    </svg>
+  );
+}
+
+function IconoCredenciales() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
+  );
+}
+
+function IconoTarjeta() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    </svg>
+  );
+}
+
+function IconoProveedor() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+    </svg>
+  );
+}
 
 export function FormCuenta({
   productos,
@@ -43,33 +90,38 @@ export function FormCuenta({
     [productos, productoId],
   );
 
-  // La capacidad viene del producto; solo es editable si el producto lo permite.
+  const esIndivisible = producto?.tipo_inventario === "recurso_indivisible";
   const capacidadFija = producto?.regla_capacidad === "fija";
+  const capacidadRango = producto?.regla_capacidad === "rango";
+  // Fija → usa capacidad_fija; rango → parte del mínimo; variable/resto → 1.
   const capacidadSugerida =
     producto?.capacidad_fija ?? producto?.capacidad_min ?? 1;
+  const unidad = etiquetaUnidad(producto?.tipo_unidad_fisica ?? "");
 
-  const esDeCliente = producto?.titularidad_predeterminada === "cliente";
   const esSpotifyFamiliar = producto?.codigo === "spotify-familiar";
+
+  const rangoValido =
+    capacidadRango &&
+    producto.capacidad_min != null &&
+    producto.capacidad_max != null;
 
   return (
     <form action={formAction} className="space-y-6">
-      {/* SECCIÓN 1: Selección de Producto y Configuración */}
+      {/* SECCIÓN 1: Producto y Capacidad */}
       <section className="space-y-4 rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900/80">
         <div className="flex items-center gap-2 border-b border-neutral-100 pb-3 dark:border-neutral-800/80">
           <div className="rounded-lg bg-neutral-100 p-1.5 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
+            <IconoCarpeta />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Producto & Capacidad</h2>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Selecciona la plataforma y modalidad a registrar</p>
+            <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Producto y capacidad</h2>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Qué se está dando de alta y con cuántos cupos</p>
           </div>
         </div>
 
         <div>
           <label htmlFor="producto_id" className={claseEtiqueta}>
-            Producto de la Plataforma
+            Producto de la plataforma
           </label>
           <select
             id="producto_id"
@@ -87,67 +139,66 @@ export function FormCuenta({
             ))}
           </select>
 
-          {producto && (
-            <div className="mt-2.5 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                {producto.tipo_inventario === "cuenta_con_unidades"
-                  ? `${capacidadSugerida} slots de inventario`
-                  : "Recurso indivisible"}
+          {producto && esSpotifyFamiliar && (
+            <div className="mt-2.5 flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs text-emerald-950 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200">
+              <span className="rounded-lg bg-emerald-500/20 px-2 py-1 font-bold text-emerald-700 dark:text-emerald-300">
+                Spotify
               </span>
-              {capacidadFija && (
-                <span className="inline-flex items-center rounded-md bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
-                  Capacidad fija
-                </span>
-              )}
+              <div>
+                <strong className="font-semibold">
+                  Familia Spotify · {capacidadSugerida} {unidad}
+                </strong>
+                <p className="mt-0.5 opacity-90">
+                  Se crean la cuenta administradora y la cobertura. Los accesos de los
+                  miembros se gestionan luego en "Gestionar familia".
+                </p>
+              </div>
             </div>
           )}
         </div>
 
-        {esDeCliente && (
-          <div
-            role="alert"
-            className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/80 p-3.5 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200"
-          >
-            <svg className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <span>Este producto es propiedad del cliente. Se carga por el flujo de servicio existente, no por aquí.</span>
-          </div>
-        )}
-
-        {esSpotifyFamiliar && (
-          <div className="flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs text-emerald-950 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200">
-            <span className="rounded-lg bg-emerald-500/20 px-2 py-1 font-bold text-emerald-700 dark:text-emerald-300">
-              Spotify
-            </span>
-            <div>
-              <strong className="font-semibold">Familia Spotify · 5 miembros</strong>
-              <p className="mt-0.5 opacity-90">
-                Se crea la cuenta administradora y cobertura. Los accesos de miembros se gestionan luego en &quot;Gestionar familia&quot;.
-              </p>
-            </div>
-          </div>
-        )}
-
+        {/* Capacidad según la regla del producto */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="capacidad" className={claseEtiqueta}>
-              Capacidad (Slots)
-            </label>
-            <input
-              id="capacidad"
-              name="capacidad"
-              type="number"
-              inputMode="numeric"
-              min={1}
-              required
-              key={`cap-${productoId}`}
-              defaultValue={capacidadSugerida}
-              readOnly={capacidadFija}
-              disabled={!producto}
-              className={claseCampo}
-            />
+            <label className={claseEtiqueta}>Capacidad</label>
+            {esIndivisible ? (
+              <>
+                <input type="hidden" name="capacidad" value={1} />
+                <div className="flex h-[42px] items-center rounded-xl border border-neutral-200 bg-neutral-50/60 px-3.5 text-sm font-medium text-neutral-700 dark:border-neutral-800 dark:bg-neutral-950/60 dark:text-neutral-300">
+                  Recurso indivisible · 1 {unidad || "cupo"}
+                </div>
+              </>
+            ) : capacidadFija ? (
+              <>
+                <input type="hidden" name="capacidad" value={capacidadSugerida} />
+                <div className="flex h-[42px] items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50/60 px-3.5 text-sm font-medium text-neutral-700 dark:border-neutral-800 dark:bg-neutral-950/60 dark:text-neutral-300">
+                  {capacidadSugerida} {unidad}
+                  <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                    Fija
+                  </span>
+                </div>
+              </>
+            ) : (
+              <input
+                id="capacidad"
+                name="capacidad"
+                type="number"
+                inputMode="numeric"
+                min={capacidadRango && producto.capacidad_min != null ? producto.capacidad_min : 1}
+                max={capacidadRango && producto.capacidad_max != null ? producto.capacidad_max : undefined}
+                required
+                disabled={!producto}
+                key={`cap-${productoId}`}
+                defaultValue={capacidadSugerida}
+                className={claseCampo}
+              />
+            )}
+
+            {rangoValido && (
+              <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+                Acepta entre {producto.capacidad_min} y {producto.capacidad_max} {unidad}.
+              </p>
+            )}
           </div>
 
           <div>
@@ -170,12 +221,10 @@ export function FormCuenta({
         <div className="flex items-center justify-between border-b border-neutral-100 pb-3 dark:border-neutral-800/80">
           <div className="flex items-center gap-2">
             <div className="rounded-lg bg-blue-500/10 p-1.5 text-blue-600 dark:text-blue-400">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
+              <IconoCredenciales />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Credenciales de Acceso</h2>
+              <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Credenciales de acceso</h2>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">Datos de inicio de sesión de la plataforma</p>
             </div>
           </div>
@@ -221,14 +270,12 @@ export function FormCuenta({
         </div>
       </section>
 
-      {/* SECCIÓN 3: Pago de Spotify (Condicional) */}
+      {/* SECCIÓN 3: Control de pago Spotify (solo familia) */}
       {esSpotifyFamiliar && (
         <section className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900/80">
           <div className="flex items-center gap-2 border-b border-neutral-100 pb-3 dark:border-neutral-800/80">
             <div className="rounded-lg bg-neutral-100 p-1.5 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
+              <IconoTarjeta />
             </div>
             <div>
               <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Control de pago Spotify</h2>
@@ -239,7 +286,7 @@ export function FormCuenta({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="gmail_pagador" className={claseEtiqueta}>
-                Gmail Pagador
+                Gmail pagador
               </label>
               <input
                 id="gmail_pagador"
@@ -253,7 +300,7 @@ export function FormCuenta({
 
             <div>
               <label htmlFor="origen_gpay" className={claseEtiqueta}>
-                Origen de Cuenta
+                Origen de cuenta
               </label>
               <select id="origen_gpay" name="origen_gpay" className={claseCampo}>
                 <option value="gpay_usa">GPay USA</option>
@@ -268,12 +315,10 @@ export function FormCuenta({
       <section className="space-y-4 rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900/80">
         <div className="flex items-center gap-2 border-b border-neutral-100 pb-3 dark:border-neutral-800/80">
           <div className="rounded-lg bg-amber-500/10 p-1.5 text-amber-600 dark:text-amber-400">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
+            <IconoProveedor />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Proveedor & Costo Operativo</h2>
+            <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Proveedor y costo operativo</h2>
             <p className="text-xs text-neutral-500 dark:text-neutral-400">Datos opcionales para control financiero e inversión</p>
           </div>
         </div>
@@ -332,7 +377,7 @@ export function FormCuenta({
 
           <div>
             <label htmlFor="ciclo_inicio" className={claseEtiqueta}>
-              Inicio Ciclo
+              Inicio del ciclo
             </label>
             <input
               id="ciclo_inicio"
@@ -341,6 +386,9 @@ export function FormCuenta({
               defaultValue={new Date().toISOString().slice(0, 10)}
               className={claseCampo}
             />
+            <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+              El día de renovación del proveedor se deriva de esta fecha (ancla). No hay que indicarlo aparte.
+            </p>
           </div>
         </div>
       </section>
@@ -362,7 +410,7 @@ export function FormCuenta({
       <div className="flex items-center gap-3 pt-2">
         <button
           type="submit"
-          disabled={pendiente || !producto || esDeCliente}
+          disabled={pendiente || !producto}
           className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
         >
           {pendiente ? (

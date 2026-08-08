@@ -117,6 +117,18 @@ export function proximaRenovacionProveedor(
   return `${anioDestino}-${pad2(mesDestino)}-${pad2(dia)}`;
 }
 
+/**
+ * Día del mes (1-31) de una fecha "YYYY-MM-DD": es el ANCLA de renovación del
+ * proveedor (DEC-26). En "Nueva cuenta" se deriva de la única fecha que pide el
+ * formulario (inicio del ciclo), sin pedir el día por separado.
+ *
+ * La equivalencia en SQL vive en `registrar_ciclo_proveedor` (coalesce del día
+ * de inicio); aquí la hacemos explícita y testeable para el contrato del alta.
+ */
+export function derivarDiaAncla(fecha: string): number {
+  return parseFecha(fecha).d;
+}
+
 export type AvisoProveedor = {
   nivel: "ok" | "proximo" | "hoy" | "vencido";
   etiqueta: string;

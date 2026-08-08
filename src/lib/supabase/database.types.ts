@@ -1248,6 +1248,75 @@ export type Database = {
           },
         ]
       }
+      gastos_personales: {
+        Row: {
+          archived_at: string | null
+          concepto: string
+          created_at: string
+          created_by: string
+          descripcion: string | null
+          fecha_gasto: string
+          id: string
+          moneda_original: string
+          monto_original: number
+          monto_usd: number
+          monto_ves: number
+          nota: string | null
+          tasa_bs_por_usd_snapshot: number
+          tasa_id: string | null
+          tasa_tipo: string
+        }
+        Insert: {
+          archived_at?: string | null
+          concepto: string
+          created_at?: string
+          created_by: string
+          descripcion?: string | null
+          fecha_gasto: string
+          id?: string
+          moneda_original: string
+          monto_original: number
+          monto_usd: number
+          monto_ves: number
+          nota?: string | null
+          tasa_bs_por_usd_snapshot: number
+          tasa_id?: string | null
+          tasa_tipo: string
+        }
+        Update: {
+          archived_at?: string | null
+          concepto?: string
+          created_at?: string
+          created_by?: string
+          descripcion?: string | null
+          fecha_gasto?: string
+          id?: string
+          moneda_original?: string
+          monto_original?: number
+          monto_usd?: number
+          monto_ves?: number
+          nota?: string | null
+          tasa_bs_por_usd_snapshot?: number
+          tasa_id?: string | null
+          tasa_tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gastos_personales_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gastos_personales_tasa_id_fkey"
+            columns: ["tasa_id"]
+            isOneToOne: false
+            referencedRelation: "tasas_cambio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       historial_estado_suscripcion: {
         Row: {
           actor_id: string | null
@@ -2931,6 +3000,10 @@ export type Database = {
         }
         Returns: number
       }
+      archivar_gasto_personal: {
+        Args: { p_gasto_id: string }
+        Returns: undefined
+      }
       calcular_cierre_mensual: { Args: { p_mes: string }; Returns: string }
       cambiar_estado_suscripcion: {
         Args: {
@@ -3007,9 +3080,26 @@ export type Database = {
         }
         Returns: string
       }
+      editar_gasto_personal: {
+        Args: {
+          p_concepto: string
+          p_descripcion: string
+          p_fecha_gasto: string
+          p_gasto_id: string
+          p_moneda_original: string
+          p_monto_original: number
+          p_nota: string
+          p_tasa_tipo: string
+        }
+        Returns: string
+      }
       eliminar_cliente: { Args: { p_cliente_id: string }; Returns: undefined }
       eliminar_cuenta: { Args: { p_cuenta_id: string }; Returns: undefined }
       eliminar_cuentas: { Args: { p_cuenta_ids: string[] }; Returns: number }
+      eliminar_gasto_personal: {
+        Args: { p_gasto_id: string }
+        Returns: undefined
+      }
       es_admin: { Args: never; Returns: boolean }
       fecha_renovacion_cliente: {
         Args: { p_inicio: string; p_meses?: number }
@@ -3178,6 +3268,18 @@ export type Database = {
         }
         Returns: string
       }
+      registrar_gasto_personal: {
+        Args: {
+          p_concepto: string
+          p_descripcion?: string
+          p_fecha_gasto: string
+          p_moneda_original?: string
+          p_monto_original?: number
+          p_nota?: string
+          p_tasa_tipo?: string
+        }
+        Returns: string
+      }
       registrar_pago_proveedor: {
         Args: {
           p_ciclo_id: string
@@ -3319,6 +3421,7 @@ export type Database = {
       }
       vender_miembro_spotify_con_identidad: {
         Args: {
+          p_cantidad_periodos?: number
           p_cliente_nombre: string
           p_cliente_whatsapp: string
           p_contrasena_cifrada: string
@@ -3337,6 +3440,7 @@ export type Database = {
       }
       vender_miembro_spotify_reemplazando_identidad: {
         Args: {
+          p_cantidad_periodos?: number
           p_cliente_nombre: string
           p_cliente_whatsapp: string
           p_contrasena_cifrada: string

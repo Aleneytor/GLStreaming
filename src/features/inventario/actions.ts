@@ -6,19 +6,28 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { cifrarSecreto, descifrarSecreto, huellaSecreto } from "@/lib/crypto";
-import { formularioSolicitaRotarCredenciales } from "./contrato-formulario-cuenta";
+import { derivarDiaAncla } from "@/domain/fechas";
+import { uno } from "@/lib/supabase/util";
+import {
+  datosCuentaDesdeFormData,
+  formularioSolicitaRotarCredenciales,
+  type DatosCrearCuenta,
+} from "./contrato-formulario-cuenta";
 
 const esquemaCuenta = z.object({
-  producto_id: z.string().uuid("Elige un producto."),
+  productoId: z.string().uuid("Elige un producto."),
   capacidad: z.coerce.number().int().positive("La capacidad debe ser mayor que cero."),
   alias: z.string().trim().max(80).optional().or(z.literal("")),
   proveedor: z.string().trim().max(80).optional().or(z.literal("")),
   notas: z.string().trim().max(1000).optional().or(z.literal("")),
   correo: z.string().trim().min(1, "El correo de la cuenta es obligatorio."),
   contrasena: z.string().min(1, "La contraseña de la cuenta es obligatoria."),
-  costo_usdt: z.string().trim().optional().or(z.literal("")),
-  ciclo_inicio: z.string().trim().optional().or(z.literal("")),
-  dia_ancla: z.string().trim().optional().or(z.literal("")),
+  costoUsdt: z.string().trim().optional().or(z.literal("")),
+  // Única fecha del alta: el ancla del proveedor se deriva de aquí (DEC-26);
+  // ya no se pide el "día de renovación" por separado.
+  cicloInicio: z.string().trim().optional().or(z.literal("")),
+  gmailPagador: z.string().trim().optional().or(z.literal("")),
+  origenGpay: z.string().trim().optional().or(z.literal("")),
 });
 
 async function registrarCicloSiCorresponde(
@@ -26,18 +35,24 @@ async function registrarCicloSiCorresponde(
   cuentaId: string,
   costoTexto: string,
   inicio: string,
-  diaAncla: string,
 ): Promise<string | null> {
   if (!costoTexto) return null;
 
   const costo = Number(costoTexto.replace(",", "."));
   if (!Number.isFinite(costo) || costo < 0) return "El costo debe ser un número válido.";
 
+  // El ancla se deriva de la única fecha del formulario. `registrar_ciclo_proveedor`
+  // también lo haría si llega null, pero lo pasamos explícito y testeable.
+  const inicioEfectivo = inicio || new Date().toISOString().slice(0, 10);
+  const diaAncla = /^\d{4}-\d{2}-\d{2}$/.test(inicioEfectivo)
+    ? derivarDiaAncla(inicioEfectivo)
+    : null;
+
   const { error } = await supabase.rpc("registrar_ciclo_proveedor", {
     p_cuenta_id: cuentaId,
     p_costo_usdt: costo,
-    p_inicio: inicio || new Date().toISOString().slice(0, 10),
-    p_dia_ancla: diaAncla ? Number(diaAncla) : null,
+    p_inicio: inicioEfectivo,
+    p_dia_ancla: diaAncla,
     p_referencia: null,
   });
   return error ? error.message : null;
@@ -49,72 +64,64 @@ export async function crearCuentaAction(
   _prev: EstadoAlta,
   formData: FormData,
 ): Promise<EstadoAlta> {
-  const parsed = esquemaCuenta.safeParse({
-    producto_id: formData.get("producto_id"),
-    capacidad: formData.get("capacidad"),
-    alias: formData.get("alias") ?? "",
-    proveedor: formData.get("proveedor") ?? "",
-    notas: formData.get("notas") ?? "",
-    correo: formData.get("correo"),
-    contrasena: formData.get("contrasena"),
-    costo_usdt: formData.get("costo_usdt") ?? "",
-    ciclo_inicio: formData.get("ciclo_inicio") ?? "",
-    dia_ancla: formData.get("dia_ancla") ?? "",
-  });
+  return crearCuentaDesdeDatos(datosCuentaDesdeFormData(formData));
+}
 
+/** Núcleo tipado del alta: recibe el contrato, no claves sueltas de FormData. */
+async function crearCuentaDesdeDatos(datos: DatosCrearCuenta): Promise<EstadoAlta> {
+  const parsed = esquemaCuenta.safeParse(datos);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
   }
-  const datos = parsed.data;
+  const d = parsed.data;
 
   const supabase = await createClient();
   const { data: producto } = await supabase
     .from("productos_plataforma")
     .select("codigo")
-    .eq("id", datos.producto_id)
+    .eq("id", d.productoId)
     .maybeSingle();
-  const loginCifrado = cifrarSecreto(datos.correo);
-  const loginFingerprint = huellaSecreto(datos.correo);
-  const contrasenaCifrada = cifrarSecreto(datos.contrasena);
-  const gmailPagador = String(formData.get("gmail_pagador") ?? "").trim();
+  const loginCifrado = cifrarSecreto(d.correo);
+  const loginFingerprint = huellaSecreto(d.correo);
+  const contrasenaCifrada = cifrarSecreto(d.contrasena);
+  const gmailPagador = d.gmailPagador;
   const origenGpay =
-    formData.get("origen_gpay") === "gpay_nigeria" ? "gpay_nigeria" : "gpay_usa";
+    d.origenGpay === "gpay_nigeria" ? "gpay_nigeria" : "gpay_usa";
 
   const { data: cuentaId, error } = producto?.codigo === "spotify-familiar"
     ? await supabase.rpc("crear_familia_spotify", {
-        p_producto_id: datos.producto_id,
-        p_capacidad: datos.capacidad,
-        p_alias: datos.alias || null,
-        p_proveedor_nombre: datos.proveedor || null,
-        p_notas: datos.notas || null,
-        p_login_cifrado: loginCifrado,
-        p_login_fingerprint: loginFingerprint,
-        p_contrasena_cifrada: contrasenaCifrada,
-        p_gmail_pagador_cifrado: gmailPagador ? cifrarSecreto(gmailPagador) : null,
-        p_gmail_pagador_fingerprint: gmailPagador ? huellaSecreto(gmailPagador) : null,
-        p_origen_gpay: gmailPagador ? origenGpay : null,
-      })
+      p_producto_id: d.productoId,
+      p_capacidad: d.capacidad,
+      p_alias: d.alias || null,
+      p_proveedor_nombre: d.proveedor || null,
+      p_notas: d.notas || null,
+      p_login_cifrado: loginCifrado,
+      p_login_fingerprint: loginFingerprint,
+      p_contrasena_cifrada: contrasenaCifrada,
+      p_gmail_pagador_cifrado: gmailPagador ? cifrarSecreto(gmailPagador) : null,
+      p_gmail_pagador_fingerprint: gmailPagador ? huellaSecreto(gmailPagador) : null,
+      p_origen_gpay: gmailPagador ? origenGpay : null,
+    })
     : await supabase.rpc("crear_cuenta_con_unidades", {
-        p_producto_id: datos.producto_id,
-        p_capacidad: datos.capacidad,
-        p_alias: datos.alias || null,
-        p_proveedor_id: null,
-        p_proveedor_nombre: datos.proveedor || null,
-        p_notas: datos.notas || null,
-        p_login_cifrado: loginCifrado,
-        p_login_fingerprint: loginFingerprint,
-        p_contrasena_cifrada: contrasenaCifrada,
-        p_nombres_unidades: null,
-      });
+      p_producto_id: d.productoId,
+      p_capacidad: d.capacidad,
+      p_alias: d.alias || null,
+      p_proveedor_id: null,
+      p_proveedor_nombre: d.proveedor || null,
+      p_notas: d.notas || null,
+      p_login_cifrado: loginCifrado,
+      p_login_fingerprint: loginFingerprint,
+      p_contrasena_cifrada: contrasenaCifrada,
+      p_nombres_unidades: null,
+    });
 
   if (error) return { error: error.message };
 
   const errorCiclo = await registrarCicloSiCorresponde(
     supabase,
     cuentaId as unknown as string,
-    datos.costo_usdt ?? "",
-    datos.ciclo_inicio ?? "",
-    datos.dia_ancla ?? "",
+    d.costoUsdt ?? "",
+    d.cicloInicio ?? "",
   );
   if (errorCiclo) {
     return { error: errorCiclo };
@@ -552,7 +559,7 @@ function parcheVendedor(opts?: OpcionesVendedor): { tipo?: string; cobra_en_para
 }
 
 async function resolverVendedorId(
-  supabase: any,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   vendedorIdInput: string | null,
   vendedorNombreCustom: string | null,
   opts?: OpcionesVendedor,
@@ -673,57 +680,65 @@ export async function venderUnidadRapidaAction(
     .eq("id", cuentaId)
     .maybeSingle();
 
-  let modalidadId = unidadId
-    ? "11111111-1111-4111-a111-111111111101"
-    : "11111111-1111-4111-a111-111111111102";
-
-  if (cuentaData?.producto_plataforma_id) {
-    const alcanceBuscado = unidadId ? "unidad" : "cuenta";
-    const { data: permitidas } = await supabase
-      .from("producto_modalidades")
-      .select("modalidad_id, modalidades!inner ( alcance_asignacion )")
-      .eq("producto_plataforma_id", cuentaData.producto_plataforma_id)
-      .eq("activa", true);
-
-    const modCoincidente = permitidas?.find(
-      (p: any) => p.modalidades?.alcance_asignacion === alcanceBuscado,
-    );
-
-    if (modCoincidente?.modalidad_id) {
-      modalidadId = modCoincidente.modalidad_id;
-    }
+  if (!cuentaData?.producto_plataforma_id) {
+    return { error: "La cuenta no existe o no tiene un producto asociado." };
   }
+
+  // La modalidad se resuelve dinámicamente por producto y alcance (unidad o
+  // cuenta). Ya no existe un UUID de respaldo: si el catálogo no tiene una
+  // modalidad activa del alcance correcto, mejor un error claro que vender con
+  // una modalidad equivocada que el motor rechazaría con "no permitida".
+  const alcanceBuscado = unidadId ? "unidad" : "cuenta";
+  const { data: permitidas, error: errorModalidades } = await supabase
+    .from("producto_modalidades")
+    .select("modalidad_id, modalidades!inner ( alcance_asignacion )")
+    .eq("producto_plataforma_id", cuentaData.producto_plataforma_id)
+    .eq("activa", true);
+
+  if (errorModalidades) return { error: errorModalidades.message };
+
+  const modCoincidente = (permitidas ?? []).find(
+    (p) => uno(p.modalidades)?.alcance_asignacion === alcanceBuscado,
+  );
+
+  if (!modCoincidente?.modalidad_id) {
+    return {
+      error: `No hay una modalidad activa de alcance "${alcanceBuscado}" para este producto. Revisa el catálogo antes de vender.`,
+    };
+  }
+
+  const modalidadId = modCoincidente.modalidad_id;
 
   const { error } = spotifyLogin && unidadId
     ? await supabase.rpc("vender_miembro_spotify_reemplazando_identidad", {
-        p_cuenta_id: cuentaId,
-        p_unidad_id: unidadId,
-        p_modalidad_id: modalidadId,
-        p_cliente_nombre: clienteNombre,
-        p_cliente_whatsapp: clienteWhatsapp || null,
-        p_precio_usd: precioUsd,
-        p_monto_usd: precioUsd,
-        p_inicio: fechaInicioTxt || null,
-        p_cantidad_periodos: meses,
-        p_vendedor_id: vendedorId,
-        p_login_cifrado: cifrarSecreto(spotifyLogin),
-        p_login_fingerprint: huellaSecreto(spotifyLogin),
-        p_contrasena_cifrada: cifrarSecreto(spotifyClave),
-        p_tipo_correo: spotifyTipoCorreo,
-      })
+      p_cuenta_id: cuentaId,
+      p_unidad_id: unidadId,
+      p_modalidad_id: modalidadId,
+      p_cliente_nombre: clienteNombre,
+      p_cliente_whatsapp: clienteWhatsapp || null,
+      p_precio_usd: precioUsd,
+      p_monto_usd: precioUsd,
+      p_inicio: fechaInicioTxt || null,
+      p_cantidad_periodos: meses,
+      p_vendedor_id: vendedorId,
+      p_login_cifrado: cifrarSecreto(spotifyLogin),
+      p_login_fingerprint: huellaSecreto(spotifyLogin),
+      p_contrasena_cifrada: cifrarSecreto(spotifyClave),
+      p_tipo_correo: spotifyTipoCorreo,
+    })
     : await supabase.rpc("vender_unidad", {
-        p_cuenta_id: cuentaId,
-        p_modalidad_id: modalidadId,
-        p_unidad_id: unidadId,
-        p_cliente_nombre: clienteNombre,
-        p_cliente_whatsapp: clienteWhatsapp || null,
-        p_nombre_perfil: nombrePerfil || undefined,
-        p_precio_usd: precioUsd,
-        p_monto_usd: precioUsd,
-        p_inicio: fechaInicioTxt || null,
-        p_cantidad_periodos: meses,
-        p_vendedor_id: vendedorId,
-      });
+      p_cuenta_id: cuentaId,
+      p_modalidad_id: modalidadId,
+      p_unidad_id: unidadId,
+      p_cliente_nombre: clienteNombre,
+      p_cliente_whatsapp: clienteWhatsapp || null,
+      p_nombre_perfil: nombrePerfil || undefined,
+      p_precio_usd: precioUsd,
+      p_monto_usd: precioUsd,
+      p_inicio: fechaInicioTxt || null,
+      p_cantidad_periodos: meses,
+      p_vendedor_id: vendedorId,
+    });
 
   if (error) return { error: error.message };
 
@@ -761,14 +776,14 @@ export async function editarVentaDirectaAction(
   );
   const spotifyTipoCorreo =
     spotifyTipoCrudo === "dominio_gl" ||
-    spotifyTipoCrudo === "gmail_propio" ||
-    spotifyTipoCrudo === "correo_cliente"
+      spotifyTipoCrudo === "gmail_propio" ||
+      spotifyTipoCrudo === "correo_cliente"
       ? spotifyTipoCrudo
       : "correo_cliente";
   const spotifyTipoCorreoOriginal =
     spotifyTipoOriginalCrudo === "dominio_gl" ||
-    spotifyTipoOriginalCrudo === "gmail_propio" ||
-    spotifyTipoOriginalCrudo === "correo_cliente"
+      spotifyTipoOriginalCrudo === "gmail_propio" ||
+      spotifyTipoOriginalCrudo === "correo_cliente"
       ? spotifyTipoOriginalCrudo
       : "correo_cliente";
   const vendedorIdInput = String(formData.get("vendedor_id") ?? "").trim() || null;

@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BotonAcceso } from "@/features/ventas/boton-acceso";
+import { clasificarVentasRevendedor } from "./clasificacion";
 
 /**
  * Panel del revendedor (cliente): dos vistas sobre SUS ventas.
@@ -26,6 +27,7 @@ export type VentaRevendedor = {
   modalidad: string;
   fecha_renovacion: string | null;
   dias: number | null;
+  nota_renovacion?: string | null;
 };
 
 type EstadoVencimiento = "ok" | "soon" | "late" | null;
@@ -152,10 +154,24 @@ function TarjetaCliente({
   v: VentaRevendedor;
   whatsappNegocio: string | null;
 }) {
-  const estado = estadoDe(v.dias);
-  const borde = estado ? BORDE_ESTADO[estado] : "border-l-neutral-300 dark:border-l-neutral-700";
-  const franja = franjaVencimiento(v.dias);
-  const necesitaRenovar = v.dias !== null && v.dias <= 5;
+  // Una pausa conserva el cupo para el cliente pero deja de ser una alarma de
+  // renovación: se pinta neutra y sin botón de solicitud (misma regla que el
+  // Centro de Operaciones del admin).
+  const esPausa = v.estado === "pausada";
+  const estado = esPausa ? null : estadoDe(v.dias);
+  const borde = esPausa
+    ? "border-l-neutral-400 dark:border-l-neutral-600"
+    : estado
+      ? BORDE_ESTADO[estado]
+      : "border-l-neutral-300 dark:border-l-neutral-700";
+  const franja = esPausa
+    ? {
+      texto: "En pausa · cupo reservado",
+      clase:
+        "border-neutral-300 bg-neutral-100 text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400",
+    }
+    : franjaVencimiento(v.dias);
+  const necesitaRenovar = !esPausa && v.dias !== null && v.dias <= 5;
 
   return (
     <div
@@ -180,7 +196,7 @@ function TarjetaCliente({
           </p>
           <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
             {v.plataforma?.toLowerCase().includes("spotify") ? "Spotify Premium" : v.producto}
-            {v.estado !== "activa" ? ` · Status: ${v.estado}` : ""}
+            {v.estado !== "activa" && v.estado !== "pausada" ? ` · Estado: ${v.estado}` : ""}
           </p>
         </div>
 
@@ -193,13 +209,19 @@ function TarjetaCliente({
         )}
       </div>
 
+      {v.nota_renovacion && (
+        <p className="mt-3 flex items-start gap-1.5 rounded-md bg-neutral-50 px-2.5 py-1.5 text-[11px] leading-snug text-neutral-600 dark:bg-neutral-800/60 dark:text-neutral-300">
+          <span aria-hidden>📝</span> {v.nota_renovacion}
+        </p>
+      )}
+
       <div
         className={`mt-3 flex items-center justify-between rounded-lg border px-3 py-2 text-xs font-semibold ${franja.clase}`}
       >
         <span>
           <span aria-hidden>⏰</span> {franja.texto}
         </span>
-        {v.dias !== null && v.dias <= 0 && (
+        {!esPausa && v.dias !== null && v.dias <= 0 && (
           <span className="rounded-full border border-current px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
             Revisar
           </span>
@@ -275,29 +297,16 @@ export function PanelRevendedor({
     [ventas, busqueda, filtro],
   );
 
-  const alDia = filtradas.filter((v) => v.dias !== null && v.dias > 5).length;
-  const porVencer = filtradas.filter((v) => v.dias !== null && v.dias >= 0 && v.dias <= 5).length;
-  const vencidas = filtradas.filter((v) => v.dias !== null && v.dias < 0).length;
-  const vencenHoy = filtradas.filter((v) => v.dias === 0).length;
-  const urgentes = vencidas + vencenHoy;
-
-  // Dentro de cada grupo, primero lo que vence antes.
-  const ordenar = (arr: VentaRevendedor[]) =>
-    [...arr].sort((a, b) => (a.dias ?? 9999) - (b.dias ?? 9999));
+  // Las métricas y los grupos de vencimiento solo cuentan ventas ACTIVAS; las
+  // pausadas viven en su grupo neutro «En pausa · cupo reservado».
+  const clasificacion = useMemo(() => clasificarVentasRevendedor(filtradas), [filtradas]);
+  const { alDia, porVencer, vencidas, vencenHoy, urgentes } = clasificacion;
 
   const plataformas = useMemo(() => {
     const m = new Map<string, number>();
     for (const v of ventas) m.set(v.plataforma, (m.get(v.plataforma) ?? 0) + 1);
     return [...m.entries()].map(([nombre, n]) => ({ nombre, n })).sort((a, b) => b.n - a.n);
   }, [ventas]);
-
-  const gruposVenc: { titulo: string; acento: string; items: VentaRevendedor[] }[] = [
-    { titulo: "Vencidos (Atención inmediata)", acento: "text-red-600 dark:text-red-400 font-bold", items: ordenar(filtradas.filter((v) => v.dias !== null && v.dias < 0)) },
-    { titulo: "Vencen hoy", acento: "text-red-600 dark:text-red-400 font-bold", items: filtradas.filter((v) => v.dias === 0) },
-    { titulo: "Próximos 5 días", acento: "text-amber-600 dark:text-amber-400 font-semibold", items: ordenar(filtradas.filter((v) => v.dias !== null && v.dias > 0 && v.dias <= 5)) },
-    { titulo: "Vigentes / Al día", acento: "text-emerald-600 dark:text-emerald-400 font-semibold", items: ordenar(filtradas.filter((v) => v.dias !== null && v.dias > 5)) },
-    { titulo: "Sin fecha asignada", acento: "text-neutral-500 dark:text-neutral-400 font-semibold", items: filtradas.filter((v) => v.dias === null) },
-  ];
 
   const porPlataforma = useMemo(() => {
     const m = new Map<string, VentaRevendedor[]>();
@@ -312,10 +321,9 @@ export function PanelRevendedor({
   }, [filtradas]);
 
   const tabBtn = (activo: boolean) =>
-    `flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm ${
-      activo
-        ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-md"
-        : "bg-white text-neutral-600 hover:text-neutral-900 border border-neutral-200 dark:bg-neutral-900 dark:border-neutral-800 dark:text-neutral-400 dark:hover:text-white"
+    `flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm ${activo
+      ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-md"
+      : "bg-white text-neutral-600 hover:text-neutral-900 border border-neutral-200 dark:bg-neutral-900 dark:border-neutral-800 dark:text-neutral-400 dark:hover:text-white"
     }`;
 
   return (
@@ -428,11 +436,10 @@ export function PanelRevendedor({
           <button
             type="button"
             onClick={() => cambiarFiltro(null)}
-            className={`shrink-0 rounded-full px-3.5 py-1.5 font-bold transition ${
-              filtro === null
+            className={`shrink-0 rounded-full px-3.5 py-1.5 font-bold transition ${filtro === null
                 ? "bg-neutral-900 text-white shadow dark:bg-white dark:text-neutral-900"
                 : "border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
-            }`}
+              }`}
           >
             Todas ({ventas.length})
           </button>
@@ -443,11 +450,10 @@ export function PanelRevendedor({
                 key={p.nombre}
                 type="button"
                 onClick={() => cambiarFiltro(activo ? null : p.nombre)}
-                className={`shrink-0 rounded-full px-3.5 py-1.5 font-bold transition ${
-                  activo
+                className={`shrink-0 rounded-full px-3.5 py-1.5 font-bold transition ${activo
                     ? "bg-neutral-900 text-white shadow dark:bg-white dark:text-neutral-900"
                     : "border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
-                }`}
+                  }`}
               >
                 {p.nombre} ({p.n})
               </button>
@@ -461,7 +467,7 @@ export function PanelRevendedor({
           No se encontraron servicios que coincidan con la búsqueda.
         </p>
       ) : vista === "operaciones" ? (
-        gruposVenc
+        clasificacion.grupos
           .filter((g) => g.items.length > 0)
           .map((g) => (
             <section key={g.titulo} className="space-y-3">

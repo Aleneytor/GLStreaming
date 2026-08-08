@@ -282,6 +282,37 @@ Para retomar: `npx supabase start` y `npm run dev` (ver `09-fase-1-setup.md`).
   - la identidad madre conserva login/clave;
   - un `correo_cliente` sí pierde secretos y queda `retirada`.
 
+## 4.9. Gastos personales privados del administrador (30/07/2026)
+
+- **Objetivo**: añadir un bloc privado dentro de la app para que el
+  administrador anote gastos personales mensuales sin mezclarlos con la
+  contabilidad del negocio.
+- **Alcance**: nueva ruta `/personal`, visible solo para admin, fuera del bloque
+  de Finanzas. Se integra en el menú principal como apartado propio.
+- **Regla clave**: estos movimientos NO participan en Caja, Cobros, Egresos,
+  Cierre mensual, margen ni ninguna lectura operativa del negocio.
+- **Implementación**:
+
+  - migración `0058_gastos_personales_admin.sql`;
+  - migración `0059_editar_y_eliminar_gastos_personales.sql`;
+  - tabla `gastos_personales` con snapshots de `monto_usd`, `monto_ves`,
+    `tasa_tipo` y `tasa_bs_por_usd_snapshot`;
+  - RPCs `registrar_gasto_personal`, `editar_gasto_personal`,
+    `archivar_gasto_personal` y `eliminar_gasto_personal`;
+  - políticas RLS admin-only.
+
+- **UX**: el formulario deja registrar en `USD` o `Bs`, eligiendo si la
+  conversión se congela a `BCV` o `paralela`. Ejemplo real de uso: “hamburguesa,
+  5 USD a BCV”. El historial mensual también deja editar, archivar y borrar de
+  forma definitiva sin tocar las finanzas del negocio.
+- **Validación real**:
+
+  - `npm run db:reset`
+  - `npx supabase gen types typescript --db-url "...54322/postgres?sslmode=disable"`
+  - `supabase/tests/personal.sql`
+  - `npm run typecheck`
+  - `npm run build`
+
 Las migraciones `0023..0035` y las iteraciones posteriores llevaron la operación
 diaria al inventario: venta y gestión directa desde cada cupo, importadores para
 las plataformas reales, cobro con tasa BCV/paralela según el tipo de vendedor y

@@ -3,6 +3,7 @@ import {
   avisoProveedor,
   badgeVencimiento,
   calcularFechaRenovacion,
+  derivarDiaAncla,
   diasParaRenovar,
   planificarRenovacionCliente,
   proximaRenovacionProveedor,
@@ -131,6 +132,24 @@ describe("proximaRenovacionProveedor — el día ancla se recupera", () => {
   it("rechaza anclas inválidas", () => {
     expect(() => proximaRenovacionProveedor("2026-01-15", 0)).toThrow();
     expect(() => proximaRenovacionProveedor("2026-01-15", 32)).toThrow();
+  });
+});
+
+describe("derivarDiaAncla — el ancla se deriva de la fecha de inicio", () => {
+  it("extrae el día de la fecha del ciclo", () => {
+    expect(derivarDiaAncla("2026-07-22")).toBe(22);
+    expect(derivarDiaAncla("2026-03-01")).toBe(1);
+  });
+
+  it("trabaja con fechas de mes completo (fin de mes)", () => {
+    expect(derivarDiaAncla("2026-01-31")).toBe(31);
+  });
+
+  it("se integra con proximaRenovacionProveedor: el ancla derivada se recupera", () => {
+    const ancla = derivarDiaAncla("2026-01-31");
+    const feb = proximaRenovacionProveedor("2026-01-31", ancla);
+    expect(feb).toBe("2026-02-28");
+    expect(proximaRenovacionProveedor(feb, ancla)).toBe("2026-03-31");
   });
 });
 

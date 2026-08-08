@@ -489,6 +489,64 @@ describe("analizarFilas", () => {
     ]);
   });
 
+  it("ancla el teléfono del vendedor cuando la hoja trae la columna «Teléfono Vendedor»", () => {
+    const r = analizarFilas(
+      [
+        fila("Correo", "Contraseña", "Perfil", "Ingresos", "Cliente", "Vendió", "Teléfono Vendedor"),
+        fila("v@gls.org", "c", "P1", "5", "Ana", "Gabriel Nadales", "+58 412-0000000"),
+        fila("w@gls.org", "c", "P1", "5", "Beto", "Gabriel Nadales", "+58 412-0000000"),
+      ].join("\n"),
+      2,
+    );
+    expect(r.conError).toBe(0);
+    // El número queda disponible por fila y en la configuración del vendedor.
+    expect(r.filas[0].datos.telefonoVendedor).toBe("+58 412-0000000");
+    expect(r.filas[1].datos.telefonoVendedor).toBe("+58 412-0000000");
+    expect(r.configuracionesVendedores).toEqual([
+      {
+        nombre: "Gabriel Nadales",
+        alias: null,
+        tipo: null,
+        tasa: null,
+        telefono: "+58 412-0000000",
+      },
+    ]);
+  });
+
+  it("reconoce el teléfono del vendedor con la abreviatura de la hoja real («Tel Vendedor»)", () => {
+    const r = analizarFilas(
+      [
+        fila("Correo", "Contraseña", "Perfil", "Ingresos", "Cliente", "Vendió", "Tel Vendedor"),
+        fila("v@gls.org", "c", "P1", "5", "Ana", "Gabriel Nadales", "+58 412-0000000"),
+      ].join("\n"),
+      1,
+    );
+    expect(r.conError).toBe(0);
+    expect(r.filas[0].datos.telefonoVendedor).toBe("+58 412-0000000");
+    expect(r.configuracionesVendedores).toEqual([
+      {
+        nombre: "Gabriel Nadales",
+        alias: null,
+        tipo: null,
+        tasa: null,
+        telefono: "+58 412-0000000",
+      },
+    ]);
+  });
+
+  it("la columna «N° Celular» del cliente no se confunde con el teléfono del vendedor", () => {
+    const r = analizarFilas(
+      [
+        fila("Correo", "Contraseña", "Perfil", "Ingresos", "Cliente", "Vendió", "N° Celular"),
+        fila("v@gls.org", "c", "P1", "5", "Ana", "Gabriel Nadales", "+58 412-0000000"),
+      ].join("\n"),
+      1,
+    );
+    expect(r.conError).toBe(0);
+    expect(r.filas[0].datos.whatsapp).toBe("+58 412-0000000");
+    expect(r.filas[0].datos.telefonoVendedor).toBeNull();
+  });
+
   it("la tasa paralela no cambia la relación comercial y admite intermediarios", () => {
     const inferido = analizarFilas(
       [
