@@ -37,7 +37,7 @@ export default async function PanelLayout({
         },
         { href: "/red", etiqueta: "Red comercial", icono: "personas" },
         { href: "/migracion", etiqueta: "Importar", icono: "descarga", soloEscritorio: true },
-        { href: "/catalogo", etiqueta: "Catálogo", icono: "engranaje" },
+        { href: "/catalogo", etiqueta: "Catálogo", icono: "engranaje", soloEscritorio: true },
       ]
     : [{ href: "/dashboard", etiqueta: "Mis ventas", icono: "recibo" }];
 
@@ -87,6 +87,15 @@ export default async function PanelLayout({
             >
               <Icono nombre="recibo" className="size-3.5" />
               <span className="hidden sm:inline">Personal</span>
+            </Link>
+          )}
+          {esAdmin(usuario) && (
+            <Link
+              href="/catalogo"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-500 transition hover:bg-neutral-50 hover:text-neutral-700 active:scale-[0.98] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 md:hidden"
+            >
+              <Icono nombre="engranaje" className="size-3.5" />
+              <span className="hidden sm:inline">Catálogo</span>
             </Link>
           )}
 
