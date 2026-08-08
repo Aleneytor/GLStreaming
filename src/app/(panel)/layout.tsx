@@ -1,8 +1,10 @@
 import Image from "next/image";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { cerrarSesion } from "@/features/auth/actions";
 import { NavPanel, type ItemNav } from "@/components/nav-panel";
+import { Icono } from "@/components/iconos";
 
 export default async function PanelLayout({
   children,
@@ -36,14 +38,6 @@ export default async function PanelLayout({
         { href: "/red", etiqueta: "Red comercial", icono: "personas" },
         { href: "/migracion", etiqueta: "Importar", icono: "descarga", soloEscritorio: true },
         { href: "/catalogo", etiqueta: "Catálogo", icono: "engranaje" },
-        {
-          href: "/personal",
-          etiqueta: "Personal",
-          icono: "recibo",
-          separador: true,
-          seccion: "Personal",
-          soloEscritorio: true,
-        },
       ]
     : [{ href: "/dashboard", etiqueta: "Mis ventas", icono: "recibo" }];
 
@@ -85,6 +79,16 @@ export default async function PanelLayout({
               </p>
             </div>
           </div>
+
+          {esAdmin(usuario) && (
+            <Link
+              href="/personal"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-500 transition hover:bg-neutral-50 hover:text-neutral-700 active:scale-[0.98] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+            >
+              <Icono nombre="recibo" className="size-3.5" />
+              <span className="hidden sm:inline">Personal</span>
+            </Link>
+          )}
 
           <form action={cerrarSesion}>
             <button
