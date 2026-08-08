@@ -737,6 +737,9 @@ export function analizarFilas(
     // usa como nombre comercial. Si el revendedor no conoce el nombre final del
     // cliente y solo entrega el correo/clave, el registro comercial provisional
     // queda a nombre del revendedor/intermediario.
+    // El teléfono del vendedor NUNCA se guarda como WhatsApp del cliente: es una
+    // referencia del vendedor (vive en la configuración del vendedor), no un
+    // contacto del cliente. Decisión confirmada por el usuario (2026-08-08).
     // Un correo de identidad POR SÍ SOLO no es una venta: puede ser un cupo con
     // su login ya preparado pero sin vender (la hoja lo marca «Vacío»). Hace
     // falta algo más: nombre, monto, teléfono o revendedor.
@@ -744,9 +747,6 @@ export function analizarFilas(
       clienteCol || (typeof monto === "number" && monto > 0) || whatsapp || vendio,
     );
     const cliente = clienteCol ?? (haySenalVenta ? (perfil ?? vendio) : null);
-    if (!whatsapp && vendio && telefonoVendedor) {
-      whatsapp = telefonoVendedor;
-    }
     if (!clienteCol && cliente) {
       avisos.push(
         cliente === vendio

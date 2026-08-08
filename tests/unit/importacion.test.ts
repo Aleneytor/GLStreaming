@@ -513,6 +513,30 @@ describe("analizarFilas", () => {
     ]);
   });
 
+  it("el teléfono del vendedor NO se guarda como WhatsApp del cliente cuando la fila no trae uno", () => {
+    const r = analizarFilas(
+      [
+        fila("Correo", "Contraseña", "Perfil", "Ingresos", "Cliente", "Vendió", "Teléfono Vendedor"),
+        fila("v@gls.org", "c", "P1", "5", "Ana", "Gabriel Nadales", "+58 412-0000000"),
+      ].join("\n"),
+      1,
+    );
+    expect(r.conError).toBe(0);
+    // El número queda solo como referencia del vendedor (columna de su
+    // configuración), nunca como contacto del cliente final.
+    expect(r.filas[0].datos.whatsapp).toBeNull();
+    expect(r.filas[0].datos.telefonoVendedor).toBe("+58 412-0000000");
+    expect(r.configuracionesVendedores).toEqual([
+      {
+        nombre: "Gabriel Nadales",
+        alias: null,
+        tipo: null,
+        tasa: null,
+        telefono: "+58 412-0000000",
+      },
+    ]);
+  });
+
   it("reconoce el teléfono del vendedor con la abreviatura de la hoja real («Tel Vendedor»)", () => {
     const r = analizarFilas(
       [

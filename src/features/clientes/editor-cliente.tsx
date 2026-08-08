@@ -28,6 +28,10 @@ export type ClienteFila = {
   whatsapp_original: string | null;
   notas: string | null;
   servicios: ServicioCliente[];
+  /** Vendedores (revendedores/intermediarios) de los servicios activos. */
+  revendedores?: string[];
+  /** El teléfono guardado es del vendedor (referencia), no contacto del cliente. */
+  whatsappEsReferenciaVendedor?: boolean;
 };
 
 function fechaVisible(fecha: string | null): string {
@@ -54,6 +58,8 @@ export function EditorCliente({ cliente }: { cliente?: ClienteFila }) {
     const servicioPrioritario = cliente.servicios[0];
     const alerta = servicioPrioritario ? estadoServicio(servicioPrioritario.dias) : null;
     const whatsapp = cliente.whatsapp_original?.replace(/[^0-9]/g, "");
+    const esReferencia = Boolean(cliente.whatsappEsReferenciaVendedor);
+    const revendedores = cliente.revendedores ?? [];
 
     return (
       <article className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
@@ -64,8 +70,23 @@ export function EditorCliente({ cliente }: { cliente?: ClienteFila }) {
                 {cliente.nombre.trim().charAt(0).toUpperCase() || "?"}
               </span>
               <div className="min-w-0">
-                <h3 className="truncate font-semibold">{cliente.nombre}</h3>
-                <p className="truncate text-xs text-neutral-500">{cliente.whatsapp_original ?? "Sin WhatsApp registrado"}</p>
+                <div className="flex items-center gap-2">
+                  <h3 className="truncate font-semibold">{cliente.nombre}</h3>
+                  {revendedores.length > 0 && (
+                    <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                      {revendedores.length === 1
+                        ? `Revendedor: ${revendedores[0]}`
+                        : `Revendedores: ${revendedores.join(", ")}`}
+                    </span>
+                  )}
+                </div>
+                <p className="truncate text-xs text-neutral-500">
+                  {cliente.whatsapp_original
+                    ? esReferencia
+                      ? `Ref. del vendedor · ${cliente.whatsapp_original}`
+                      : cliente.whatsapp_original
+                    : "Sin WhatsApp registrado"}
+                </p>
               </div>
             </div>
             <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-1 text-[11px] font-medium dark:bg-neutral-800">
@@ -92,7 +113,7 @@ export function EditorCliente({ cliente }: { cliente?: ClienteFila }) {
         </div>
 
         <div className="grid grid-cols-2 border-t border-neutral-200 dark:border-neutral-800">
-          {whatsapp ? (
+          {whatsapp && !esReferencia ? (
             <a
               href={`https://wa.me/${whatsapp}`}
               target="_blank"

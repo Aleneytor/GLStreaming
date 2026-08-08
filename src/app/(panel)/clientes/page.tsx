@@ -41,7 +41,7 @@ export default async function ClientesPage({
        suscripciones (
          id, estado,
          productos_plataforma ( nombre, codigo, plataformas ( nombre, slug ) ),
-         vendedores ( nombre ),
+         vendedores ( nombre, telefono_normalizado ),
          periodos_servicio ( inicio, fecha_renovacion, precio_comercial_usd )
        )`,
     )
@@ -77,12 +77,39 @@ export default async function ClientesPage({
       })
       .sort((a, b) => (a.vence ?? "9999").localeCompare(b.vence ?? "9999"));
 
+    // Un teléfono es "referencia del vendedor" (no contacto del cliente) cuando
+    // coincide con el de un vendedor que le vendió un servicio y el cliente no
+    // ES ese vendedor. El caso cliente = revendedor se conserva: ahí la venta
+    // se le hace a él mismo y el teléfono es legítimamente suyo.
+    const normalizar = (valor: string | null | undefined) => (valor ?? "").replace(/[^0-9+]/g, "");
+    const telCliente = normalizar(cliente.whatsapp_original);
+    const whatsappEsReferenciaVendedor =
+      telCliente.length > 0 &&
+      (cliente.suscripciones ?? []).some((suscripcion) => {
+        const vendedor = uno(suscripcion.vendedores);
+        if (!vendedor?.telefono_normalizado) return false;
+        return (
+          normalizar(vendedor.telefono_normalizado) === telCliente &&
+          vendedor.nombre?.trim().toLowerCase() !== cliente.nombre.trim().toLowerCase()
+        );
+      });
+
+    const revendedores = [
+      ...new Set(
+        servicios
+          .map((servicio) => servicio.vendedor)
+          .filter((nombre): nombre is string => Boolean(nombre)),
+      ),
+    ];
+
     return {
       id: cliente.id,
       nombre: cliente.nombre,
       whatsapp_original: cliente.whatsapp_original,
       notas: cliente.notas,
       servicios,
+      revendedores,
+      whatsappEsReferenciaVendedor,
     };
   });
 
@@ -106,7 +133,7 @@ export default async function ClientesPage({
     if (filtro === "vencidos") {
       return cliente.servicios.some((servicio) => servicio.dias != null && servicio.dias < 0);
     }
-    if (filtro === "sin-contacto") return !cliente.whatsapp_original;
+    if (filtro === "sin-contacto") return !cliente.whatsapp_original || cliente.whatsappEsReferenciaVendedor;
     return true;
   });
 
