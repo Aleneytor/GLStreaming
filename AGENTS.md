@@ -114,6 +114,50 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 
 ## Estado actual
 
+- **El teléfono del revendedor ya no se guarda como WhatsApp del cliente;
+  limpieza de la cartera (COMPLETO 2026-08-08, migración `0061`)** — el
+  importador guardaba el teléfono del vendedor como «referencia comercial
+  provisional» del cliente cuando la fila traía un cliente final sin WhatsApp;
+  en `/clientes` eso hacía que el cliente de un revendedor pareciera propio, con
+  el teléfono del vendedor y un botón de WhatsApp que abría un chat con el
+  vendedor (no con el cliente). Decisión del usuario (2026-08-08): el teléfono
+  del vendedor **NUNCA** es contacto del cliente; solo queda como referencia en
+  `vendedores.telefono_*`.
+  - **Importador**: `src/domain/importacion.ts` eliminó el fallback
+    `if (!whatsapp && vendio && telefonoVendedor) { whatsapp = telefonoVendedor }`.
+    El `telefonoVendedor` se conserva y se persiste a `vendedores.telefono_*` vía
+    `configuracionesVendedores`. Prueba de regresión añadida en
+    `tests/unit/importacion.test.ts` («el teléfono del vendedor NO se guarda como
+    WhatsApp del cliente…»; 48 pruebas de importación, 214 unitarias en total).
+  - **Vista `/clientes`**: `src/app/(panel)/clientes/page.tsx` ahora selecciona
+    `vendedores (nombre, telefono_normalizado)` y calcula
+    `whatsappEsReferenciaVendedor` (el teléfono del cliente coincide con el de un
+    vendedor que le vendió Y los nombres difieren) y `revendedores[]`;
+    `src/features/clientes/editor-cliente.tsx` muestra el badge neutro
+    «Revendedor: X», etiqueta el teléfono como «Ref. del vendedor · …» y SUPRIME
+    el botón de WhatsApp engañoso (muestra «Sin contacto»); el filtro
+    `sin-contacto` incluye a estos clientes.
+  - **Limpieza de datos (migración `0061`)**: como `vendedores.telefono_*` estaba
+    vacío en la base histórica, la migración RECONSTRUYE el teléfono de cada
+    vendedor desde su cartera (espejo = cliente homónimo; si no, el número
+    compartido por ≥2 clientes suyos), lo devuelve a `vendedores.telefono_*`
+    (**20 vendedores backfilled**: Gabriel Nadales, NubeDigital, Roman,
+    AguaMiel_Store1, Paola Cruz, Yuselyn, Eder, Edgar Espinoza, etc.) y retira el
+    WhatsApp de los clientes cuyo número coincide con el de un vendedor que les
+    vendió Y cuyo nombre difiere del vendedor (**116 teléfonos-referencia
+    limpiados**; clientes con contacto 323 → 207). Se conservan los «espejos»
+    (venta directa al propio revendedor): NubeDigital, AguaMiel_Store1, Roman,
+    Paola Cruz, etc. Validado contra PostgreSQL real: 20 vendedores backfilled,
+    116 limpiados, y el único remanente de teléfono == vendedor son clientes
+    espejo; `npm test` (214), `npm run typecheck`, `supabase/tests/importacion.sql`
+    y `rls.sql` en verde.
+  - ⚠️ **Por qué algunos revendedores «tienen pocos clientes»**: no es un bug de la
+    vista. El importador viejo colapsaba los clientes finales sin nombre bajo el
+    nombre del vendedor (fallback `Cliente → Perfil → Vendió`), así que muchas
+    suscripciones de un revendedor quedaron a nombre del propio revendedor (ej.
+    NubeDigital con 35 suscripciones a su nombre). Los nombres reales del cliente
+    final solo viven en el Excel de respaldo; para recuperarlos hay que volver a
+    importar esas filas.
 - **Pase visual COMPLETO (2026-08-08)** — se cerraron los cinco quick wins y las
   cuatro elevaciones de `docs/10-auditoria-visual.md` / `11-pase-visual-claude.md`:
   - **Marca real**: el logo del negocio (`assets_gl_streaming/Logo.jpg`) es
@@ -380,7 +424,7 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 - **Pagos de proveedor por lote (migración `0036`)**: el inventario permite seleccionar todas las cuentas visibles de un mismo proveedor, desmarcar excepciones y editar el costo de cada ciclo. Comparten una sola `fecha_pago` y un `lote_pago_id`, pero cada ciclo nuevo comienza en la `proxima_renovacion` individual ya guardada. La operación es atómica y rechaza mezclar proveedores. El pago individual también usa `registrar_renovacion_y_pago`, por lo que ahora sí crea el egreso en Caja.
 - **Importador ampliado sin romper el Excel anterior**: `/migracion` conserva todas las columnas y reglas históricas (encabezados libres, celdas combinadas, Canva, Spotify, cuentas completas, costos y renovaciones) y ahora también puede leer `Alias Cuenta`, `Notas Cuenta`, `Estado Cuenta`, `Notas Cliente`, `Nota Renovación`, `Alias/Tipo/Tasa Vendedor` y `Tipo/Teléfono/Notas Proveedor`. Son columnas opcionales. La vista previa y el guardado comparten la decisión de tasa: directa usa BCV y cualquier vendedor/intermediario usa su base guardada. Los vendedores existentes conservan su configuración si la hoja vieja solo trae `Vendió`; una configuración explícita sí la actualiza. El selector de modalidad se reinicia al cambiar de producto para no enviar un UUID de la variante anterior.
 - **Clientes canónicos e importación comercial coherente (migraciones `0053` y `0054`)**: la resolución de clientes dejó de reutilizar por nombre a secas. Ahora agrupa por `nombre + teléfono` cuando existe número, y solo reutiliza un nombre sin teléfono si es inequívoco. Esto evita mezclar homónimos y permite que Operaciones agrupe mejor la cartera real. `vendedores` ahora guarda `telefono_original`/`telefono_normalizado`; Catálogo lo edita y el importador lo persiste al resolver `Vendió`.
-- **Spotify familiar no usa el correo como cliente**: el importador nunca toma `Correo Cliente` como nombre comercial. Si falta el nombre final del cliente, la prioridad queda `Cliente → Perfil → Vendió`; así, una venta de revendedor puede quedar provisionalmente a nombre del revendedor en vez de crear un cliente `correo@gmail.com`. Si no viene WhatsApp del cliente pero sí teléfono del vendedor importado, se usa ese número como referencia comercial provisional.
+- **Spotify familiar no usa el correo como cliente**: el importador nunca toma `Correo Cliente` como nombre comercial. Si falta el nombre final del cliente, la prioridad queda `Cliente → Perfil → Vendió`; así, una venta de revendedor puede quedar provisionalmente a nombre del revendedor en vez de crear un cliente `correo@gmail.com`. ⚠️ Desde 2026-08-08 el teléfono del vendedor NUNCA se guarda como WhatsApp del cliente (la antigua «referencia comercial provisional» quedó RETIRADA por decisión del usuario — ver entrada «El teléfono del revendedor…» en Estado actual y la migración `0061`): el número solo vive en `vendedores.telefono_*`.
 - **Filas madre/libres de Spotify familiar no se marcan como venta por monto 0**: `monto = 0` ya no dispara por sí solo la exigencia de un cliente. Esto corrige la vista previa de filas madre o cupos libres que antes aparecían en rojo solo por traer `0` en una columna financiera.
 - **Centro de Operaciones agrupado por cliente**: el frontend agrupa tarjetas por `cliente_id` y, como respaldo para importaciones históricas, por `nombre + teléfono`. Un mismo cliente con varios servicios ya no se repite innecesariamente como tarjetas separadas cuando la identidad comercial coincide.
 - **Renovaciones de proveedor con costo cero en todo el importador**: una fecha en `Renovar` crea o sincroniza el ciclo aunque `Inversión` sea `0`, tanto en Netflix/resto de plataformas como en las rutas especiales Spotify familiar e individual. Si Spotify ya se había importado con el bug, se pueden volver a pegar sus filas: el importador repara el ciclo y trata la venta existente como metadato ya cargado, sin duplicarla. Las fechas omitidas por la carga anterior no pueden reconstruirse desde PostgreSQL y deben venir otra vez del respaldo.
@@ -649,18 +693,23 @@ visual en teléfonos reales por todas las plataformas y modales (el rediseño de
 revendedor y el cierre del MVP con datos reales —0 perfiles fantasma + traslado
 real controlado— ya se completaron — ver entrada de “Estado actual” 2026-08-08).*
 
-*Última actualización: 2026-08-08 (migraciones hasta `0060`; rediseño de “Nueva
-cuenta” contextual por plataforma —1.1 a 1.8—; seguridad endurecida: `search_path`
-vacío en `vender_unidad` y gastos personales, sin UUID quemado de modalidad,
-`resolverVendedorId` tipado; panel del revendedor alineado con la pausa y RLS
-reforzado; SLICE 5 de higiene: `database.types.ts` a UTF-8 sin BOM, paleta
-calmada en `/personal`, sangrías y bullet de `plan-maestro.md`, y bug del
-teléfono del revendedor en el importador; indicador visual de cuenta en
-`mantenimiento`/`suspendida` en el inventario (badge ámbar/rojo + borde del
-bloque y de la tarjeta); cierre del MVP con datos reales: **0 perfiles fantasma**
-y traslado real controlado de Alberto López (Netflix perfil extra) validado en
-PostgreSQL —178 unitarias, typecheck y build en verde, 25/25 suites SQL en
-verde tras `db:reset` —las suites de venta insertan su propia tasa—).*
+*Última actualización: 2026-08-08 (migraciones hasta `0061`; el teléfono del
+revendedor ya no se guarda como WhatsApp del cliente — importador sin el
+fallback, vista `/clientes` con badge «Revendedor: X» + teléfono «Ref. del
+vendedor» y sin botón de WhatsApp engañoso, y migración `0061` que reconstruyó
+20 teléfonos de vendedor y limpió 116 teléfonos-referencia conservando los
+espejos —; rediseño de “Nueva cuenta” contextual por plataforma —1.1 a 1.8—;
+seguridad endurecida: `search_path` vacío en `vender_unidad` y gastos
+personales, sin UUID quemado de modalidad, `resolverVendedorId` tipado; panel
+del revendedor alineado con la pausa y RLS reforzado; SLICE 5 de higiene:
+`database.types.ts` a UTF-8 sin BOM, paleta calmada en `/personal`, sangrías y
+bullet de `plan-maestro.md`, y bug del teléfono del revendedor en el importador;
+indicador visual de cuenta en `mantenimiento`/`suspendida` en el inventario
+(badge ámbar/rojo + borde del bloque y de la tarjeta); cierre del MVP con datos
+reales: **0 perfiles fantasma** y traslado real controlado de Alberto López
+(Netflix perfil extra) validado en PostgreSQL —214 unitarias y typecheck en
+verde, suites `importacion.sql` y `rls.sql` en verde sobre la base migrada a
+`0061`—).*
 ### Nota de sesión 2026-07-28
 
 - `Gestionar Venta` para Spotify familiar ahora deja editar correo, clave y

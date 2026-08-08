@@ -25,6 +25,11 @@ GL Streaming reemplaza un Excel operativo de reventa de cuentas de streaming (Ne
 | `06-decisiones-pendientes.md` | **Fuente de verdad de qué está confirmado y qué sigue abierto** (P0/P1) |
 | `07-integracion-tasas.md` | Contrato exacto de las APIs de tasa BCV y paralela (Kuanto), hallazgos de auditoría |
 | `08-proximo-paso.md` | Última instrucción registrada antes de esta consolidación |
+| `09-fase-1-setup.md` | Setup de la Fase 1: entorno local, Supabase, usuarios de desarrollo |
+| `10-auditoria-visual.md` | Auditoría visual de pantallas clave (dashboard, inventario, finanzas, login) |
+| `11-pase-visual-claude.md` | Pase autónomo para ejecutar el diseño/branding con un modelo con visión |
+| `12-checklist-despliegue.md` | Checklist de despliegue a producción (env vars, seguridad, PWA, smoke tests) |
+| `13-pendientes.md` | **Lista canónica de pendientes** para retomar una sesión (git, visual, seguridad, despliegue, docs) |
 | `plataformas/` | Ficha detallada de cada una de las 15 plataformas + 4 arquetipos de cuenta compartida |
 
 Si hay que reconstruir el proyecto desde cero, **empezar por este archivo, luego `06-decisiones-pendientes.md`** (para saber exactamente qué ya está decidido) y después la sección 3 de este documento (stack técnico) antes de tocar cualquier editor.
@@ -709,3 +714,18 @@ devuelve a `pausada`. Si además cambió el vendedor de origen durante la
 renovación, restaura el vendedor del período anterior. La UI expone la acción
 desde `PanelSuscripcion` y desde el éxito inmediato del modal de renovación en
 Operaciones.
+### Consolidación 2026-08-08: auditoría visual, pase a modelo con visión y 4 ramas no visuales
+
+El MVP está cerrado con datos reales (ver «Estado actual» en `AGENTS.md`). En
+esta sesión: (1) se documentó la auditoría visual en `10-auditoria-visual.md` y
+el pase autónomo para un modelo con visión en `11-pase-visual-claude.md` — el
+modelo actual no tiene visión, así que el branding (logo en `assets_gl_streaming/`,
+iconos PWA ya en `public/`) lo ejecuta un chat con visión; (2) se reforzaron las
+pruebas del dominio a **213 unitarias en verde**, destapando y corrigiendo un
+bug real: `validarFechaVigencia` aceptaba fechas de calendario inexistentes
+(30-feb) porque JS rueda la fecha en vez de fallar; (3) higiene técnica limpia
+(sin `any`/`console`/TODO; se conservan 5 exports sin consumidor porque están
+testeados como reglas de dominio); (4) preparación para producción: cabeceras de
+seguridad no-CSP en `next.config.ts`, `formatDetection` en `layout.tsx` y
+`12-checklist-despliegue.md`. Pendiente de la rama visual: definir la CSP por
+entorno, rotar el secreto de Kuanto y la pasada visual en sí.
