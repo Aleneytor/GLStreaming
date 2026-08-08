@@ -128,9 +128,28 @@ Si prefieres empezar limpio, usa la función de importación de la app (`/migrac
    default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://<project-id>.supabase.co https://bcvscrapper.vercel.app; font-src 'self' data:; frame-ancestors 'none';
    ```
 
-7. En **Site settings > Domain management > Custom domains**, añade `glcuenta.com` y sigue las instrucciones de Netlify para configurar los DNS de tu dominio (apuntar a los nameservers de Netlify o añadir un CNAME).
+7. Configurar el dominio `glcuenta.com` (DNS en Cloudflare, sin moverlo):
 
-8. **Activa HTTPS**: Netlify lo hace automáticamente con Let's Encrypt al configurar el dominio. Solo verifica que quede activado.
+   **En Netlify:**
+   - Ve a **Site settings > Domain management > Custom domains**.
+   - Añade `glcuenta.com`.
+   - Netlify te dará un subdominio temporal (ej. `glstreaming.netlify.app`). Toma nota de él.
+
+   **En Cloudflare:**
+   - Ve al panel DNS de `glcuenta.com`.
+   - Añade un registro **CNAME**:  
+     - Nombre: `@` (o `glcuenta.com`)  
+     - Destino: `glstreaming.netlify.app` (el que te dio Netlify)  
+     - Proxy: **Desactívalo** (nube gris, ⚠️ no naranja) — Let's Encrypt necesita ver el registro real para emitir el certificado.
+   - Añade otro CNAME para `www`:  
+     - Nombre: `www`  
+     - Destino: `glstreaming.netlify.app`  
+     - Proxy: también desactivado.
+   - Guarda los cambios.
+
+8. **Activar HTTPS en Netlify**: vuelve a Netlify > Domain management y espera a que el dominio se verifique. Netlify aprovisionará el certificado SSL automáticamente vía Let's Encrypt. Una vez que aparezca el candado verde, puedes **volver a activar el proxy de Cloudflare** (nube naranja) si quieres — Cloudflare usará el certificado de Netlify en modo "Full".
+
+9. ⚠️ **Desactiva "Always Use HTTPS" en Cloudflare** si lo tienes activo: Netlify ya fuerza HTTPS, y la doble redirección puede causar bucles.
 
 ---
 
