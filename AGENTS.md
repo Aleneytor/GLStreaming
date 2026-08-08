@@ -114,6 +114,23 @@ Get-Content supabase\tests\<suite>.sql -Raw | docker exec -i <supabase_db_...> p
 
 ## Estado actual
 
+- **Cierre del MVP con datos reales (COMPLETO 2026-08-08)**: los **3 perfiles
+  fantasma** de la auditoría del 2026-07-27 **ya no existen** en la base real.
+  Re-verificado contra PostgreSQL: no hay ninguna unidad con `nombre_visible` de
+  cliente sin asignación abierta —las 73 filas que quedan con nombre y sin venta
+  abierta son etiquetas normales «Perfil N» de cupos libres—, así que **no hizo
+  falta limpiar nada**. Además se probó un **traslado real controlado** de
+  principio a fin en la UI (Alberto López, Netflix perfil extra, suscripción
+  `fb63105b-…`): `trasladar_servicio_por_falla` cerró la asignación vieja con
+  `motivo_fin='traslado_falla'`, dejó la cuenta y unidad origen en
+  `mantenimiento`, abrió la nueva asignación en una cuenta destino válida
+  (cuenta `8f437f08-…`/unidad `51956c2c-…`) con `nombre_visible` copiado,
+  revocó las entregas viejas y creó una `entregas_acceso` `traslado` `pendiente`
+  con el snapshot de renovación (2026-09-06) intacto; el período de la
+  suscripción no se tocó ($7.00, `vigente`, inicio 2026-08-07). El RPC exige
+  sesión admin (`es_admin()`), por eso no se probó vía psql: lo ejecutó el
+  usuario desde `/inventario/netflix` → «Mover por falla» y confirmó que
+  funciona bien. Validado: typecheck en verde y 178/178 unitarias.
 - **Indicador visual del modo mantenimiento/suspendida en el inventario
   (COMPLETO 2026-08-08)**: una cuenta en `mantenimiento` o `suspendida` ya no se
   ve igual que una activa. `src/features/inventario/tabla-inventario.tsx` gana dos
@@ -597,10 +614,11 @@ solo registrar los Bs reales; faltaba la ergonomía de entrada.
   fueron tipados en `src/features/inventario/actions.ts`.
 
 ---
-*Pendiente destacado: probar visualmente un traslado real controlado y terminar
-la revisión responsive móvil (el rediseño de “Nueva cuenta” para todas las
-plataformas y la actualización del panel del revendedor ya se completaron — ver
-entrada de “Estado actual” 2026-08-08).*
+*Pendiente destacado: terminar la revisión responsive móvil con una pasada
+visual en teléfonos reales por todas las plataformas y modales (el rediseño de
+“Nueva cuenta” para todas las plataformas, la actualización del panel del
+revendedor y el cierre del MVP con datos reales —0 perfiles fantasma + traslado
+real controlado— ya se completaron — ver entrada de “Estado actual” 2026-08-08).*
 
 *Última actualización: 2026-08-08 (migraciones hasta `0060`; rediseño de “Nueva
 cuenta” contextual por plataforma —1.1 a 1.8—; seguridad endurecida: `search_path`
@@ -610,9 +628,10 @@ reforzado; SLICE 5 de higiene: `database.types.ts` a UTF-8 sin BOM, paleta
 calmada en `/personal`, sangrías y bullet de `plan-maestro.md`, y bug del
 teléfono del revendedor en el importador; indicador visual de cuenta en
 `mantenimiento`/`suspendida` en el inventario (badge ámbar/rojo + borde del
-bloque y de la tarjeta) —178 unitarias, typecheck y build en verde, 25/25
-suites SQL en verde tras `db:reset` —las suites de venta insertan su propia
-tasa—).*
+bloque y de la tarjeta); cierre del MVP con datos reales: **0 perfiles fantasma**
+y traslado real controlado de Alberto López (Netflix perfil extra) validado en
+PostgreSQL —178 unitarias, typecheck y build en verde, 25/25 suites SQL en
+verde tras `db:reset` —las suites de venta insertan su propia tasa—).*
 ### Nota de sesión 2026-07-28
 
 - `Gestionar Venta` para Spotify familiar ahora deja editar correo, clave y
