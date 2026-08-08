@@ -126,7 +126,10 @@ export default async function CajaPage({
             <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{salidas.length} egresos/pagos</p>
           </div>
 
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
+          {/* Franja NEUTRA a propósito: el flujo neto no es una categoría de
+              movimiento (entra/sale) sino su saldo. El color semántico ya lo
+              lleva el número, que se pone rojo solo si el día cierra negativo. */}
+          <div className="rounded-2xl border border-l-4 border-neutral-200 border-l-neutral-400 bg-white p-5 shadow-xs dark:border-neutral-800 dark:border-l-neutral-500 dark:bg-neutral-900">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Flujo neto del día</span>
             <p className={`mt-2 text-2xl font-bold tabular-nums ${flujo < 0 ? "text-red-700 dark:text-red-400" : "text-neutral-900 dark:text-white"}`}>
               {bs(flujo)} <span className="text-xs font-medium text-neutral-400">Bs</span>

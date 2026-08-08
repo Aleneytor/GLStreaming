@@ -11,6 +11,7 @@ import {
 } from "@/domain/filtros-inventario";
 import { esCuentaCompletaLegada } from "@/domain/cuentas-completas";
 import { FiltrosInventario } from "@/features/inventario/filtros";
+import { LogoPlataforma, tieneLogo } from "@/features/inventario/logos-plataforma";
 import {
   TablaInventario,
   type BloqueCuenta,
@@ -556,29 +557,51 @@ export default async function PlataformaPage({
 
   return (
     <div className="w-full space-y-4">
-      <div>
+      {/* Cabecera al patrón canónico del resto del panel (tarjeta + eyebrow azul
+          + h1 de 2xl). El logo de la plataforma es el mismo componente que usa
+          el selector de /inventario, para que ambas pantallas se reconozcan. */}
+      <header className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
         <Link
           href="/inventario"
           className="text-xs text-neutral-500 transition hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
         >
           ← Volver a Inventario
         </Link>
-        <div className="mt-1 flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-lg font-semibold tracking-tight">{plataforma.nombre}</h1>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              {totalCuentasVisibles} {totalCuentasVisibles === 1 ? "cuenta" : "cuentas"} ·{" "}
-              {totalFilas} {totalFilas === 1 ? "cupo" : "cupos"}
-            </p>
+        <div className="mt-3 flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span
+              aria-hidden
+              className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
+            >
+              {tieneLogo(plataforma.slug) ? (
+                <LogoPlataforma slug={plataforma.slug} className="size-6" />
+              ) : (
+                <span className="text-sm font-black tracking-tight">
+                  {plataforma.nombre.slice(0, 1).toUpperCase()}
+                </span>
+              )}
+            </span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-700 dark:text-blue-400">
+                Inventario
+              </p>
+              <h1 className="mt-0.5 truncate text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white">
+                {plataforma.nombre}
+              </h1>
+              <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                {totalCuentasVisibles} {totalCuentasVisibles === 1 ? "cuenta" : "cuentas"} ·{" "}
+                {totalFilas} {totalFilas === 1 ? "cupo" : "cupos"}
+              </p>
+            </div>
           </div>
           <Link
             href={`/inventario/nueva?plataforma=${plataforma.slug}`}
-            className="shrink-0 rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white transition active:scale-[0.98] dark:bg-white dark:text-neutral-900"
+            className="inline-flex min-h-11 shrink-0 items-center rounded-xl bg-neutral-900 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800 active:scale-[0.98] dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
           >
-            + Nueva Cuenta
+            + Nueva cuenta
           </Link>
         </div>
-      </div>
+      </header>
 
       <FiltrosInventario
         productos={opcionesProducto}
