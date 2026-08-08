@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { FormCrearRevendedor } from "@/features/usuarios/form-crear-revendedor";
+import { BotonCambiarPassword } from "@/features/usuarios/boton-cambiar-password";
 import { Icono } from "@/components/iconos";
 
 export const dynamic = "force-dynamic";
@@ -99,6 +100,7 @@ export default async function UsuariosPage() {
                         ) : null}
                       </div>
                     </div>
+                    <BotonCambiarPassword userId={u.id} nombre={u.nombre} />
                   </li>
                 );
               })}

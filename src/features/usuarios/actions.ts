@@ -93,3 +93,51 @@ export async function crearUsuarioRevendedorAction(
   revalidatePath("/catalogo");
   return { ok: `Revendedor «${nombre}» creado.` };
 }
+
+const esquemaCambiarPassword = z.object({
+  user_id: z.string().uuid(),
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
+});
+
+/**
+ * Cambia la contraseña de cualquier usuario (admin o revendedor).
+ * Solo el admin puede ejecutar esta acción.
+ */
+export async function cambiarPasswordAction(
+  _prev: EstadoUsuario,
+  formData: FormData,
+): Promise<EstadoUsuario> {
+  const usuario = await obtenerUsuarioActual();
+  if (!esAdmin(usuario)) return { error: "No autorizado." };
+
+  const parsed = esquemaCambiarPassword.safeParse({
+    user_id: formData.get("user_id"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
+  }
+
+  const { user_id, password } = parsed.data;
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/admin/users/${user_id}`,
+    {
+      method: "PUT",
+      headers: {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ password }),
+    },
+  );
+
+  if (!res.ok) {
+    const detalle = await res.text();
+    return { error: `Error al cambiar la contraseña (${res.status}): ${detalle}` };
+  }
+
+  revalidatePath("/usuarios");
+  return { ok: "Contraseña cambiada." };
+}
