@@ -68,7 +68,7 @@ export default async function RedComercialPage({
         <p className="mt-1 max-w-2xl text-sm text-neutral-500 dark:text-neutral-400">
           Vendedores, revendedores, proveedores y accesos a la plataforma.
         </p>
-        <div className="mt-5 grid grid-cols-3 gap-2">
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
           {resumen.map((dato) => (
             <div key={dato.etiqueta} className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 dark:border-neutral-800 dark:bg-neutral-950/60">
               <p className="font-mono text-xl font-bold text-neutral-900 dark:text-white">{dato.valor}</p>
@@ -78,7 +78,7 @@ export default async function RedComercialPage({
         </div>
       </header>
 
-      <nav aria-label="Secciones" className="grid grid-cols-3 gap-2">
+      <nav aria-label="Secciones" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {secciones.map((item) => {
           const activa = seccion === item.clave;
           return (
@@ -167,7 +167,7 @@ export default async function RedComercialPage({
                   return (
                     <li
                       key={u.id}
-                      className="flex items-center justify-between gap-4 px-5 py-3.5"
+                      className="flex flex-col gap-3 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
