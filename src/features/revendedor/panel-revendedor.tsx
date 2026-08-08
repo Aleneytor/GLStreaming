@@ -153,27 +153,39 @@ function BotonSolicitud({
  * "Perfil individual", "Cupo por dispositivo", "Asiento" → "Perfil".
  * "Cuenta completa" y "Familiar" se conservan.
  */
+/**
+ * Color de texto sutil por plataforma para diferenciarlas al vuelo.
+ * Solo el texto, nunca el fondo de la tarjeta (paleta calmada).
+ */
+const COLOR_PLATAFORMA: Record<string, string> = {
+  netflix: "text-red-600 dark:text-red-400",
+  "disney+": "text-blue-500 dark:text-blue-400",
+  "hbo max": "text-purple-600 dark:text-purple-400",
+  "prime video": "text-sky-500 dark:text-sky-400",
+  crunchyroll: "text-orange-500 dark:text-orange-400",
+  "paramount+": "text-blue-600 dark:text-blue-400",
+  spotify: "text-green-500 dark:text-green-400",
+  canva: "text-cyan-500 dark:text-cyan-400",
+  flujotv: "text-rose-500 dark:text-rose-400",
+  youtube: "text-red-500 dark:text-red-400",
+  "gemini / google cloud": "text-amber-500 dark:text-amber-400",
+};
+
+function colorPlataforma(nombre: string): string {
+  return COLOR_PLATAFORMA[nombre.toLowerCase()] ?? "";
+}
+
 function formatearProducto(
-  plataforma: string,
+  _plataforma: string,
   _producto: string,
   modalidad: string,
 ): string {
   const m = modalidad.toLowerCase();
-  if (m.includes("extra")) return `${plataforma} · Perfil extra`;
-  if (m.includes("completa")) return `${plataforma} · Cuenta completa`;
-  if (m.includes("familiar") || m.includes("miembro"))
-    return `${plataforma} · Familiar`;
+  if (m.includes("extra")) return "Perfil extra";
+  if (m.includes("completa")) return "Cuenta completa";
+  if (m.includes("familiar") || m.includes("miembro")) return "Familiar";
   // Perfil individual, cupo por dispositivo, asiento: todos son un perfil.
-  if (
-    m.includes("perfil") ||
-    m.includes("individual") ||
-    m.includes("dispositivo") ||
-    m.includes("cupo") ||
-    m.includes("asiento")
-  ) {
-    return `${plataforma} · Perfil`;
-  }
-  return `${plataforma} · ${modalidad}`;
+  return "Perfil";
 }
 
 function TarjetaCliente({
@@ -209,7 +221,7 @@ function TarjetaCliente({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+            <span className={`inline-flex items-center gap-1.5 text-xs font-bold ${colorPlataforma(v.plataforma)}`}>
               <span className="size-1.5 rounded-full bg-neutral-400 dark:bg-neutral-600" />
               {v.plataforma}
             </span>
