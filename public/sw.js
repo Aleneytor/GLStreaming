@@ -2,17 +2,16 @@
  * Service Worker de GL Streaming.
  *
  * Estrategia:
- * - App shell (HTML, CSS, JS, fuentes, iconos): cache-first con fallback a red.
- *   Tras el primer load, la app abre sin red (PWA instalable).
- * - APIs de datos (Supabase, BCV, Kuanto): network-first. Si no hay red,
- *   se intenta cache; si tampoco hay cache, se devuelve error para que la
- *   UI lo muestre (no se inventan datos financieros offline).
+ * - App shell (HTML, CSS, JS, fuentes, iconos): NETWORK-FIRST con fallback a
+ *   cache. El cache-first anterior cacheaba los JS viejos y tras cada deploy
+ *   el navegador servia Server Actions obsoletas que ya no existian.
+ * - APIs de datos (Supabase, BCV, Kuanto): network-first.
  *
- * El SW se registra desde `src/components/registrador-sw.tsx` (cliente).
- * Next.js sirve este archivo estático desde /public/sw.js.
+ * ATENCION: La version del cache (CACHE) debe cambiarse en cada deploy que
+ * modifique el app shell para forzar la invalidacion del cache viejo.
  */
 
-const CACHE = "gl-streaming-v1";
+const CACHE = "gl-streaming-v2";
 const RUTAS_SHELL = [
     "/",
     "/login",
@@ -66,25 +65,23 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
-    // App shell y estáticos: cache-first.
+    // App shell y estaticos: NETWORK-FIRST (cache-first rompia los deploys).
     event.respondWith(
-        caches.match(request).then((cached) => {
-            if (cached) return cached;
-            return fetch(request)
-                .then((res) => {
-                    if (res.ok && url.origin === self.location.origin) {
-                        const copia = res.clone();
-                        caches.open(CACHE).then((cache) => cache.put(request, copia));
-                    }
-                    return res;
-                })
-                .catch(() => {
-                    // Si es navegación y no hay cache, devolver la página raíz cacheada.
-                    if (request.mode === "navigate") {
-                        return caches.match("/");
-                    }
+        fetch(request)
+            .then((res) => {
+                if (res.ok && url.origin === self.location.origin) {
+                    const copia = res.clone();
+                    caches.open(CACHE).then((cache) => cache.put(request, copia));
+                }
+                return res;
+            })
+            .catch(() => {
+                // Sin red: servir de cache.
+                return caches.match(request).then((cached) => {
+                    if (cached) return cached;
+                    if (request.mode === "navigate") return caches.match("/");
                     return Response.error();
                 });
-        }),
+            }),
     );
 });
