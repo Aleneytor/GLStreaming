@@ -149,19 +149,23 @@ function BotonSolicitud({
 
 /**
  * Traduce nombres técnicos de modalidad a algo que el revendedor entiende.
- * "Perfil extra", "Perfil individual", "Cupo por dispositivo" → "Perfil".
- * "Cuenta completa" se conserva. "Miembro familiar" → "Familiar".
+ * "Perfil extra" es un producto independiente (cuenta propia), se distingue.
+ * "Perfil individual", "Cupo por dispositivo", "Asiento" → "Perfil".
+ * "Cuenta completa" y "Familiar" se conservan.
  */
 function formatearProducto(
   plataforma: string,
-  producto: string,
+  _producto: string,
   modalidad: string,
 ): string {
   const m = modalidad.toLowerCase();
-  // Palabras que para el revendedor significan "un perfil más".
+  if (m.includes("extra")) return `${plataforma} · Perfil extra`;
+  if (m.includes("completa")) return `${plataforma} · Cuenta completa`;
+  if (m.includes("familiar") || m.includes("miembro"))
+    return `${plataforma} · Familiar`;
+  // Perfil individual, cupo por dispositivo, asiento: todos son un perfil.
   if (
     m.includes("perfil") ||
-    m.includes("extra") ||
     m.includes("individual") ||
     m.includes("dispositivo") ||
     m.includes("cupo") ||
@@ -169,11 +173,7 @@ function formatearProducto(
   ) {
     return `${plataforma} · Perfil`;
   }
-  if (m.includes("completa")) return `${plataforma} · Cuenta completa`;
-  if (m.includes("familiar") || m.includes("miembro"))
-    return `${plataforma} · Familiar`;
-  // Fallback: mostrar el producto tal cual.
-  return producto || `${plataforma} · ${modalidad}`;
+  return `${plataforma} · ${modalidad}`;
 }
 
 function TarjetaCliente({
