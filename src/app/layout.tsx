@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { RegistradorSW } from "@/components/registrador-sw";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -52,6 +53,7 @@ export default function RootLayout({
     <html lang="es" className="dark" suppressHydrationWarning>
       <body className="min-h-screen bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
         {children}
+        <RegistradorSW />
       </body>
     </html>
   );
