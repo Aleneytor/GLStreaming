@@ -3,8 +3,16 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "GL Streaming",
+  applicationName: "GL Streaming",
   description:
     "Gestión de inventario, ventas, renovaciones, finanzas y revendedores de servicios de streaming.",
+  // La app muestra teléfonos/WhatsApp de clientes: iOS no debe convertirlos en
+  // enlaces automáticos ni marcarlos como datos de contacto del sistema.
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
+  },
   // Comportamiento tipo app instalada en iOS al añadir a pantalla de inicio.
   appleWebApp: {
     capable: true,
