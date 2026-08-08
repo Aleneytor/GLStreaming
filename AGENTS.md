@@ -5,6 +5,20 @@
 > **Manténlo actualizado al final de cada sesión de trabajo** (junto con
 > `docs/00-plan-maestro.md`). Es la fuente de orientación para cualquier agente.
 
+## 🧪 FASE ACTUAL: PRUEBA DE 1 MES (desde 2026-08-08)
+
+**MVP completado y desplegado en producción.** La app está operativa en
+`https://glcuenta.com` (Netlify + Supabase Free Tier). El administrador
+(`alejandro@glcuenta.com`) está usando la app en el día a día del negocio
+durante 1 mes. Al finalizar la prueba, se revisará:
+
+- Qué funciona bien y qué no
+- Qué falta (features, ajustes, bugs)
+- Si la app reemplaza completamente el Excel
+
+**Hasta que el usuario no dé luz verde, no se agregan features nuevos.**
+Solo se corrigen bugs críticos que impidan operar.
+
 ## Qué es este proyecto
 
 Aplicación web para gestionar un negocio de **reventa de cuentas de streaming**
