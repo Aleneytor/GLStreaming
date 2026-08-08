@@ -147,6 +147,35 @@ function BotonSolicitud({
   );
 }
 
+/**
+ * Traduce nombres técnicos de modalidad a algo que el revendedor entiende.
+ * "Perfil extra", "Perfil individual", "Cupo por dispositivo" → "Perfil".
+ * "Cuenta completa" se conserva. "Miembro familiar" → "Familiar".
+ */
+function formatearProducto(
+  plataforma: string,
+  producto: string,
+  modalidad: string,
+): string {
+  const m = modalidad.toLowerCase();
+  // Palabras que para el revendedor significan "un perfil más".
+  if (
+    m.includes("perfil") ||
+    m.includes("extra") ||
+    m.includes("individual") ||
+    m.includes("dispositivo") ||
+    m.includes("cupo") ||
+    m.includes("asiento")
+  ) {
+    return `${plataforma} · Perfil`;
+  }
+  if (m.includes("completa")) return `${plataforma} · Cuenta completa`;
+  if (m.includes("familiar") || m.includes("miembro"))
+    return `${plataforma} · Familiar`;
+  // Fallback: mostrar el producto tal cual.
+  return producto || `${plataforma} · ${modalidad}`;
+}
+
 function TarjetaCliente({
   v,
   whatsappNegocio,
@@ -184,20 +213,21 @@ function TarjetaCliente({
               <span className="size-1.5 rounded-full bg-neutral-400 dark:bg-neutral-600" />
               {v.plataforma}
             </span>
-            {v.modalidad && !v.plataforma?.toLowerCase().includes("spotify") && (
-              <span className="rounded-md bg-neutral-100 px-2 py-0.5 font-mono text-[11px] font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
-                {v.modalidad}
-              </span>
-            )}
           </div>
 
           <p className="mt-2 truncate text-base font-bold text-neutral-900 dark:text-white">
             {v.cliente}
           </p>
-          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-            {v.plataforma?.toLowerCase().includes("spotify") ? "Spotify Premium" : v.producto}
-            {v.estado !== "activa" && v.estado !== "pausada" ? ` · Estado: ${v.estado}` : ""}
+          <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
+            {v.plataforma?.toLowerCase().includes("spotify")
+              ? "Spotify Premium"
+              : formatearProducto(v.plataforma, v.producto, v.modalidad)}
           </p>
+          {v.estado !== "activa" && v.estado !== "pausada" && (
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              Estado: {v.estado}
+            </p>
+          )}
         </div>
 
         {v.fecha_renovacion && (
