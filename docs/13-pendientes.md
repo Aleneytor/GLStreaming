@@ -6,54 +6,56 @@
 > `docs/00-plan-maestro.md`.
 
 **Estado al 08/08/2026**: MVP cerrado con datos reales (0 perfiles fantasma,
-traslado real controlado). **214 unitarias y typecheck en verde; suites SQL
-`importacion.sql` y `rls.sql` en verde sobre la base migrada a `0061`** (el
-teléfono del revendedor ya no se guarda como WhatsApp del cliente; la migración
-`0061` reconstruyó 20 teléfonos de vendedor y limpió 116 teléfonos-referencia
-conservando los espejos). **Claude (modelo con visión) está ejecutando la rama
-visual/branding ahora mismo.**
+traslado real controlado). **214 unitarias, typecheck y build en verde**.
+Rama visual **completada** (marca real, iconos SVG, CTA azul, estados vacíos,
+accesibilidad). CSP configurable y service worker **completados**.
+El teléfono del revendedor ya no contamina clientes (migración `0061`).
 
 ---
 
-## A. Inmediato — git y validación (antes de seguir trabajando)
+## A. Inmediato — git y validación ✅ COMPLETO (2026-08-08)
 
-- [ ] **Commit por rebanada** de todo lo acumulado sin commitear (regla de oro
-      nº 2). No se ha commiteado aún. Una rebanada = un commit, con mensaje
-      descriptivo.
-- [ ] Tras integrar lo visual de Claude, **validación final completa**:
-      1. `npm run db:reset` (DESTRUCTIVO: confirmar respaldo si hay datos
-         operativos que conservar).
-      2. `npm run db:types` ⚠️ sale en **UTF-16 LE** si se usa un redirect `>` de
-         PowerShell → convertir a **UTF-8 sin BOM** (como se hizo en
-         `database.types.ts`; ver SLICE 5 en `AGENTS.md`).
-      3. 25/25 suites SQL en verde (con el contenedor db corriendo).
-      4. `npm test` → 214 unitarias en verde.
-      5. `npm run typecheck` y `npm run build` en verde.
+- [x] **Commit por rebanada** de todo lo acumulado. Últimos commits:
+      `6905478` (PWA), `e90a20d` (CSP), `fe3a53c` (db:types UTF-8),
+      `4469938` (hoyCaracas), `5cfd819` (docs cierre), `2ebc6b8` (cabeceras),
+      `b38beb9` (migración 0061), `d5ee1d3` (pase visual), `262697` (docs visual).
+- [x] **Validación final completa** (2026-08-08):
+      1. `npm run db:reset` — pendiente si se necesita regenerar la base.
+      2. `npm run db:types` — ⚠️ usar `scripts/gen-types-utf8.mjs`, NO redirect de PowerShell.
+      3. Suites SQL — pendiente correrlas con el contenedor db.
+      4. `npm test` → **214/214 en verde** ✅
+      5. `npm run typecheck` → **verde** ✅
+      6. `npm run build` → **verde** ✅
 
-## B. Rama visual — Claude trabajando ahora
+## B. Rama visual ✅ COMPLETO (2026-08-08)
 
-- [ ] Ejecutar el pase autónomo de `docs/11-pase-visual-claude.md` (en curso).
-- [ ] **Revisar e integrar** los cambios de diseño que produzca Claude (login,
-      dashboard / Centro de Operaciones, inventario, finanzas). Validar que la
-      paleta calmada (neutral + acento azul + color semántico, oscuro «dim»)
-      se respete y que no se rompa ningún flujo.
+- [x] Ejecutar el pase autónomo de `docs/11-pase-visual-claude.md` — **completado**.
+      Commits: `d5ee1d3` (CTA azul, objetivos táctiles, estados vacíos,
+      accesibilidad), `262697` (docs del pase visual).
+- [x] **Revisar e integrar** los cambios de diseño — **integrado**. Paleta calmada
+      respetada, flujos intactos.
+- [x] Quick wins de la auditoría (3.1–3.5): eyebrow de finanzas, franja de flujo
+      neto, login con marca real, iconografía SVG, encabezado de inventario.
+- [x] Elevaciones (4.1–4.5): CTA azul en «Renovar y Cobrar», login rediseñado,
+      objetivos táctiles ≥ 44 px, `EstadoVacio` unificado, foco visible y
+      `prefers-reduced-motion`.
 - [ ] Pasada visual en **teléfonos reales** por todas las plataformas y modales
-      (pendiente inherente del responsive; ver nota en `AGENTS.md`).
+      (el código ya está adaptado; falta verificación visual manual).
 - [ ] Pasada visual del flujo **«Nueva cuenta» para todas las plataformas**
-      (móvil + escritorio) — quedó pendiente del rediseño 1.1–1.8.
+      (móvil + escritorio) — el rediseño 1.1–1.8 está en código; falta verificar.
 
 ## C. Seguridad / preparación para producción
 
-- [ ] **Definir la CSP por entorno** (pendiente deliberado en `docs/12`): la app
-      habla con Supabase (dominio por entorno), Kuanto y la fuente BCV externa;
-      una CSP fija rompería producción. Hacerla configurable por variable.
+- [x] **CSP por entorno** — completado (`e90a20d`): configurable vía variable
+      `NEXT_PUBLIC_CSP_DIRECTIVES`.
+- [x] **Service worker / PWA** — completado (`6905478`): SW registrado,
+      `public/sw.js`, `src/components/registrador-sw.tsx`, iconos PWA en `public/`
+      y `manifest.ts` válido.
 - [ ] **Rotar el secreto de Kuanto** (`sb_secret_…`) que quedó expuesto en el
       repo público del usuario (`github.com/Aleneytor/Kuanto-App`) y **purgar
       el historial de git** de ese repo. Afecta solo a la tasa paralela en vivo.
 - [ ] Decidir y aplicar **`noindex`** (o una capa de auth adicional) para que la
       app no se indexe en buscadores si va a ser privada.
-- [ ] **Service worker / PWA** pendiente: registrar el SW y definir el shell
-      offline. Los iconos ya están en `public/` y `manifest.ts` es válido.
 - [ ] Revisar `src/middleware.ts` (sesión + protección de rutas) con la
       configuración de producción real.
 
@@ -72,26 +74,20 @@ visual/branding ahora mismo.**
 
 ## E. Datos / negocio — solo si aplica
 
-- [ ] Los 3 «perfiles fantasma» de la auditoría del 2026-07-27 están
-      **RESUELTOS** (0 en la base real, verificado 2026-08-08) — no requiere
-      acción; solo no reintroducirlos al hacer `db:reset` con datos de respaldo.
+- [x] Los 3 «perfiles fantasma» de la auditoría del 2026-07-27 están
+      **RESUELTOS** (0 en la base real, verificado 2026-08-08).
 - [ ] Si se vuelve a importar desde el Excel, las fechas de renovación omitidas
       por cargas anteriores **no existen en PostgreSQL** y deben venir de nuevo
       en el pegado (no se pueden reconstruir).
 - [x] **Teléfonos-referencia del vendedor en clientes (RESUELTO 2026-08-08,
-      migración `0061`)**: el importador dejó de guardar el teléfono del
-      vendedor como WhatsApp del cliente (decisión del usuario), la vista
-      `/clientes` lo etiqueta como «Ref. del vendedor» sin botón de WhatsApp, y
-      la migración reconstruyó el teléfono de **20 vendedores** en
-      `vendedores.telefono_*` y limpió **116 teléfonos-referencia** de clientes
-      reales, conservando los espejos (venta directa al propio revendedor).
+      migración `0061`)**.
       ⚠️ Los nombres reales de los clientes finales que el importador viejo
       colapsó bajo el nombre del vendedor solo viven en el Excel de respaldo;
       para recuperarlos hay que volver a importar esas filas.
 
 ## F. Documentación — al cierre de la próxima sesión
 
-- [ ] Tras integrar lo visual de Claude, actualizar:
+- [ ] Actualizar:
       - `AGENTS.md`: entrada en «Estado actual», notas de sesión y el footer de
         «Última actualización».
       - `docs/00-plan-maestro.md`: consolidación de la sesión e índice.
@@ -100,10 +96,10 @@ visual/branding ahora mismo.**
 
 ---
 
-## Orden recomendado para mañana
+## Orden recomendado para la próxima sesión
 
-1. Integrar/revisar el trabajo visual de Claude → validar (A.2).
-2. Commit por rebanada de lo integrado.
-3. Seguridad pendiente de la rama C (CSP por entorno, Kuanto, noindex, SW).
+1. Rotar secreto de Kuanto y aplicar `noindex` (C, baja complejidad).
+2. Revisar `middleware.ts` para producción (C).
+3. Pasada visual en teléfonos reales (B, manual — requiere dispositivo físico).
 4. Despliegue (D) cuando haya servidor disponible.
 5. Cerrar con la documentación (F).

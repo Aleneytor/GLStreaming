@@ -1,0 +1,28 @@
+# Configuración de Netlify para GL Streaming (Next.js 15 App Router)
+# Documentación: https://docs.netlify.com/frameworks/nextjs/overview/
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  # Next.js 15 en Netlify usa el plugin @netlify/plugin-nextjs automáticamente.
+  # Estas variables de build NO deben incluir secretos (solo las necesita el
+  # servidor en runtime). Los secretos van en el panel de Netlify > Site settings >
+  # Environment variables, marcados como "during deploy AND runtime".
+  NODE_VERSION = "20"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Redirección para el service worker (debe servirse desde la raíz)
+[[redirects]]
+  from = "/sw.js"
+  to = "/sw.js"
+  status = 200
+
+# Cabeceras de seguridad adicionales (refuerzan las de next.config.ts)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
