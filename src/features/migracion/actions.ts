@@ -15,6 +15,7 @@ import {
 // `restarUnMes` recorta al último día válido del mes destino.
 import { obtenerTasasVigentes } from "@/features/tasas/actions";
 import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
+import { hoyCaracas } from "@/domain/fechas";
 
 /**
  * Importación masiva de la cartera existente.
@@ -40,15 +41,6 @@ export type EstadoImportacion = {
   resumen?: string;
   filas?: ResultadoFila[];
 } | null;
-
-function hoyCaracas(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Caracas",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 
 /**
  * Clasifica el correo de una identidad de Spotify. Los del dominio propio son
@@ -706,14 +698,11 @@ export async function importarAction(
       mensaje: error
         ? error.message
         : d.cliente
-          ? `${d.cliente} · vence ${vence}${etiquetaCobro}${etiquetaVendedor}${
-              advertenciasMeta.length ? ` · aviso: ${advertenciasMeta.join("; ")}` : ""
-            }`
-          : `${esFamiliar ? `Miembro ${fila.slot}` : `Perfil ${fila.slot}`} cargado libre${
-              esFamiliar && d.correoCliente ? " con correo y clave preparados" : ""
-            }${
-              advertenciasMeta.length ? ` · aviso: ${advertenciasMeta.join("; ")}` : ""
-            }`,
+          ? `${d.cliente} · vence ${vence}${etiquetaCobro}${etiquetaVendedor}${advertenciasMeta.length ? ` · aviso: ${advertenciasMeta.join("; ")}` : ""
+          }`
+          : `${esFamiliar ? `Miembro ${fila.slot}` : `Perfil ${fila.slot}`} cargado libre${esFamiliar && d.correoCliente ? " con correo y clave preparados" : ""
+          }${advertenciasMeta.length ? ` · aviso: ${advertenciasMeta.join("; ")}` : ""
+          }`,
     });
   }
 

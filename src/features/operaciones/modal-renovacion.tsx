@@ -8,16 +8,8 @@ import {
   type TipoCorreoTarifaSpotify,
 } from "@/domain/tarifas-spotify";
 import { parsearMontoFormulario } from "@/domain/dinero";
+import { hoyCaracas } from "@/domain/fechas";
 import type { VendedorOperacion } from "./obtener-operaciones";
-
-function hoyCaracas(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Caracas",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 
 export function ModalRenovacion({
   suscripcionId,
@@ -153,8 +145,8 @@ export function ModalRenovacion({
               </select>
               <div
                 className={`mt-2 rounded-xl border px-3 py-2 text-xs ${cobraEnParalela
-                    ? "border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
-                    : "border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-200"
+                  ? "border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                  : "border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-200"
                   }`}
               >
                 <strong>{vendedor?.nombre ?? "Venta directa"}</strong>
@@ -216,8 +208,8 @@ export function ModalRenovacion({
                           aplicarTarifa(meses, tipo);
                         }}
                         className={`rounded-xl border px-2 py-2 text-[11px] font-semibold ${tipoCorreo === tipo
-                            ? "border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
-                            : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-300"
+                          ? "border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+                          : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-300"
                           }`}
                       >
                         {etiqueta}

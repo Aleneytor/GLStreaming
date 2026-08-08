@@ -165,3 +165,19 @@ export function badgeVencimiento(dias: number): BadgeVencimiento {
   if (dias === 0) return { color: "amarillo", etiqueta: "Renueva hoy · acceso todo el día" };
   return { color: "rojo", etiqueta: `Vencido hace ${Math.abs(dias)} días` };
 }
+
+/**
+ * Fecha de hoy en la zona horaria del negocio (America/Caracas), en formato
+ * "YYYY-MM-DD". Se usa `en-CA` porque es el locale que produce el formato ISO
+ * sin depender de la zona horaria del servidor donde corre la app.
+ *
+ * Centraliza una función que estaba duplicada en 12 archivos.
+ */
+export function hoyCaracas(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Caracas",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}

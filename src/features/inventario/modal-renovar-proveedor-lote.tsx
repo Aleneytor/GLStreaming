@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useMemo, useState } from "react";
 import { registrarPagosProveedorLoteAction } from "./actions";
+import { hoyCaracas } from "@/domain/fechas";
 
 export type CuentaPagoProveedorLote = {
   cuentaId: string;
@@ -10,15 +11,6 @@ export type CuentaPagoProveedorLote = {
   costo: number | null;
   renovarProveedor: string;
 };
-
-function hoyCaracas(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Caracas",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 
 function fechaVisible(fecha: string): string {
   const [anio, mes, dia] = fecha.split("-");

@@ -4,7 +4,7 @@ import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { uno } from "@/lib/supabase/util";
 import { descifrarSecreto } from "@/lib/crypto";
-import { badgeVencimiento, diasParaRenovar } from "@/domain/fechas";
+import { badgeVencimiento, diasParaRenovar, hoyCaracas } from "@/domain/fechas";
 import {
   coincideFiltroInventario,
   normalizarFiltroInventario,
@@ -20,16 +20,6 @@ import {
 } from "@/features/inventario/tabla-inventario";
 
 export const dynamic = "force-dynamic";
-
-/** Fecha de hoy en la zona horaria del negocio (America/Caracas). */
-function hoyCaracas(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Caracas",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 
 /** Descifra sin reventar la página si una fila quedó con clave vieja. */
 function desc(cifrado: string | null | undefined): string {
@@ -516,12 +506,12 @@ export default async function PlataformaPage({
           let filas = coincideCuenta
             ? cta.filas
             : cta.filas.filter(
-                (f) =>
-                  f.cliente?.toLowerCase().includes(busqueda) ||
-                  f.celular?.includes(busqueda) ||
-                  f.vendio?.toLowerCase().includes(busqueda) ||
-                  f.clienteLogin?.toLowerCase().includes(busqueda),
-              );
+              (f) =>
+                f.cliente?.toLowerCase().includes(busqueda) ||
+                f.celular?.includes(busqueda) ||
+                f.vendio?.toLowerCase().includes(busqueda) ||
+                f.clienteLogin?.toLowerCase().includes(busqueda),
+            );
 
           filas = filas.filter((fila) =>
             coincideFiltroInventario(fila, filtroOperativo, cta.cuentaEstado),

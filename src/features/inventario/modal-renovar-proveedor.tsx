@@ -2,15 +2,7 @@
 
 import { useActionState, useEffect } from "react";
 import { registrarPagoProveedorRapidoAction } from "./actions";
-
-function hoyCaracas(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Caracas",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
+import { hoyCaracas } from "@/domain/fechas";
 
 export function ModalRenovarProveedorRapido({
   cuentaId,

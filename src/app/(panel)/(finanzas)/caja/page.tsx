@@ -3,17 +3,9 @@ import { redirect } from "next/navigation";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { BotonDeshacerCobro } from "@/features/finanzas/boton-deshacer-cobro";
+import { hoyCaracas } from "@/domain/fechas";
 
 export const dynamic = "force-dynamic";
-
-function hoyCaracas(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Caracas",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 
 const bs = (n: number) =>
   n.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -238,11 +230,10 @@ export default async function CajaPage({
                   </div>
                   <div className="shrink-0 text-right tabular-nums">
                     <p
-                      className={`text-sm font-bold ${
-                        monto < 0
+                      className={`text-sm font-bold ${monto < 0
                           ? "text-red-700 dark:text-red-400"
                           : "text-emerald-700 dark:text-emerald-400"
-                      }`}
+                        }`}
                     >
                       {monto > 0 ? "+" : ""}
                       {bs(monto)} Bs

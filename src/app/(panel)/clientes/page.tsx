@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { diasParaRenovar } from "@/domain/fechas";
+import { diasParaRenovar, hoyCaracas } from "@/domain/fechas";
 import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { uno } from "@/lib/supabase/util";
@@ -12,15 +12,6 @@ import {
 import { EstadoVacio } from "@/components/estado-vacio";
 
 export const dynamic = "force-dynamic";
-
-function hoyCaracas(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Caracas",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 
 export default async function ClientesPage({
   searchParams,

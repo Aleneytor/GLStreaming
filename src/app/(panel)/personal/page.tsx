@@ -3,19 +3,11 @@ import { obtenerUsuarioActual, esAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { obtenerTasasVigentes } from "@/features/tasas/actions";
 import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
+import { hoyCaracas } from "@/domain/fechas";
 import { FormGastoPersonal } from "@/features/personal/form-gasto-personal";
 import { ItemGastoPersonal } from "@/features/personal/item-gasto-personal";
 
 export const dynamic = "force-dynamic";
-
-function hoyCaracas(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Caracas",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 
 function finMes(fecha: string) {
   const [y, m] = fecha.split("-").map(Number);

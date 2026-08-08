@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { uno } from "@/lib/supabase/util";
-import { badgeVencimiento, diasParaRenovar, type BadgeVencimiento } from "@/domain/fechas";
+import { badgeVencimiento, diasParaRenovar, hoyCaracas, type BadgeVencimiento } from "@/domain/fechas";
 import { obtenerTasasVigentes } from "@/features/tasas/actions";
 import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
 import { descifrarSecreto } from "@/lib/crypto";
@@ -59,15 +59,6 @@ export type DatosOperaciones = {
   limpiezas: LimpiezaPendiente[];
   vendedores: VendedorOperacion[];
 };
-
-function hoyCaracas(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Caracas",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 
 export async function obtenerDatosOperaciones(): Promise<DatosOperaciones> {
   const hoy = hoyCaracas();

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { obtenerUsuarioActual } from "@/lib/auth";
-import { diasParaRenovar } from "@/domain/fechas";
+import { diasParaRenovar, hoyCaracas } from "@/domain/fechas";
 import { PanelRevendedor, type VentaRevendedor } from "./panel-revendedor";
 
 /**
@@ -15,15 +15,6 @@ import { PanelRevendedor, type VentaRevendedor } from "./panel-revendedor";
  * teléfono al venderle). No se conoce al cliente FINAL, así que no hay contacto
  * de WhatsApp que ofrecer: el revendedor atiende a los suyos por su cuenta.
  */
-
-function hoyCaracas(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Caracas",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 
 export async function MisVentasRevendedor({ q }: { q?: string }) {
   const hoy = hoyCaracas();

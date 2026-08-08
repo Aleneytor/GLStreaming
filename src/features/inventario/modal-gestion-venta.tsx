@@ -8,6 +8,7 @@ import type { DestinoTraslado } from "./acciones-traslado";
 import type { VendedorOp } from "./modal-venta-rapida";
 import {
   calcularFechaRenovacion,
+  hoyCaracas,
   planificarRenovacionCliente,
 } from "@/domain/fechas";
 import {
@@ -15,15 +16,6 @@ import {
   tipoTarifaSpotifyDesdeCorreo,
   type TipoCorreoTarifaSpotify,
 } from "@/domain/tarifas-spotify";
-
-function hoyCaracas(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Caracas",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 
 function formatearFecha(fecha: string | null): string {
   if (!fecha) return "";
@@ -100,8 +92,8 @@ export function ModalGestionVenta({
     clave: clienteClave ?? "",
     tipo:
       clienteTipoCorreo === "dominio_gl" ||
-      clienteTipoCorreo === "gmail_propio" ||
-      clienteTipoCorreo === "correo_cliente"
+        clienteTipoCorreo === "gmail_propio" ||
+        clienteTipoCorreo === "correo_cliente"
         ? clienteTipoCorreo
         : "correo_cliente",
   });
@@ -214,8 +206,8 @@ export function ModalGestionVenta({
   useEffect(() => {
     const tipoActual =
       clienteTipoCorreo === "dominio_gl" ||
-      clienteTipoCorreo === "gmail_propio" ||
-      clienteTipoCorreo === "correo_cliente"
+        clienteTipoCorreo === "gmail_propio" ||
+        clienteTipoCorreo === "correo_cliente"
         ? clienteTipoCorreo
         : "correo_cliente";
     setClienteNombreForm(clienteNombre);
@@ -489,17 +481,17 @@ export function ModalGestionVenta({
                   </div>
 
                   <label className="flex items-start gap-2 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-                      <input
-                        type="checkbox"
-                        name="vendedor_cobra_paralela"
-                        checked={cobraParalela}
-                        onChange={(e) => setCobraParalela(e.target.checked)}
-                        className="mt-0.5"
-                      />
-                      <span>
-                        Cobra a <strong>tasa paralela</strong>; desmarcado cobra a BCV.
-                      </span>
-                    </label>
+                    <input
+                      type="checkbox"
+                      name="vendedor_cobra_paralela"
+                      checked={cobraParalela}
+                      onChange={(e) => setCobraParalela(e.target.checked)}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      Cobra a <strong>tasa paralela</strong>; desmarcado cobra a BCV.
+                    </span>
+                  </label>
 
                   <p className="text-[11px] font-semibold text-neutral-700 dark:text-neutral-200">
                     Renovaciones: {nombreVendedorSeleccionado} · {tipoVendedor} · {baseSeleccionada}
@@ -582,52 +574,51 @@ export function ModalGestionVenta({
             </p>
 
             <div>
-                <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                  Duración del nuevo paquete
-                </label>
-                <select
-                  name="meses"
-                  value={mesesRenovacion}
-                  onChange={(e) => {
-                    const meses = Number(e.target.value);
-                    setMesesRenovacion(meses);
-                    aplicarTarifaSpotify(meses);
-                  }}
-                  className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                >
-                  {opcionesMeses.map((meses) => (
-                    <option key={meses} value={meses}>
-                      {meses} {meses === 1 ? "mes" : "meses"}
-                    </option>
-                  ))}
-                </select>
+              <label className="mb-1 block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                Duración del nuevo paquete
+              </label>
+              <select
+                name="meses"
+                value={mesesRenovacion}
+                onChange={(e) => {
+                  const meses = Number(e.target.value);
+                  setMesesRenovacion(meses);
+                  aplicarTarifaSpotify(meses);
+                }}
+                className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+              >
+                {opcionesMeses.map((meses) => (
+                  <option key={meses} value={meses}>
+                    {meses} {meses === 1 ? "mes" : "meses"}
+                  </option>
+                ))}
+              </select>
               {slug === "spotify" && (
                 <>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  {([
-                    ["dominio_gl", "Correo de mi dominio"],
-                    ["correo_cliente", "Correo del cliente"],
-                  ] as const).map(([tipo, etiqueta]) => (
-                    <button
-                      key={tipo}
-                      type="button"
-                      onClick={() => {
-                        setTipoCorreoTarifa(tipo);
-                        aplicarTarifaSpotify(mesesRenovacion, tipo);
-                      }}
-                      className={`rounded-lg border px-2 py-2 text-[11px] font-semibold ${
-                        tipoCorreoTarifa === tipo
-                          ? "border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
-                          : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-300"
-                      }`}
-                    >
-                      {etiqueta}
-                    </button>
-                  ))}
-                </div>
-                <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
-                  Se sugiere la tarifa vigente; puedes editar el monto si acordaste una excepción.
-                </p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {([
+                      ["dominio_gl", "Correo de mi dominio"],
+                      ["correo_cliente", "Correo del cliente"],
+                    ] as const).map(([tipo, etiqueta]) => (
+                      <button
+                        key={tipo}
+                        type="button"
+                        onClick={() => {
+                          setTipoCorreoTarifa(tipo);
+                          aplicarTarifaSpotify(mesesRenovacion, tipo);
+                        }}
+                        className={`rounded-lg border px-2 py-2 text-[11px] font-semibold ${tipoCorreoTarifa === tipo
+                            ? "border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+                            : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-300"
+                          }`}
+                      >
+                        {etiqueta}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+                    Se sugiere la tarifa vigente; puedes editar el monto si acordaste una excepción.
+                  </p>
                 </>
               )}
             </div>
@@ -647,11 +638,10 @@ export function ModalGestionVenta({
             </div>
 
             <div
-              className={`rounded-lg border px-3 py-2 text-xs ${
-                baseSeleccionada === "Paralela"
+              className={`rounded-lg border px-3 py-2 text-xs ${baseSeleccionada === "Paralela"
                   ? "border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
                   : "border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200"
-              }`}
+                }`}
             >
               <strong>{nombreVendedorSeleccionado}</strong> · {tipoVendedor} · tasa{" "}
               <strong>{baseSeleccionada}</strong>

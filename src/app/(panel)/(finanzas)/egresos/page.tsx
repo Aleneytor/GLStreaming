@@ -5,19 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { uno } from "@/lib/supabase/util";
 import { obtenerTasasVigentes } from "@/features/tasas/actions";
 import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
+import { hoyCaracas } from "@/domain/fechas";
 import { FormGasto } from "@/features/finanzas/form-gasto";
 import { FormRenovacionProveedor } from "@/features/finanzas/form-renovacion-proveedor";
 
 export const dynamic = "force-dynamic";
-
-function hoyCaracas(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Caracas",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
 
 const bs = (n: number) =>
   n.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -125,15 +117,14 @@ export default async function EgresosPage() {
                         {Number(c.costo_usdt ?? 0).toFixed(2)} USDT
                       </span>
                       <span
-                        className={`mt-1 block rounded-full px-2 py-0.5 text-xs ${
-                          c.sin_desembolso
+                        className={`mt-1 block rounded-full px-2 py-0.5 text-xs ${c.sin_desembolso
                             ? "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
                             : c.pagado
                               ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                               : dias < 0
                                 ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
                                 : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                        }`}
+                          }`}
                       >
                         {c.sin_desembolso
                           ? "sin costo"
