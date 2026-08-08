@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -47,9 +48,20 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mb-2 text-4xl">📺</div>
-          <h1 className="text-xl font-semibold tracking-tight">GL Streaming</h1>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+          {/* La marca es monocroma (blanco sobre oscuro, como en las piezas del
+              negocio). En claro se invierte a negro: invertir una marca
+              monocroma es su uso estándar, no un color nuevo. */}
+          <h1>
+            <Image
+              src="/logo-gl-completo.png"
+              alt="GL Streaming Services"
+              width={900}
+              height={608}
+              priority
+              className="mx-auto h-auto w-48 invert dark:invert-0"
+            />
+          </h1>
+          <p className="mt-5 text-sm text-neutral-500 dark:text-neutral-400">
             Inicia sesión para continuar
           </p>
         </div>
@@ -67,7 +79,7 @@ export default function LoginPage() {
               required
               value={correo}
               onChange={(e) => setCorreo(e.target.value)}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-base outline-none transition focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-neutral-300"
+              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-base outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-blue-500"
             />
           </div>
 
@@ -82,7 +94,7 @@ export default function LoginPage() {
               required
               value={contrasena}
               onChange={(e) => setContrasena(e.target.value)}
-              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-base outline-none transition focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-neutral-300"
+              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-base outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-blue-500"
             />
           </div>
 
