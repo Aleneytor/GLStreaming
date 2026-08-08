@@ -1,5 +1,26 @@
 import type { NextConfig } from "next";
 
+/**
+ * Content-Security-Policy configurable por entorno.
+ *
+ * La app habla con Supabase (dominio por entorno), Kuanto y la fuente BCV
+ * externa, así que una CSP hardcodeada rompería producción. Si la variable
+ * `CSP_DIRECTIVES` está definida, se usa tal cual (el operador la configura con
+ * los dominios correctos de su entorno). Si no está definida, no se emite CSP
+ * —se mantiene el comportamiento anterior para no romper el desarrollo local.
+ *
+ * Ejemplo para producción (en .env.local o el entorno de deploy):
+ *   CSP_DIRECTIVES="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://supabase.co https://bcvscrapper.vercel.app; font-src 'self' data:; frame-ancestors 'none';"
+ *
+ * Notas:
+ * - `'unsafe-inline'` en script-src/style-src es necesario porque Next.js
+ *   inyecta estilos y scripts inline en desarrollo. En producción con
+ *   `next start`, los scripts van en archivos externos, pero los estilos
+ *   inline siguen presentes (Tailwind + Next).
+ * - `frame-ancestors 'none'` refuerza el X-Frame-Options: DENY ya existente.
+ */
+const cspDirectives = process.env.CSP_DIRECTIVES;
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Existe otro package-lock.json en el perfil del usuario y Next infería ese
@@ -17,24 +38,28 @@ const nextConfig: NextConfig = {
     // Server Actions habilitadas por defecto en Next 15; se deja el bloque
     // como punto de configuración explícito para límites de body, etc.
   },
-  // Cabeceras de seguridad en producción (y desarrollo). Se omite a propósito
-  // un Content-Security-Policy fijo: la app habla con Supabase (dominio por
-  // entorno), Kuanto y la fuente BCV externa, así que una CSP hardcodeada
-  // rompería producción. Ver docs/12-checklist-despliegue.md.
+  // Cabeceras de seguridad en producción (y desarrollo).
   async headers() {
+    const headers = [
+      { key: "X-Frame-Options", value: "DENY" },
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "X-DNS-Prefetch-Control", value: "off" },
+      {
+        key: "Permissions-Policy",
+        value: "camera=(), microphone=(), geolocation=(), usb=(), payment=()",
+      },
+    ];
+
+    // Solo se añade CSP si la variable de entorno está definida.
+    if (cspDirectives) {
+      headers.push({ key: "Content-Security-Policy", value: cspDirectives });
+    }
+
     return [
       {
         source: "/(.*)",
-        headers: [
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "X-DNS-Prefetch-Control", value: "off" },
-          {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=(), usb=(), payment=()",
-          },
-        ],
+        headers,
       },
     ];
   },
