@@ -118,5 +118,13 @@ export function validarFechaVigencia(fecha: unknown): ResultadoValidacion {
   if (Number.isNaN(t)) {
     return { valida: false, motivo: `Fecha de vigencia inválida: ${fecha}` };
   }
+  // Ojo: `new Date("2026-02-30T00:00:00Z")` NO falla — JavaScript rueda al 2 de
+  // marzo. Comprobamos que la fecha del calendario coincide con lo publicado
+  // para no aceptar un 30 de febrero ni otro día inexistente.
+  const [y, m, d] = fecha.split("-").map(Number);
+  const t2 = new Date(Date.UTC(y, m - 1, d));
+  if (t2.getUTCFullYear() !== y || t2.getUTCMonth() !== m - 1 || t2.getUTCDate() !== d) {
+    return { valida: false, motivo: `Fecha de vigencia inválida: ${fecha}` };
+  }
   return { valida: true };
 }

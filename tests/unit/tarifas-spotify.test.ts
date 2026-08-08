@@ -29,3 +29,27 @@ describe("tarifas de Spotify", () => {
     );
   });
 });
+
+describe("tarifas de Spotify (casos límite)", () => {
+  it("devuelve null para meses no ofertados", () => {
+    expect(tarifaSpotify("dominio_gl", 2)).toBeNull();
+    expect(tarifaSpotify("correo_cliente", 4)).toBeNull();
+    expect(tarifaSpotify("dominio_gl", 24)).toBeNull();
+    expect(tarifaSpotify("correo_cliente", 0)).toBeNull();
+  });
+
+  it("sin correo ni titularidad guardada asume el dominio GL", () => {
+    expect(tipoTarifaSpotifyDesdeCorreo(null)).toBe("dominio_gl");
+    expect(tipoTarifaSpotifyDesdeCorreo(undefined, null)).toBe("dominio_gl");
+  });
+
+  it("reconoce los dominios propios sin importar mayúsculas", () => {
+    expect(tipoTarifaSpotifyDesdeCorreo("UNO@GLSTREAMING.ORG")).toBe("dominio_gl");
+    expect(tipoTarifaSpotifyDesdeCorreo("Dos@GlCuenta.Com")).toBe("dominio_gl");
+  });
+
+  it("la titularidad registrada manda aunque falte el correo", () => {
+    expect(tipoTarifaSpotifyDesdeCorreo(null, "gmail_propio")).toBe("dominio_gl");
+    expect(tipoTarifaSpotifyDesdeCorreo(null, "correo_cliente")).toBe("correo_cliente");
+  });
+});

@@ -55,3 +55,23 @@ describe("esCuentaCompletaLegada", () => {
     ).toBe(false);
   });
 });
+
+describe("esCuentaCompletaLegada (casos límite)", () => {
+  it("un nombre ausente o vacío no es cuenta completa", () => {
+    expect(
+      esCuentaCompletaLegada({ tipoInventario: "cuenta_con_unidades", numeroSlot: 1, nombreVisible: null }),
+    ).toBe(false);
+    expect(
+      esCuentaCompletaLegada({ tipoInventario: "cuenta_con_unidades", numeroSlot: 1, nombreVisible: undefined }),
+    ).toBe(false);
+    expect(
+      esCuentaCompletaLegada({ tipoInventario: "cuenta_con_unidades", numeroSlot: 1, nombreVisible: "" }),
+    ).toBe(false);
+  });
+
+  it("ignora mayúsculas y espacios alrededor del nombre", () => {
+    expect(
+      esCuentaCompletaLegada({ tipoInventario: "cuenta_con_unidades", numeroSlot: 1, nombreVisible: "  CUENTA COMPLETA  " }),
+    ).toBe(true);
+  });
+});

@@ -104,3 +104,58 @@ describe("confirmadaAt", () => {
     expect(evaluarFrescura(tasa.obtenida_at, ahora).nivel).toBe("inservible");
   });
 });
+
+describe("validarValorTasa (límites de desviación)", () => {
+  it("una desviación exacta del 50% todavía se acepta", () => {
+    // DESVIACION_MAXIMA = 0.5 y la regla es `>` (no `>=`): 40 -> 60 es justo el borde.
+    expect(validarValorTasa(60, 40).valida).toBe(true);
+  });
+
+  it("una desviación superior al 50% se rechaza", () => {
+    expect(validarValorTasa(60.1, 40).valida).toBe(false);
+    expect(validarValorTasa(19.9, 40).valida).toBe(false);
+  });
+});
+
+describe("antiguedadEnMinutos (casos límite)", () => {
+  const ahora = new Date("2026-07-23T12:00:00Z");
+
+  it("acepta una instancia Date", () => {
+    expect(antiguedadEnMinutos(new Date("2026-07-23T11:30:00Z"), ahora)).toBe(30);
+  });
+
+  it("una observación futura no da antigüedad negativa", () => {
+    expect(antiguedadEnMinutos("2026-07-23T12:30:00Z", ahora)).toBe(0);
+  });
+
+  it("una fecha ilegible se trata como infinitamente vieja", () => {
+    expect(antiguedadEnMinutos("no-es-fecha", ahora)).toBe(Number.POSITIVE_INFINITY);
+  });
+});
+
+describe("evaluarFrescura (umbrales exactos y etiquetas)", () => {
+  const ahora = new Date("2026-07-23T12:00:00Z");
+
+  it("a los 30 minutos exactos pasa a «vieja»", () => {
+    const r = evaluarFrescura("2026-07-23T11:30:00Z", ahora);
+    expect(r.nivel).toBe("vieja");
+    expect(r.etiqueta).toContain("30 min");
+  });
+
+  it("a las 24 horas exactas pasa a «inservible»", () => {
+    const r = evaluarFrescura("2026-07-22T12:00:00Z", ahora);
+    expect(r.nivel).toBe("inservible");
+    expect(r.etiqueta).toContain("24 h");
+  });
+
+  it("recién obtenida dice «Ahora mismo»", () => {
+    expect(evaluarFrescura("2026-07-23T11:59:59Z", ahora).etiqueta).toBe("Ahora mismo");
+  });
+});
+
+describe("validarFechaVigencia (calendario)", () => {
+  it("rechaza fechas que no existen en el calendario", () => {
+    expect(validarFechaVigencia("2026-13-45").valida).toBe(false);
+    expect(validarFechaVigencia("2026-02-30").valida).toBe(false);
+  });
+});
