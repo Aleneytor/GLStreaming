@@ -35,6 +35,7 @@ export default async function PanelLayout({
         },
         { href: "/personal", etiqueta: "Personal", icono: "recibo" },
         { href: "/catalogo", etiqueta: "Catálogo", icono: "engranaje" },
+        { href: "/usuarios", etiqueta: "Revendedores", icono: "usuario" },
         { href: "/migracion", etiqueta: "Importar", icono: "descarga", soloEscritorio: true },
       ]
     : [{ href: "/dashboard", etiqueta: "Mis ventas", icono: "recibo" }];
