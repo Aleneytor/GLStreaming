@@ -6,6 +6,7 @@ import { obtenerTasasVigentes } from "@/features/tasas/actions";
 import { confirmadaAt, evaluarFrescura } from "@/domain/tasas";
 import { calcularMontoVesEsperado } from "@/domain/dinero";
 import { BotonCobrar } from "@/features/finanzas/boton-cobrar";
+import { Icono } from "@/components/iconos";
 
 export const dynamic = "force-dynamic";
 
@@ -73,7 +74,7 @@ export default async function CobrosPage() {
 
       {filas.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/50 p-8 text-center dark:border-emerald-900 dark:bg-emerald-950/20">
-          <span className="text-3xl" aria-hidden>✓</span>
+          <Icono nombre="check" className="mx-auto size-9 text-emerald-600 dark:text-emerald-400" />
           <p className="mt-2 font-medium text-emerald-800 dark:text-emerald-300">Todos los pagos están registrados</p>
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">No hay ventas ni renovaciones esperando un cobro.</p>
         </div>

@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Icono, type NombreIcono } from "./iconos";
 
 export type ItemNav = {
   href: string;
   etiqueta: string;
-  icono: string;
+  /** Icono SVG (ver `components/iconos.tsx`), no un emoji: los emojis los
+   * dibuja cada sistema operativo a su manera y rompían la paleta. */
+  icono: NombreIcono;
   /** Otras rutas que también deben marcar este elemento como activo. */
   incluye?: string[];
   /** No se muestra en la barra inferior del móvil (tarea de escritorio). */
@@ -49,9 +52,7 @@ export function NavPanel({ items }: { items: ItemNav[] }) {
                     : "text-neutral-500 dark:text-neutral-400"
                 }`}
               >
-                <span aria-hidden className="text-lg leading-none">
-                  {item.icono}
-                </span>
+                <Icono nombre={item.icono} className="size-5" />
                 {item.etiqueta}
               </Link>
             </li>
@@ -81,9 +82,10 @@ export function NavPanel({ items }: { items: ItemNav[] }) {
                       : "text-neutral-600 hover:bg-neutral-200/60 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100"
                   }`}
                 >
-                  <span className={`text-base ${activo ? "scale-110" : "opacity-80"}`}>
-                    {item.icono}
-                  </span>
+                  <Icono
+                    nombre={item.icono}
+                    className={`size-5 shrink-0 ${activo ? "" : "opacity-70"}`}
+                  />
                   <span>{item.etiqueta}</span>
                 </Link>
               </li>

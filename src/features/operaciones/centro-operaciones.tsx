@@ -7,6 +7,7 @@ import { BotonCopiarWhatsapp } from "./boton-copiar-whatsapp";
 import { ModalRenovacion } from "./modal-renovacion";
 import { ModalGestionSuscripcion } from "./modal-gestion-suscripcion";
 import { BotonLimpieza } from "@/features/ventas/boton-limpieza";
+import { Icono } from "@/components/iconos";
 
 type TabTipo = "urgente" | "proximos" | "pausados" | "todos" | "limpieza";
 type GrupoOperaciones = {
@@ -272,8 +273,9 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
                     {grupo.clienteNombre}
                   </span>
                   {grupo.clienteWhatsapp && (
-                    <span className="font-mono text-xs text-neutral-500 dark:text-neutral-400">
-                      📞 {grupo.clienteWhatsapp}
+                    <span className="inline-flex items-center gap-1 font-mono text-xs text-neutral-500 dark:text-neutral-400">
+                      <Icono nombre="telefono" className="size-3.5 shrink-0" />
+                      {grupo.clienteWhatsapp}
                     </span>
                   )}
                   <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">

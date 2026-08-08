@@ -24,20 +24,20 @@ export default async function PanelLayout({
 
   const items: ItemNav[] = esAdmin(usuario)
     ? [
-        { href: "/dashboard", etiqueta: "Operaciones", icono: "⚡" },
-        { href: "/inventario", etiqueta: "Inventario", icono: "📦" },
-        { href: "/clientes", etiqueta: "Clientes", icono: "👥" },
+        { href: "/dashboard", etiqueta: "Operaciones", icono: "rayo" },
+        { href: "/inventario", etiqueta: "Inventario", icono: "caja" },
+        { href: "/clientes", etiqueta: "Clientes", icono: "personas" },
         {
           href: "/caja",
           etiqueta: "Finanzas",
-          icono: "💵",
+          icono: "dinero",
           incluye: ["/cobros", "/egresos", "/cierre", "/tasas"],
         },
-        { href: "/personal", etiqueta: "Personal", icono: "🧾" },
-        { href: "/catalogo", etiqueta: "Catálogo", icono: "⚙️" },
-        { href: "/migracion", etiqueta: "Importar", icono: "📥", soloEscritorio: true },
+        { href: "/personal", etiqueta: "Personal", icono: "recibo" },
+        { href: "/catalogo", etiqueta: "Catálogo", icono: "engranaje" },
+        { href: "/migracion", etiqueta: "Importar", icono: "descarga", soloEscritorio: true },
       ]
-    : [{ href: "/dashboard", etiqueta: "Mis ventas", icono: "🧾" }];
+    : [{ href: "/dashboard", etiqueta: "Mis ventas", icono: "recibo" }];
 
   return (
     <div className="flex min-h-screen flex-col bg-neutral-50 dark:bg-neutral-950">
