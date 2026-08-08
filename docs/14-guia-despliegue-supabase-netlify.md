@@ -24,22 +24,24 @@
 
 ## Paso 2 — Conectar la CLI local al proyecto Supabase hosted
 
-1. En el dashboard de Supabase, ve a **Project Settings > API**.
-2. Verás estos tres campos (son distintos, no los confundas):
-   - **Project URL**: un dominio tipo `https://abcdefghijklm.supabase.co`
-   - **anon public**: un token larguísimo que empieza con `eyJ...` (la publishable key)
-   - **service_role**: otro token que también empieza con `eyJ...` (la clave secreta, NUNCA en el navegador)
-3. Copia **Project URL** y **service_role key**.
-4. En tu `.env.local` local, **crea una copia de respaldo** y luego reemplaza temporalmente las variables para apuntar al proyecto hosted. La Project URL va en `NEXT_PUBLIC_SUPABASE_URL` y la service_role en `SUPABASE_SERVICE_ROLE_KEY`:
+1. En el dashboard de Supabase, ve a **Project Settings** (el engranaje junto al nombre del proyecto). Aquí verás el **Project ID** (ej. `aqsroqaohfnznnppzezr`). Apúntalo.
+2. También en el dashboard, ve a **Project Settings > API** (o **Settings > Data API** según la versión). Ahí encontrarás las dos API keys:
+   - **anon public**: un token larguísimo que empieza con `eyJ...` (seguro para el navegador)
+   - **service_role**: otro token que también empieza con `eyJ...` (clave secreta total, NUNCA en el navegador)
+3. La **Project URL** NO aparece como campo separado: se construye con el Project ID:
    ```
-   NEXT_PUBLIC_SUPABASE_URL=https://abcdefghijklm.supabase.co
+   https://<project-id>.supabase.co
+   ```
+   Por ejemplo, si tu Project ID es `aqsroqaohfnznnppzezr`, la URL es `https://aqsroqaohfnznnppzezr.supabase.co`.
+4. En tu `.env.local` local, **crea una copia de respaldo** y luego reemplaza temporalmente las variables para apuntar al proyecto hosted:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=https://aqsroqaohfnznnppzezr.supabase.co
    SUPABASE_SERVICE_ROLE_KEY=eyJ... (la service_role, NO la anon)
    ```
-4. (Opcional) Linkea la CLI de Supabase al proyecto hosted:
+5. (Opcional) Linkea la CLI de Supabase al proyecto hosted (el `project-ref` es el Project ID):
    ```bash
-   npx supabase link --project-ref <project-id>
+   npx supabase link --project-ref aqsroqaohfnznnppzezr
    ```
-   El `project-id` está en la URL del dashboard: `https://supabase.com/dashboard/project/<project-id>`.
 5. **Aplica las migraciones** al proyecto hosted:
    ```bash
    npx supabase db push
