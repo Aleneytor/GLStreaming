@@ -9,3 +9,28 @@
 html {
   -webkit-text-size-adjust: 100%;
 }
+
+/* Foco visible de base para quien navega con teclado.
+   `:focus-visible` solo se activa al tabular, no al hacer clic con el ratón, así
+   que no ensucia el uso normal. Los campos con su propio anillo azul
+   (`focus:ring-*`) lo siguen usando: esto es la red de seguridad para el resto
+   de botones y enlaces, que antes quedaban sin ninguna señal. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid theme("colors.blue.500");
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+/* Respeta «reducir movimiento» del sistema en todo lo que no sea esencial. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

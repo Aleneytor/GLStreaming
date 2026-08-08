@@ -9,6 +9,7 @@ import {
   type ClienteFila,
   type ServicioCliente,
 } from "@/features/clientes/editor-cliente";
+import { EstadoVacio } from "@/components/estado-vacio";
 
 export const dynamic = "force-dynamic";
 
@@ -175,13 +176,15 @@ export default async function ClientesPage({
         </div>
 
         {filas.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-neutral-300 p-8 text-center dark:border-neutral-700">
-            <p className="text-2xl" aria-hidden>◌</p>
-            <p className="mt-2 font-medium">{q || filtro !== "todos" ? "No hay coincidencias" : "Aún no hay clientes"}</p>
-            <p className="mt-1 text-sm text-neutral-500">
-              {q || filtro !== "todos" ? "Prueba otra búsqueda o limpia los filtros." : "Aparecerán aquí cuando registres las ventas."}
-            </p>
-          </div>
+          <EstadoVacio
+            icono="personas"
+            titulo={q || filtro !== "todos" ? "No hay coincidencias" : "Aún no hay clientes"}
+            sugerencia={
+              q || filtro !== "todos"
+                ? "Prueba otra búsqueda o limpia los filtros."
+                : "Aparecerán aquí cuando registres las ventas."
+            }
+          />
         ) : (
           <div className="grid items-start gap-3 lg:grid-cols-2">
             {filas.map((cliente) => <EditorCliente key={cliente.id} cliente={cliente} />)}

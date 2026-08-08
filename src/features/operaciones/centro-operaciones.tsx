@@ -8,6 +8,7 @@ import { ModalRenovacion } from "./modal-renovacion";
 import { ModalGestionSuscripcion } from "./modal-gestion-suscripcion";
 import { BotonLimpieza } from "@/features/ventas/boton-limpieza";
 import { Icono } from "@/components/iconos";
+import { EstadoVacio } from "@/components/estado-vacio";
 
 type TabTipo = "urgente" | "proximos" | "pausados" | "todos" | "limpieza";
 type GrupoOperaciones = {
@@ -153,7 +154,13 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                   {t.etiqueta}
                 </span>
-                <span className={`size-2 rounded-full ${hue.dot} ${t.pulso ? "animate-pulse" : ""}`} />
+                {/* `motion-safe`: quien active «reducir movimiento» en su
+                    sistema no ve el parpadeo. */}
+                <span
+                  className={`size-2 rounded-full ${hue.dot} ${
+                    t.pulso ? "motion-safe:animate-pulse" : ""
+                  }`}
+                />
               </div>
               <p className={`mt-2 text-2xl font-bold tabular-nums ${hue.num}`}>{t.valor}</p>
               <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">{t.sub}</p>
@@ -257,9 +264,18 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
           ))}
         </div>
       ) : itemsTab.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-neutral-300 p-8 text-center text-xs text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
-          {busqueda ? `No hay resultados para "${busqueda}".` : "No hay clientes en este grupo."}
-        </div>
+        busqueda ? (
+          <EstadoVacio
+            titulo={`Sin resultados para «${busqueda}»`}
+            sugerencia="Prueba con otro nombre, teléfono, revendedor o plataforma."
+          />
+        ) : (
+          <EstadoVacio
+            variante="ok"
+            titulo="Nada pendiente en este grupo"
+            sugerencia="Cuando haya servicios que atender aquí, aparecerán en esta lista."
+          />
+        )
       ) : (
         <div className="space-y-3">
           {gruposTab.map((grupo) => (
@@ -337,7 +353,11 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
                         <button
                           type="button"
                           onClick={() => setRenovandoItem(item)}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-neutral-900 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-neutral-800 active:scale-[0.98] dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+                          // ÚNICO botón azul de la app (decisión del usuario,
+                          // 2026-08-08): es la acción más frecuente del día, y
+                          // al ser el único con acento guía el ojo. El resto
+                          // sigue neutro para no competir con él.
+                          className="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-blue-600 px-4 text-xs font-semibold text-white shadow-xs transition hover:bg-blue-700 active:scale-[0.98] dark:bg-blue-600 dark:text-white dark:hover:bg-blue-500"
                         >
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path
@@ -357,7 +377,7 @@ export function CentroOperaciones({ datos }: { datos: DatosOperaciones }) {
                         <button
                           type="button"
                           onClick={() => setGestionandoItem(item)}
-                          className="inline-flex items-center gap-1 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 active:scale-[0.98] dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+                          className="inline-flex min-h-11 items-center gap-1 rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 active:scale-[0.98] dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
                           title="Gestionar estado, pausar, cancelar o ir al inventario"
                         >
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -1106,7 +1106,7 @@ function BloqueCuentaExcel({
           claseAlerta = "bg-amber-100 text-amber-950 border border-amber-300 font-bold hover:bg-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/50 dark:hover:bg-amber-500/30 rounded-md px-2.5 py-1 shadow-sm cursor-pointer";
           textoAlerta = `Falta ${f.dias} días ⚙️`;
         } else if (f.dias === 0) {
-          claseAlerta = "bg-red-600 text-white font-black hover:bg-red-700 rounded-md px-2.5 py-1 animate-pulse shadow-md cursor-pointer";
+          claseAlerta = "bg-red-600 text-white font-black hover:bg-red-700 rounded-md px-2.5 py-1 motion-safe:animate-pulse shadow-md cursor-pointer";
           textoAlerta = "Vence hoy ⚙️";
         } else {
           const transcurridos = Math.abs(f.dias);
@@ -1697,7 +1697,7 @@ function TarjetaCuentaMovil({
                             fila.clienteTipoCorreo,
                           )
                         }
-                        className={`rounded px-2.5 py-1 text-xs font-semibold text-white active:scale-95 disabled:cursor-not-allowed ${destinosTraslado
+                        className={`inline-flex min-h-11 items-center rounded-lg px-3.5 text-xs font-semibold text-white active:scale-95 disabled:cursor-not-allowed ${destinosTraslado
                             ? esDestinoSeleccionado
                               ? "bg-amber-500"
                               : destinoCompatible

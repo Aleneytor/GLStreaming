@@ -47,7 +47,7 @@ export function BotonCopiarWhatsapp({
         type="button"
         onClick={copiar}
         disabled={cargando}
-        className={`inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-medium transition ${
+        className={`inline-flex min-h-11 items-center gap-1 rounded-xl px-3.5 text-xs font-medium transition ${
           copiado
             ? "bg-emerald-600 text-white"
             : "bg-neutral-100 text-neutral-800 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"

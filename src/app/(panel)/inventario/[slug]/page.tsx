@@ -12,6 +12,7 @@ import {
 import { esCuentaCompletaLegada } from "@/domain/cuentas-completas";
 import { FiltrosInventario } from "@/features/inventario/filtros";
 import { LogoPlataforma, tieneLogo } from "@/features/inventario/logos-plataforma";
+import { EstadoVacio } from "@/components/estado-vacio";
 import {
   TablaInventario,
   type BloqueCuenta,
@@ -615,11 +616,19 @@ export default async function PlataformaPage({
       />
 
       {gruposFiltrados.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-neutral-300 p-6 text-center text-xs text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-          {q || estado || productoSeleccionado || cuentaSeleccionada
-            ? "Nada coincide con el filtro."
-            : `Todavía no hay cuentas de ${plataforma.nombre}.`}
-        </p>
+        <EstadoVacio
+          icono="caja"
+          titulo={
+            q || estado || productoSeleccionado || cuentaSeleccionada
+              ? "Nada coincide con el filtro"
+              : `Todavía no hay cuentas de ${plataforma.nombre}`
+          }
+          sugerencia={
+            q || estado || productoSeleccionado || cuentaSeleccionada
+              ? "Prueba con otro filtro o limpia la búsqueda."
+              : "Da de alta la primera para empezar a vender sus cupos."
+          }
+        />
       ) : (
         gruposFiltrados.map((g) => (
           <section key={g.codigo} className="space-y-2">
