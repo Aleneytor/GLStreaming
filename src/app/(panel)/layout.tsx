@@ -33,10 +33,18 @@ export default async function PanelLayout({
           icono: "dinero",
           incluye: ["/cobros", "/egresos", "/cierre", "/tasas"],
         },
-        { href: "/personal", etiqueta: "Personal", icono: "recibo" },
         { href: "/catalogo", etiqueta: "Catálogo", icono: "engranaje" },
+        { href: "/red", etiqueta: "Red comercial", icono: "personas" },
         { href: "/usuarios", etiqueta: "Revendedores", icono: "usuario" },
         { href: "/migracion", etiqueta: "Importar", icono: "descarga", soloEscritorio: true },
+        {
+          href: "/personal",
+          etiqueta: "Personal",
+          icono: "recibo",
+          separador: true,
+          seccion: "Personal",
+          soloEscritorio: true,
+        },
       ]
     : [{ href: "/dashboard", etiqueta: "Mis ventas", icono: "recibo" }];
 

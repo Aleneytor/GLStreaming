@@ -14,6 +14,10 @@ export type ItemNav = {
   incluye?: string[];
   /** No se muestra en la barra inferior del móvil (tarea de escritorio). */
   soloEscritorio?: boolean;
+  /** Si es true, dibuja un separador visual antes de este ítem (sección nueva). */
+  separador?: boolean;
+  /** Etiqueta opcional para la nueva sección. Solo se usa si separador=true. */
+  seccion?: string;
 };
 
 /**
@@ -73,6 +77,15 @@ export function NavPanel({ items }: { items: ItemNav[] }) {
             const activo = esActivo(item);
             return (
               <li key={item.href}>
+                {item.separador && (
+                  <div className="mb-1 mt-5 border-t border-neutral-200 pt-4 dark:border-neutral-800">
+                    {item.seccion && (
+                      <p className="mb-2 px-2.5 text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                        {item.seccion}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <Link
                   href={item.href}
                   aria-current={activo ? "page" : undefined}

@@ -6,10 +6,6 @@ import { uno } from "@/lib/supabase/util";
 import {
   EditorPlataforma,
   EditorProducto,
-  EditorProveedor,
-  EditorVendedor,
-  type ProveedorFila,
-  type VendedorFila,
 } from "@/features/catalogo/editores";
 
 export const dynamic = "force-dynamic";
@@ -17,8 +13,6 @@ export const dynamic = "force-dynamic";
 const secciones = [
   { clave: "productos", etiqueta: "Productos", icono: "▦", descripcion: "Qué se vende" },
   { clave: "plataformas", etiqueta: "Plataformas", icono: "◫", descripcion: "Servicios disponibles" },
-  { clave: "vendedores", etiqueta: "Vendedores", icono: "♟", descripcion: "Quién origina ventas" },
-  { clave: "proveedores", etiqueta: "Proveedores", icono: "◇", descripcion: "A quién se compra" },
 ] as const;
 
 export default async function CatalogoPage({
@@ -36,9 +30,6 @@ export default async function CatalogoPage({
   const [
     { data: plataformas },
     { data: productos },
-    { data: proveedores },
-    { data: vendedores },
-    { data: usuarios },
   ] = await Promise.all([
     supabase.from("plataformas").select("id, nombre, slug, activa").order("nombre"),
     supabase
@@ -47,22 +38,11 @@ export default async function CatalogoPage({
         "id, nombre, codigo, estado_comercial, permite_renovaciones, activo, capacidad_fija, capacidad_vendible_predeterminada, plataformas ( nombre )",
       )
       .order("codigo"),
-    supabase
-      .from("proveedores")
-      .select("id, tipo, nombre_o_alias, telefono_original, notas, activo")
-      .order("nombre_o_alias"),
-    supabase
-      .from("vendedores")
-      .select("id, nombre, alias, telefono_original, usuario_id, tipo, cobra_en_paralela, activo")
-      .order("nombre"),
-    supabase.from("usuarios").select("id, nombre, rol").eq("activo", true).order("nombre"),
   ]);
 
   const resumen = [
     { valor: (productos ?? []).filter((item) => item.activo).length, etiqueta: "productos activos" },
     { valor: (plataformas ?? []).filter((item) => item.activa).length, etiqueta: "plataformas" },
-    { valor: (vendedores ?? []).filter((item) => item.activo).length, etiqueta: "vendedores" },
-    { valor: (proveedores ?? []).filter((item) => item.activo).length, etiqueta: "proveedores" },
   ];
 
   return (
@@ -73,9 +53,9 @@ export default async function CatalogoPage({
         </p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white">Catálogo</h1>
         <p className="mt-1 max-w-2xl text-sm text-neutral-500 dark:text-neutral-400">
-          Controla lo que vendes y las personas que participan en cada operación.
+          Productos y plataformas que ofreces a tus clientes.
         </p>
-        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="mt-5 grid grid-cols-2 gap-2">
           {resumen.map((dato) => (
             <div key={dato.etiqueta} className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 dark:border-neutral-800 dark:bg-neutral-950/60">
               <p className="font-mono text-xl font-bold text-neutral-900 dark:text-white">{dato.valor}</p>
@@ -85,7 +65,7 @@ export default async function CatalogoPage({
         </div>
       </header>
 
-      <nav aria-label="Secciones del catálogo" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <nav aria-label="Secciones del catálogo" className="grid grid-cols-2 gap-2">
         {secciones.map((item) => {
           const activa = seccion === item.clave;
           return (
@@ -153,47 +133,6 @@ export default async function CatalogoPage({
         </section>
       )}
 
-      {seccion === "vendedores" && (
-        <section className="space-y-4">
-          <div>
-            <h2 className="font-semibold">Vendedores y revendedores</h2>
-            <p className="text-xs text-neutral-500">
-              Distingue afiliados con portal de intermediarios ocasionales y define su base de cobro.
-            </p>
-          </div>
-          <details className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-900">
-            <summary className="cursor-pointer text-sm font-semibold text-blue-700 dark:text-blue-400">+ Registrar vendedor</summary>
-            <div className="mt-4"><EditorVendedor usuarios={usuarios ?? []} /></div>
-          </details>
-          <div className="grid gap-3 lg:grid-cols-2">
-            {(vendedores ?? []).map((vendedor) => (
-              <EditorVendedor
-                key={vendedor.id}
-                vendedor={vendedor as VendedorFila}
-                usuarios={usuarios ?? []}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {seccion === "proveedores" && (
-        <section className="space-y-4">
-          <div>
-            <h2 className="font-semibold">Proveedores</h2>
-            <p className="text-xs text-neutral-500">Contactos a quienes compras cuentas, perfiles o coberturas.</p>
-          </div>
-          <details className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-900">
-            <summary className="cursor-pointer text-sm font-semibold text-blue-700 dark:text-blue-400">+ Registrar proveedor</summary>
-            <div className="mt-4"><EditorProveedor /></div>
-          </details>
-          <div className="grid gap-3 lg:grid-cols-2">
-            {(proveedores ?? []).map((proveedor) => (
-              <EditorProveedor key={proveedor.id} proveedor={proveedor as ProveedorFila} />
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }
