@@ -25,11 +25,15 @@
 ## Paso 2 — Conectar la CLI local al proyecto Supabase hosted
 
 1. En el dashboard de Supabase, ve a **Project Settings > API**.
-2. Copia **Project URL** y **service_role key**.
-3. En tu `.env.local` local, **crea una copia de respaldo** y luego reemplaza temporalmente las variables para apuntar al proyecto hosted:
+2. Verás estos tres campos (son distintos, no los confundas):
+   - **Project URL**: un dominio tipo `https://abcdefghijklm.supabase.co`
+   - **anon public**: un token larguísimo que empieza con `eyJ...` (la publishable key)
+   - **service_role**: otro token que también empieza con `eyJ...` (la clave secreta, NUNCA en el navegador)
+3. Copia **Project URL** y **service_role key**.
+4. En tu `.env.local` local, **crea una copia de respaldo** y luego reemplaza temporalmente las variables para apuntar al proyecto hosted. La Project URL va en `NEXT_PUBLIC_SUPABASE_URL` y la service_role en `SUPABASE_SERVICE_ROLE_KEY`:
    ```
-   NEXT_PUBLIC_SUPABASE_URL=https://<project-id>.supabase.co
-   SUPABASE_SERVICE_ROLE_KEY=<service_role key>
+   NEXT_PUBLIC_SUPABASE_URL=https://abcdefghijklm.supabase.co
+   SUPABASE_SERVICE_ROLE_KEY=eyJ... (la service_role, NO la anon)
    ```
 4. (Opcional) Linkea la CLI de Supabase al proyecto hosted:
    ```bash
